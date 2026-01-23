@@ -31,7 +31,7 @@ export default function ReadPage({ params }: { params: { id: string } }) {
   };
   
   if (!isMounted) {
-    return null; // or a loading skeleton
+    return null; // atau kerangka pemuatan
   }
 
   return (

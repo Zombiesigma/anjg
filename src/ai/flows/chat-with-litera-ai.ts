@@ -1,26 +1,26 @@
 'use server';
 /**
- * @fileOverview A Litera AI chatbot flow.
+ * @fileOverview Alur chatbot Litera AI.
  *
- * - chatWithLiteraAI - A function that handles the chat with Litera AI process.
- * - ChatWithLiteraAIInput - The input type for the chatWithLiteraAI function.
- * - ChatWithLiteraAIOutput - The return type for the chatWithLiteraAI function.
+ * - chatWithLiteraAI - Fungsi yang menangani proses obrolan dengan Litera AI.
+ * - ChatWithLiteraAIInput - Tipe input untuk fungsi chatWithLiteraAI.
+ * - ChatWithLiteraAIOutput - Tipe kembalian untuk fungsi chatWithLiteraAI.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const ChatWithLiteraAIInputSchema = z.object({
-  message: z.string().describe('The message from the user.'),
+  message: z.string().describe('Pesan dari pengguna.'),
   chatHistory: z.array(z.object({
     role: z.enum(['user', 'assistant']),
     content: z.string(),
-  })).optional().describe('The chat history between the user and the assistant.'),
+  })).optional().describe('Riwayat obrolan antara pengguna dan asisten.'),
 });
 export type ChatWithLiteraAIInput = z.infer<typeof ChatWithLiteraAIInputSchema>;
 
 const ChatWithLiteraAIOutputSchema = z.object({
-  response: z.string().describe('The response from Litera AI.'),
+  response: z.string().describe('Respons dari Litera AI.'),
 });
 export type ChatWithLiteraAIOutput = z.infer<typeof ChatWithLiteraAIOutputSchema>;
 
@@ -32,20 +32,20 @@ const prompt = ai.definePrompt({
   name: 'chatWithLiteraAIPrompt',
   input: {schema: ChatWithLiteraAIInputSchema},
   output: {schema: ChatWithLiteraAIOutputSchema},
-  prompt: `You are Litera AI, a helpful AI assistant for the LiteraVerse platform.
+  prompt: `Anda adalah Litera AI, asisten AI yang membantu untuk platform LiteraVerse.
 
-  Your purpose is to assist users with writing, research, and exploring book recommendations within the LiteraVerse platform.
-  Maintain a friendly and engaging tone.
+  Tujuan Anda adalah membantu pengguna dengan penulisan, penelitian, dan menjelajahi rekomendasi buku dalam platform LiteraVerse.
+  Pertahankan nada yang ramah dan menarik.
 
   {{#if chatHistory}}
-  Here is the chat history:
+  Berikut adalah riwayat obrolan:
   {{#each chatHistory}}
-  {{#if isUser}}User: {{content}}{{/if}}
+  {{#if isUser}}Pengguna: {{content}}{{/if}}
   {{#if isAssistant}}Litera AI: {{content}}{{/if}}
   {{/each}}
   {{/if}}
 
-  User: {{{message}}}
+  Pengguna: {{{message}}}
   Litera AI: `,
 });
 

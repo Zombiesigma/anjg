@@ -30,15 +30,15 @@ export default function NotificationsPage() {
     <div className="max-w-3xl mx-auto space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-headline font-bold">Notifications</h1>
-          <p className="text-muted-foreground">You have {unreadNotifications.length} unread notifications.</p>
+          <h1 className="text-3xl font-headline font-bold">Notifikasi</h1>
+          <p className="text-muted-foreground">Anda memiliki {unreadNotifications.length} notifikasi belum dibaca.</p>
         </div>
-        <Button variant="outline">Mark all as read</Button>
+        <Button variant="outline">Tandai semua telah dibaca</Button>
       </div>
       
       <Card>
         <CardHeader>
-          <CardTitle>New</CardTitle>
+          <CardTitle>Baru</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {unreadNotifications.length > 0 ? (
@@ -60,14 +60,14 @@ export default function NotificationsPage() {
               </div>
             ))
           ) : (
-            <p className="text-sm text-muted-foreground text-center py-4">No new notifications.</p>
+            <p className="text-sm text-muted-foreground text-center py-4">Tidak ada notifikasi baru.</p>
           )}
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Earlier</CardTitle>
+          <CardTitle>Sebelumnya</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {readNotifications.map(notif => (

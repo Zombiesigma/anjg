@@ -19,14 +19,14 @@ import type { AiChatMessage } from '@/lib/types';
 import { Separator } from '@/components/ui/separator';
 
 const initialHistory: AiChatMessage[] = [
-    { role: 'assistant', content: 'Hello! I am Litera AI. How can I help you with your writing, research, or book recommendations today?' }
+    { role: 'assistant', content: 'Halo! Saya Litera AI. Ada yang bisa saya bantu dengan tulisan, riset, atau rekomendasi buku Anda hari ini?' }
 ];
 
 const chatHistories = [
-    { id: '1', title: 'Brainstorming Sci-Fi Plot' },
-    { id: '2', title: 'Character Name Ideas' },
-    { id: '3', title: 'Summarize "Dune"' },
-    { id: '4', title: 'Poetry about rain' },
+    { id: '1', title: 'Brainstorming Plot Fiksi Ilmiah' },
+    { id: '2', title: 'Ide Nama Karakter' },
+    { id: '3', title: 'Ringkas "Dune"' },
+    { id: '4', title: 'Puisi tentang hujan' },
 ];
 
 export default function AiPage() {
@@ -61,14 +61,14 @@ export default function AiPage() {
                 </SidebarContent>
                  <SidebarFooter className="mt-auto border-t p-2">
                     <p className="text-xs text-muted-foreground group-data-[collapsible=icon]:hidden px-2">
-                        Litera AI can make mistakes. Consider checking important information.
+                        Litera AI dapat membuat kesalahan. Pertimbangkan untuk memeriksa informasi penting.
                     </p>
                 </SidebarFooter>
             </Sidebar>
             <SidebarInset className="p-0 m-0 !min-h-0 rounded-none shadow-none">
                  <div className="flex items-center gap-2 p-2 border-b h-[var(--sidebar-header-height)]">
                     <SidebarTrigger className="md:hidden"/>
-                    <h3 className="font-semibold">Brainstorming Sci-Fi Plot</h3>
+                    <h3 className="font-semibold">Brainstorming Plot Fiksi Ilmiah</h3>
                 </div>
                 <ChatClient history={initialHistory} />
             </SidebarInset>

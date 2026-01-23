@@ -24,22 +24,22 @@ export default function SettingsPage() {
   return (
     <div className="max-w-3xl mx-auto space-y-8">
        <div>
-        <h1 className="text-3xl font-headline font-bold">Settings</h1>
-        <p className="text-muted-foreground">Manage your account and display preferences.</p>
+        <h1 className="text-3xl font-headline font-bold">Pengaturan</h1>
+        <p className="text-muted-foreground">Kelola akun dan preferensi tampilan Anda.</p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Profile</CardTitle>
-          <CardDescription>This is how others will see you on the site.</CardDescription>
+          <CardTitle>Profil</CardTitle>
+          <CardDescription>Beginilah cara orang lain akan melihat Anda di situs.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
            <div className="space-y-2">
-            <Label htmlFor="username">Username</Label>
+            <Label htmlFor="username">Nama Pengguna</Label>
             <Input id="username" defaultValue="@guntur" />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="name">Full Name</Label>
+            <Label htmlFor="name">Nama Lengkap</Label>
             <Input id="name" defaultValue="Guntur Padilah" />
           </div>
           <div className="space-y-2">
@@ -48,46 +48,46 @@ export default function SettingsPage() {
           </div>
         </CardContent>
         <CardFooter className="border-t px-6 py-4">
-          <Button>Save Changes</Button>
+          <Button>Simpan Perubahan</Button>
         </CardFooter>
       </Card>
       
       <Card>
         <CardHeader>
-          <CardTitle>Display</CardTitle>
-          <CardDescription>Adjust the appearance of the application.</CardDescription>
+          <CardTitle>Tampilan</CardTitle>
+          <CardDescription>Sesuaikan tampilan aplikasi.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex items-center justify-between">
             <Label htmlFor="theme-mode" className="flex flex-col space-y-1">
-              <span>Theme</span>
+              <span>Tema</span>
               <span className="font-normal leading-snug text-muted-foreground">
-                Select your preferred theme.
+                Pilih tema pilihan Anda.
               </span>
             </Label>
             <Select defaultValue="system">
                 <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Theme" />
+                    <SelectValue placeholder="Tema" />
                 </SelectTrigger>
                 <SelectContent>
-                    <SelectItem value="light">Light</SelectItem>
-                    <SelectItem value="dark">Dark</SelectItem>
-                    <SelectItem value="system">System</SelectItem>
+                    <SelectItem value="light">Terang</SelectItem>
+                    <SelectItem value="dark">Gelap</SelectItem>
+                    <SelectItem value="system">Sistem</SelectItem>
                 </SelectContent>
             </Select>
           </div>
            <div className="flex items-center justify-between">
             <Label htmlFor="dense-mode" className="flex flex-col space-y-1">
-              <span>Compact View</span>
+              <span>Tampilan Ringkas</span>
               <span className="font-normal leading-snug text-muted-foreground">
-                Display content more compactly.
+                Tampilkan konten secara lebih ringkas.
               </span>
             </Label>
             <Switch id="dense-mode" />
           </div>
         </CardContent>
          <CardFooter className="border-t px-6 py-4">
-          <Button>Save Preferences</Button>
+          <Button>Simpan Preferensi</Button>
         </CardFooter>
       </Card>
 

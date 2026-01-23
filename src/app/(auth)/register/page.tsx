@@ -34,13 +34,13 @@ export default function RegisterPage() {
         <div className="inline-block mx-auto">
           <Logo className="h-10 w-10" />
         </div>
-        <CardTitle className="text-2xl font-headline">Create an Account</CardTitle>
-        <CardDescription>Enter your information to create an account</CardDescription>
+        <CardTitle className="text-2xl font-headline">Buat Akun</CardTitle>
+        <CardDescription>Masukkan informasi Anda untuk membuat akun</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleRegister} className="grid gap-4">
           <div className="grid gap-2">
-            <Label htmlFor="full-name">Full name</Label>
+            <Label htmlFor="full-name">Nama Lengkap</Label>
             <Input id="full-name" placeholder="Guntur Padilah" required />
           </div>
           <div className="grid gap-2">
@@ -48,25 +48,25 @@ export default function RegisterPage() {
             <Input id="email" type="email" placeholder="m@example.com" required />
           </div>
            <div className="grid gap-2">
-            <Label htmlFor="picture">Profile picture</Label>
+            <Label htmlFor="picture">Foto Profil</Label>
             <Input id="picture" type="file" />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">Kata Sandi</Label>
             <Input id="password" type="password" required />
           </div>
           <Button type="submit" className="w-full">
-            Create account
+            Buat akun
           </Button>
            <Separator className="my-2" />
            <Button variant="outline" className="w-full">
-            Sign up with Google
+            Daftar dengan Google
           </Button>
         </form>
         <div className="mt-4 text-center text-sm">
-          Already have an account?{' '}
+          Sudah punya akun?{' '}
           <Link href="/login" className="underline">
-            Sign in
+            Masuk
           </Link>
         </div>
       </CardContent>

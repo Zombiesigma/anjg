@@ -18,10 +18,10 @@ export default function MessagesPage() {
         {/* Chat List */}
         <div className="col-span-12 md:col-span-4 lg:col-span-3 border-r h-full flex flex-col">
           <div className="p-4 border-b">
-            <h1 className="text-2xl font-headline font-bold">Messages</h1>
+            <h1 className="text-2xl font-headline font-bold">Pesan</h1>
             <div className="relative mt-2">
                 <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search chats" className="pl-8" />
+                <Input placeholder="Cari obrolan" className="pl-8" />
             </div>
           </div>
           <ScrollArea className="flex-1">
@@ -76,22 +76,22 @@ export default function MessagesPage() {
                 {/* Mock messages */}
                 <div className="flex justify-start gap-3">
                     <Avatar className="h-8 w-8"><AvatarImage src={users[1].avatarUrl} data-ai-hint="person portrait"/><AvatarFallback>JD</AvatarFallback></Avatar>
-                    <div className="bg-card p-3 rounded-lg rounded-bl-none max-w-md shadow-sm">Hey, did you finish reading my last chapter?</div>
+                    <div className="bg-card p-3 rounded-lg rounded-bl-none max-w-md shadow-sm">Hei, apakah kamu sudah selesai membaca bab terakhirku?</div>
                 </div>
                 <div className="flex justify-end gap-3">
-                    <div className="bg-primary text-primary-foreground p-3 rounded-lg rounded-br-none max-w-md shadow-sm">Almost! The ending was a huge surprise. I'll send my notes over soon.</div>
+                    <div className="bg-primary text-primary-foreground p-3 rounded-lg rounded-br-none max-w-md shadow-sm">Hampir! Akhirnya sangat mengejutkan. Aku akan segera mengirimkan catatanku.</div>
                     <Avatar className="h-8 w-8"><AvatarImage src={currentUser.avatarUrl} data-ai-hint="man portrait"/><AvatarFallback>GP</AvatarFallback></Avatar>
                 </div>
                  <div className="flex justify-start gap-3">
                     <Avatar className="h-8 w-8"><AvatarImage src={users[1].avatarUrl} data-ai-hint="person portrait"/><AvatarFallback>JD</AvatarFallback></Avatar>
-                    <div className="bg-card p-3 rounded-lg rounded-bl-none max-w-md shadow-sm">Awesome, can't wait!</div>
+                    <div className="bg-card p-3 rounded-lg rounded-bl-none max-w-md shadow-sm">Luar biasa, tidak sabar!</div>
                 </div>
             </div>
           </ScrollArea>
 
           <div className="p-4 border-t bg-background">
             <div className="relative">
-              <Input placeholder="Type a message..." className="pr-24" />
+              <Input placeholder="Ketik pesan..." className="pr-24" />
               <div className="absolute top-1/2 right-2 -translate-y-1/2 flex items-center gap-1">
                 <Button variant="ghost" size="icon"><Smile className="h-5 w-5 text-muted-foreground"/></Button>
                 <Button size="icon"><Send className="h-5 w-5"/></Button>

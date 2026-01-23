@@ -10,7 +10,7 @@ export function MobileNav() {
       <div className="grid h-full max-w-lg grid-cols-5 mx-auto font-medium">
         <Link href="/" className="inline-flex flex-col items-center justify-center px-5 hover:bg-accent group">
           <Home className="w-5 h-5 mb-1 text-muted-foreground group-hover:text-primary" />
-          <span className="text-xs text-muted-foreground group-hover:text-primary">Home</span>
+          <span className="text-xs text-muted-foreground group-hover:text-primary">Beranda</span>
         </Link>
         <Link href="/join-author" className="inline-flex flex-col items-center justify-center px-5 hover:bg-accent group">
           <BookUser className="w-5 h-5 mb-1 text-muted-foreground group-hover:text-primary" />
@@ -18,7 +18,7 @@ export function MobileNav() {
         </Link>
         <Link href="/upload" className="inline-flex flex-col items-center justify-center px-5 hover:bg-accent group">
           <PlusSquare className="w-5 h-5 mb-1 text-muted-foreground group-hover:text-primary" />
-          <span className="text-xs text-muted-foreground group-hover:text-primary">Upload</span>
+          <span className="text-xs text-muted-foreground group-hover:text-primary">Unggah</span>
         </Link>
         <Link href="/ai" className="inline-flex flex-col items-center justify-center px-5 hover:bg-accent group">
           <Bot className="w-5 h-5 mb-1 text-muted-foreground group-hover:text-primary" />
@@ -26,7 +26,7 @@ export function MobileNav() {
         </Link>
         <Link href={`/profile/${currentUser.username}`} className="inline-flex flex-col items-center justify-center px-5 hover:bg-accent group">
           <User className="w-5 h-5 mb-1 text-muted-foreground group-hover:text-primary" />
-          <span className="text-xs text-muted-foreground group-hover:text-primary">Profile</span>
+          <span className="text-xs text-muted-foreground group-hover:text-primary">Profil</span>
         </Link>
       </div>
     </div>

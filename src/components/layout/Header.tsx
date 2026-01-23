@@ -21,13 +21,13 @@ export function Header() {
             <Link href="/messages">
               <Button variant="ghost" size="icon">
                 <MessageSquare className="h-5 w-5" />
-                <span className="sr-only">Messages</span>
+                <span className="sr-only">Pesan</span>
               </Button>
             </Link>
             <Link href="/notifications">
               <Button variant="ghost" size="icon">
                 <Bell className="h-5 w-5" />
-                <span className="sr-only">Notifications</span>
+                <span className="sr-only">Notifikasi</span>
               </Button>
             </Link>
             <UserNav />

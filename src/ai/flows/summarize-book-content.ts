@@ -1,11 +1,11 @@
 'use server';
 
 /**
- * @fileOverview A flow that summarizes book content using the Gemini API.
+ * @fileOverview Alur yang merangkum konten buku menggunakan Gemini API.
  *
- * - summarizeBookContent - A function that summarizes the content of a book.
- * - SummarizeBookContentInput - The input type for the summarizeBookContent function.
- * - SummarizeBookContentOutput - The return type for the summarizeBookContent function.
+ * - summarizeBookContent - Fungsi yang merangkum konten sebuah buku.
+ * - SummarizeBookContentInput - Tipe input untuk fungsi summarizeBookContent.
+ * - SummarizeBookContentOutput - Tipe kembalian untuk fungsi summarizeBookContent.
  */
 
 import {ai} from '@/ai/genkit';
@@ -14,14 +14,14 @@ import {z} from 'genkit';
 const SummarizeBookContentInputSchema = z.object({
   bookContent: z
     .string()
-    .describe('The content of the book to be summarized.'),
+    .describe('Konten buku yang akan diringkas.'),
 });
 export type SummarizeBookContentInput = z.infer<typeof SummarizeBookContentInputSchema>;
 
 const SummarizeBookContentOutputSchema = z.object({
   summary: z
     .string()
-    .describe('A concise summary of the book content.'),
+    .describe('Ringkasan singkat dari konten buku.'),
 });
 export type SummarizeBookContentOutput = z.infer<typeof SummarizeBookContentOutputSchema>;
 
@@ -35,7 +35,7 @@ const prompt = ai.definePrompt({
   name: 'summarizeBookContentPrompt',
   input: {schema: SummarizeBookContentInputSchema},
   output: {schema: SummarizeBookContentOutputSchema},
-  prompt: `Summarize the following book content in a concise manner:\n\n{{{bookContent}}}`,
+  prompt: `Ringkas konten buku berikut secara singkat:\n\n{{{bookContent}}}`,
 });
 
 const summarizeBookContentFlow = ai.defineFlow(

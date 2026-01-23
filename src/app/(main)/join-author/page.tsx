@@ -20,38 +20,38 @@ export default function JoinAuthorPage() {
             <div className="mx-auto bg-primary/10 p-3 rounded-full w-fit">
                 <BookUser className="h-8 w-8 text-primary" />
             </div>
-          <CardTitle className="text-3xl font-headline mt-4">Become an Author</CardTitle>
+          <CardTitle className="text-3xl font-headline mt-4">Menjadi Penulis</CardTitle>
           <CardDescription>
-            Share your stories with the world. Fill out the form below to apply.
+            Bagikan cerita Anda kepada dunia. Isi formulir di bawah ini untuk mendaftar.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <Input id="name" placeholder="e.g., Guntur Padilah" />
+              <Label htmlFor="name">Nama Lengkap</Label>
+              <Input id="name" placeholder="cth., Guntur Padilah" />
             </div>
              <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
-              <Input id="email" type="email" placeholder="you@example.com" />
+              <Label htmlFor="email">Alamat Email</Label>
+              <Input id="email" type="email" placeholder="anda@contoh.com" />
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="portfolio">Portfolio/Website (Optional)</Label>
-            <Input id="portfolio" placeholder="https://your-portfolio.com" />
+            <Label htmlFor="portfolio">Portofolio/Situs Web (Opsional)</Label>
+            <Input id="portfolio" placeholder="https://portofolio-anda.com" />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="motivation">Why do you want to be an author on LiteraVerse?</Label>
-            <Textarea id="motivation" placeholder="Tell us about your writing passion and what you plan to publish..." rows={5}/>
+            <Label htmlFor="motivation">Mengapa Anda ingin menjadi penulis di LiteraVerse?</Label>
+            <Textarea id="motivation" placeholder="Ceritakan tentang hasrat menulis Anda dan apa yang Anda rencanakan untuk diterbitkan..." rows={5}/>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="sample">Writing Sample (Optional)</Label>
+            <Label htmlFor="sample">Contoh Tulisan (Opsional)</Label>
              <Input id="sample" type="file" accept=".pdf,.doc,.docx,.txt" />
-             <p className="text-xs text-muted-foreground">Upload a short sample of your work.</p>
+             <p className="text-xs text-muted-foreground">Unggah sampel singkat dari karya Anda.</p>
           </div>
         </CardContent>
         <CardFooter>
-          <Button className="w-full" size="lg">Submit Application</Button>
+          <Button className="w-full" size="lg">Kirim Lamaran</Button>
         </CardFooter>
       </Card>
     </div>

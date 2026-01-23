@@ -41,11 +41,11 @@ export default function ProfilePage({ params }: { params: { username: string } }
                 </div>
                 <div className="flex gap-2">
                     {isOwnProfile ? (
-                        <Button><Edit className="mr-2 h-4 w-4"/> Edit Profile</Button>
+                        <Button><Edit className="mr-2 h-4 w-4"/> Edit Profil</Button>
                     ) : (
                         <>
-                            <Button><UserPlus className="mr-2 h-4 w-4"/> Follow</Button>
-                            <Button variant="outline"><MessageCircle className="mr-2 h-4 w-4"/> Message</Button>
+                            <Button><UserPlus className="mr-2 h-4 w-4"/> Ikuti</Button>
+                            <Button variant="outline"><MessageCircle className="mr-2 h-4 w-4"/> Pesan</Button>
                         </>
                     )}
                 </div>
@@ -54,15 +54,15 @@ export default function ProfilePage({ params }: { params: { username: string } }
             <div className="flex justify-center md:justify-start gap-6 mt-4 pt-4 border-t">
                 <div className="text-center">
                     <p className="font-bold text-lg">{user.role === 'penulis' ? userBooks.length : favoriteBooks.length}</p>
-                    <p className="text-sm text-muted-foreground">Books</p>
+                    <p className="text-sm text-muted-foreground">Buku</p>
                 </div>
                  <div className="text-center">
                     <p className="font-bold text-lg">{new Intl.NumberFormat().format(user.followers)}</p>
-                    <p className="text-sm text-muted-foreground">Followers</p>
+                    <p className="text-sm text-muted-foreground">Pengikut</p>
                 </div>
                  <div className="text-center">
                     <p className="font-bold text-lg">{new Intl.NumberFormat().format(user.following)}</p>
-                    <p className="text-sm text-muted-foreground">Following</p>
+                    <p className="text-sm text-muted-foreground">Mengikuti</p>
                 </div>
             </div>
         </CardContent>
@@ -70,15 +70,15 @@ export default function ProfilePage({ params }: { params: { username: string } }
 
       <Tabs defaultValue={user.role === 'penulis' ? 'my-books' : 'favorites'}>
         <TabsList>
-            {user.role === 'penulis' && <TabsTrigger value="my-books">My Books</TabsTrigger>}
-            <TabsTrigger value="favorites">Favorites</TabsTrigger>
+            {user.role === 'penulis' && <TabsTrigger value="my-books">Buku Saya</TabsTrigger>}
+            <TabsTrigger value="favorites">Favorit</TabsTrigger>
         </TabsList>
         {user.role === 'penulis' && (
             <TabsContent value="my-books">
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                     {userBooks.map(book => <BookCard key={book.id} book={book} />)}
                 </div>
-                {userBooks.length === 0 && <p className="text-muted-foreground text-center py-8">This author hasn't published any books yet.</p>}
+                {userBooks.length === 0 && <p className="text-muted-foreground text-center py-8">Penulis ini belum menerbitkan buku apa pun.</p>}
             </TabsContent>
         )}
         <TabsContent value="favorites">

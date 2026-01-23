@@ -96,7 +96,7 @@ export function UserNav() {
               <Link href="/about" className="flex items-center justify-between p-2 rounded-md hover:bg-accent">
                 <div className="flex items-center gap-3">
                   <Info className="h-5 w-5" />
-                  <span>About</span>
+                  <span>Tentang</span>
                 </div>
                 <ChevronRight className="h-5 w-5 text-muted-foreground" />
               </Link>
@@ -120,12 +120,12 @@ export function UserNav() {
               <AlertDialogTrigger asChild>
                 <Button variant="ghost" className="w-full justify-start gap-3 p-2 h-auto text-destructive hover:text-destructive hover:bg-destructive/10">
                   <LogOut className="h-5 w-5" />
-                  <span>Logout</span>
+                  <span>Keluar</span>
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Apakah anda yakin ingin keluar?</AlertDialogTitle>
+                  <AlertDialogTitle>Apakah Anda yakin ingin keluar?</AlertDialogTitle>
                   <AlertDialogDescription>
                     Anda akan dikembalikan ke halaman login.
                   </AlertDialogDescription>

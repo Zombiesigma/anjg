@@ -65,7 +65,7 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
       console.error("Error with Litera AI:", error);
       const errorMessage: AiChatMessage = {
         role: "assistant",
-        content: "Sorry, I encountered an error. Please try again.",
+        content: "Maaf, saya mengalami kesalahan. Silakan coba lagi.",
       };
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
@@ -125,7 +125,7 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
                 <div className="max-w-xl p-3 rounded-xl shadow-sm bg-card border rounded-bl-none">
                     <div className="flex items-center gap-2 text-muted-foreground">
                         <Loader2 className="w-5 h-5 animate-spin" />
-                        <span>Litera Sedang Berfikir...</span>
+                        <span>Litera Sedang Berpikir...</span>
                     </div>
                 </div>
               </motion.div>
@@ -138,7 +138,7 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
           <Textarea
             value={input}
             onChange={handleInputChange}
-            placeholder="Ask Litera AI anything..."
+            placeholder="Tanyakan apa saja pada Litera AI..."
             className="w-full pr-20 resize-none"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
@@ -151,12 +151,12 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
           <div className="absolute top-1/2 right-3 -translate-y-1/2 flex items-center gap-2">
              <p className="text-xs text-muted-foreground hidden sm:block">
                 <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
-                    <CornerDownLeft className="h-3 w-3" /> Shift+Enter for new line
+                    <CornerDownLeft className="h-3 w-3" /> Shift+Enter untuk baris baru
                 </kbd>
             </p>
             <Button type="submit" size="icon" disabled={isLoading || !input.trim()}>
                 {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                <span className="sr-only">Send</span>
+                <span className="sr-only">Kirim</span>
             </Button>
           </div>
         </form>

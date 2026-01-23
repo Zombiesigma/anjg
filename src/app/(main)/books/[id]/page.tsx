@@ -43,12 +43,12 @@ export default function BookDetailsPage({ params }: { params: { id: string } }) 
                 <div className="flex flex-col items-center gap-1">
                     <Eye className="h-5 w-5 text-muted-foreground" />
                     <span className="font-semibold">{new Intl.NumberFormat().format(book.viewCount)}</span>
-                    <span className="text-xs text-muted-foreground">Views</span>
+                    <span className="text-xs text-muted-foreground">Dilihat</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
                     <Download className="h-5 w-5 text-muted-foreground" />
                     <span className="font-semibold">{new Intl.NumberFormat().format(book.downloadCount)}</span>
-                    <span className="text-xs text-muted-foreground">Downloads</span>
+                    <span className="text-xs text-muted-foreground">Unduhan</span>
                 </div>
             </CardContent>
           </Card>
@@ -62,18 +62,18 @@ export default function BookDetailsPage({ params }: { params: { id: string } }) 
                 <AvatarImage src={book.author.avatarUrl} alt={book.author.name} data-ai-hint="person portrait"/>
                 <AvatarFallback>{book.author.name.charAt(0)}</AvatarFallback>
               </Avatar>
-              <span className="font-medium">by {book.author.name}</span>
+              <span className="font-medium">oleh {book.author.name}</span>
             </div>
           </div>
           <div className="space-y-4">
-              <h2 className="text-xl font-headline font-semibold">Synopsis</h2>
+              <h2 className="text-xl font-headline font-semibold">Sinopsis</h2>
               <p className="text-muted-foreground leading-relaxed">{book.synopsis}</p>
           </div>
           <div className="flex flex-col sm:flex-row gap-4 pt-4">
             <Link href={`/books/${book.id}/read`} className="flex-1">
                 <Button size="lg" className="w-full"><BookOpen className="mr-2 h-5 w-5"/> Baca Sekarang</Button>
             </Link>
-            <Button size="lg" variant="outline" className="flex-1"><Download className="mr-2 h-5 w-5"/> Download eBook</Button>
+            <Button size="lg" variant="outline" className="flex-1"><Download className="mr-2 h-5 w-5"/> Unduh eBook</Button>
           </div>
 
           <Separator className="my-8" />
@@ -86,7 +86,7 @@ export default function BookDetailsPage({ params }: { params: { id: string } }) 
                 <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
               </Avatar>
               <div className="w-full relative">
-                <Textarea placeholder="Add a comment..." className="w-full pr-12"/>
+                <Textarea placeholder="Tambahkan komentar..." className="w-full pr-12"/>
                 <Button size="icon" className="absolute top-2 right-2 h-8 w-8"><Send className="h-4 w-4"/></Button>
               </div>
             </div>
