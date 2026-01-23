@@ -1,14 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import { books, bookContentSample } from '@/lib/placeholder-data';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { ArrowLeft, Sun, Moon, Text, Menu } from 'lucide-react';
 import Link from 'next/link';
 
-export default function ReadPage({ params }: { params: { id: string } }) {
+export default function ReadPage() {
+  const params = useParams<{ id: string }>();
   const [isMounted, setIsMounted] = useState(false);
   const [fontSize, setFontSize] = useState(16);
   const [isDark, setIsDark] = useState(false);
