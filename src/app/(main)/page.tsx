@@ -2,7 +2,7 @@
 
 import { useFirestore } from '@/firebase';
 import { useCollection } from '@/firebase/firestore/use-collection';
-import { collection, query, orderBy, limit, where } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import { BookCard } from '@/components/BookCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Book } from '@/lib/types';
@@ -11,13 +11,20 @@ import { useMemo } from 'react';
 export default function HomePage() {
   const firestore = useFirestore();
 
+  // The query is simplified to avoid needing a composite index.
   const booksQuery = useMemo(() => (
     firestore
-    ? query(collection(firestore, 'books'), where('status', '==', 'published'), orderBy('viewCount', 'desc'), limit(12))
+    ? query(collection(firestore, 'books'), where('status', '==', 'published'))
     : null
   ), [firestore]);
   
-  const { data: books, isLoading } = useCollection<Book>(booksQuery);
+  const { data: rawBooks, isLoading } = useCollection<Book>(booksQuery);
+
+  // We sort the books on the client-side after fetching and take the top 12.
+  const books = useMemo(() => {
+    if (!rawBooks) return null;
+    return [...rawBooks].sort((a, b) => b.viewCount - a.viewCount).slice(0, 12);
+  }, [rawBooks]);
 
   return (
     <div className="space-y-8">
