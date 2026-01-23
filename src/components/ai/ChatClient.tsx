@@ -9,13 +9,12 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { chatWithLiteraAI } from "@/ai/flows/chat-with-litera-ai";
 import type { AiChatMessage } from '@/lib/types';
-import { users } from '@/lib/placeholder-data';
+import { useUser } from '@/firebase';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const currentUser = users[0];
-
 export function ChatClient({ history }: { history: AiChatMessage[] }) {
+  const { user: currentUser } = useUser();
   const [messages, setMessages] = useState<AiChatMessage[]>(history);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -106,8 +105,8 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
                 </div>
                  {m.role === "user" && (
                    <Avatar className="w-8 h-8">
-                    <AvatarImage src={currentUser.avatarUrl} alt={currentUser.name} data-ai-hint="man portrait"/>
-                    <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
+                    <AvatarImage src={currentUser?.photoURL ?? ''} alt={currentUser?.displayName ?? ''} />
+                    <AvatarFallback>{currentUser?.displayName?.charAt(0) ?? 'U'}</AvatarFallback>
                   </Avatar>
                 )}
               </motion.div>
