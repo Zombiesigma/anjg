@@ -2,7 +2,7 @@
 
 import { useFirestore } from '@/firebase';
 import { useCollection } from '@/firebase/firestore/use-collection';
-import { collection, query, orderBy, limit } from 'firebase/firestore';
+import { collection, query, orderBy, limit, where } from 'firebase/firestore';
 import { BookCard } from '@/components/BookCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Book } from '@/lib/types';
@@ -13,7 +13,7 @@ export default function HomePage() {
 
   const booksQuery = useMemo(() => (
     firestore
-    ? query(collection(firestore, 'books'), orderBy('viewCount', 'desc'), limit(12))
+    ? query(collection(firestore, 'books'), where('status', '==', 'published'), orderBy('viewCount', 'desc'), limit(12))
     : null
   ), [firestore]);
   

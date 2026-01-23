@@ -1,119 +1,163 @@
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Progress } from "@/components/ui/progress"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { UploadCloud, File, X } from "lucide-react"
+'use client';
 
-export default function UploadPage() {
-  // Mock state for progress bar and file preview
-  const progress = 0;
-  const fileName = "";
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { useRouter } from 'next/navigation';
+import { useFirestore, useUser } from '@/firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from '@/hooks/use-toast';
+import { Loader2, Sparkles } from "lucide-react";
+
+const formSchema = z.object({
+  title: z.string().min(3, { message: "Judul minimal 3 karakter." }).max(100, { message: "Judul maksimal 100 karakter."}),
+  genre: z.string({ required_error: "Genre harus dipilih."}),
+  synopsis: z.string().min(10, { message: "Sinopsis minimal 10 karakter." }).max(1000, { message: "Sinopsis maksimal 1000 karakter."}),
+});
+
+export default function CreateBookPage() {
+  const router = useRouter();
+  const firestore = useFirestore();
+  const { user: currentUser } = useUser();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      title: "",
+      synopsis: "",
+    },
+  });
+
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    if (!firestore || !currentUser) {
+        toast({
+            variant: "destructive",
+            title: "Gagal",
+            description: "Anda harus masuk untuk membuat buku.",
+        });
+        return;
+    }
+    
+    setIsLoading(true);
+
+    try {
+      const bookData = {
+        ...values,
+        authorId: currentUser.uid,
+        authorName: currentUser.displayName,
+        authorAvatarUrl: currentUser.photoURL,
+        status: 'draft' as const,
+        viewCount: 0,
+        downloadCount: 0,
+        // Use a random image from picsum.photos for the cover
+        coverUrl: `https://picsum.photos/seed/${Date.now()}/400/600`,
+        createdAt: serverTimestamp(),
+      };
+      
+      const booksCollection = collection(firestore, 'books');
+      const docRef = await addDoc(booksCollection, bookData);
+      
+      toast({
+        title: "Buku Dibuat",
+        description: "Draf buku Anda telah disimpan. Sekarang Anda bisa mulai menulis bab.",
+      });
+
+      router.push(`/books/${docRef.id}/edit`);
+
+    } catch (error) {
+      console.error("Error creating book:", error);
+      toast({
+        variant: "destructive",
+        title: "Gagal Membuat Buku",
+        description: "Terjadi kesalahan. Silakan coba lagi.",
+      });
+      setIsLoading(false);
+    }
+  }
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="max-w-2xl mx-auto">
       <Card>
         <CardHeader>
-          <CardTitle className="font-headline text-3xl">Unggah Buku Anda</CardTitle>
-          <CardDescription>Isi detail di bawah ini untuk menerbitkan karya Anda di Litera.</CardDescription>
+          <CardTitle className="font-headline text-3xl">Mulai Cerita Baru</CardTitle>
+          <CardDescription>Isi detail dasar buku Anda. Anda dapat mengubahnya nanti.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="title">Judul Buku</Label>
-            <Input id="title" placeholder="Petualangan Dimulai" />
-          </div>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)}>
+            <CardContent className="space-y-6">
+              <FormField
+                control={form.control}
+                name="title"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Judul Buku</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Petualangan di Negeri Awan" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <div className="space-y-2">
-            <Label htmlFor="genre">Genre</Label>
-            <Select>
-              <SelectTrigger id="genre">
-                <SelectValue placeholder="Pilih genre" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="self-improvement">Pengembangan Diri</SelectItem>
-                <SelectItem value="novel">Novel</SelectItem>
-                <SelectItem value="mental-health">Kesehatan Mental</SelectItem>
-                <SelectItem value="sci-fi">Fiksi Ilmiah</SelectItem>
-                <SelectItem value="fantasy">Fantasi</SelectItem>
-                <SelectItem value="mystery">Misteri</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+              <FormField
+                control={form.control}
+                name="genre"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Genre</FormLabel>
+                     <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Pilih genre yang paling sesuai" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="self-improvement">Pengembangan Diri</SelectItem>
+                          <SelectItem value="novel">Novel</SelectItem>
+                          <SelectItem value="mental-health">Kesehatan Mental</SelectItem>
+                          <SelectItem value="sci-fi">Fiksi Ilmiah</SelectItem>
+                          <SelectItem value="fantasy">Fantasi</SelectItem>
+                          <SelectItem value="mystery">Misteri</SelectItem>
+                          <SelectItem value="romance">Romansa</SelectItem>
+                          <SelectItem value="horror">Horor</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <div className="space-y-2">
-            <Label htmlFor="synopsis">Sinopsis</Label>
-            <Textarea id="synopsis" placeholder="Ringkasan singkat buku Anda..." rows={4} />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Gambar Sampul</Label>
-            <div className="flex items-center justify-center w-full">
-                <label htmlFor="dropzone-file-cover" className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-muted hover:bg-muted/80">
-                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                        <UploadCloud className="w-8 h-8 mb-4 text-muted-foreground" />
-                        <p className="mb-2 text-sm text-muted-foreground"><span className="font-semibold">Klik untuk mengunggah</span> atau seret dan lepas</p>
-                        <p className="text-xs text-muted-foreground">PNG, JPG, atau GIF (MAKS. 800x400px)</p>
-                    </div>
-                    <Input id="dropzone-file-cover" type="file" className="hidden" />
-                </label>
-            </div> 
-          </div>
-
-          <div className="space-y-2">
-            <Label>File Buku (PDF)</Label>
-            <div className="flex items-center justify-center w-full">
-                <label htmlFor="dropzone-file-book" className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-muted hover:bg-muted/80">
-                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                        <UploadCloud className="w-8 h-8 mb-4 text-muted-foreground" />
-                        <p className="mb-2 text-sm text-muted-foreground"><span className="font-semibold">Klik untuk mengunggah</span> atau seret dan lepas</p>
-                        <p className="text-xs text-muted-foreground">Hanya PDF</p>
-                    </div>
-                    <Input id="dropzone-file-book" type="file" className="hidden" />
-                </label>
-            </div> 
-          </div>
-
-          {/* Mock upload progress */}
-          {fileName && (
-            <div className="space-y-2 pt-4">
-              <Label>Progres Unggahan</Label>
-              <div className="border rounded-lg p-3 flex items-center gap-4">
-                <File className="h-8 w-8 text-primary" />
-                <div className="flex-1">
-                  <div className="flex justify-between items-center">
-                    <p className="text-sm font-medium">{fileName}</p>
-                    <p className="text-sm text-muted-foreground">{progress}%</p>
-                  </div>
-                  <Progress value={progress} className="h-2 mt-1" />
-                </div>
-                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive">
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          )}
-
-        </CardContent>
-        <CardFooter>
-          <Button size="lg" className="w-full">
-            Kirim untuk Ditinjau
-          </Button>
-        </CardFooter>
+              <FormField
+                control={form.control}
+                name="synopsis"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Sinopsis</FormLabel>
+                    <FormControl>
+                      <Textarea placeholder="Ringkasan singkat tentang buku Anda..." rows={5} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+            <CardContent>
+              <Button type="submit" size="lg" className="w-full" disabled={isLoading}>
+                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                Buat Buku & Mulai Menulis
+              </Button>
+            </CardContent>
+          </form>
+        </Form>
       </Card>
     </div>
   )

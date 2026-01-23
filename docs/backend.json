@@ -61,9 +61,21 @@
         "authorId": { "type": "string" },
         "authorName": { "type": "string" },
         "authorAvatarUrl": { "type": "string", "format": "uri" },
-        "content": { "type": "string", "description": "The full content of the book." }
+        "status": { "type": "string", "enum": ["draft", "published"] }
       },
-      "required": ["title", "authorId", "authorName"]
+      "required": ["title", "authorId", "authorName", "status"]
+    },
+    "Chapter": {
+        "title": "Chapter",
+        "description": "A chapter of a book.",
+        "type": "object",
+        "properties": {
+            "title": { "type": "string" },
+            "content": { "type": "string" },
+            "order": { "type": "number" },
+            "createdAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["title", "content", "order", "createdAt"]
     },
     "Comment": {
         "title": "Comment",
@@ -94,6 +106,12 @@
         "$ref": "#/backend/entities/Book"
       },
       "description": "Stores book information."
+    },
+    "/books/{bookId}/chapters/{chapterId}": {
+        "schema": {
+            "$ref": "#/backend/entities/Chapter"
+        },
+        "description": "Stores chapters for a specific book."
     },
     "/books/{bookId}/comments/{commentId}": {
       "schema": {

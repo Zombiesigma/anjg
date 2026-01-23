@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
-import { Eye, Download, BookOpen, Send, MessageCircle, Loader2 } from 'lucide-react';
+import { Eye, Download, BookOpen, Send, MessageCircle, Loader2, Edit } from 'lucide-react';
 import type { Book, Comment } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -23,7 +23,9 @@ export default function BookDetailsPage() {
   const firestore = useFirestore();
   const { user: currentUser } = useUser();
 
-  const bookRef = firestore ? doc(firestore, 'books', params.id) : null;
+  const bookRef = useMemo(() => (
+    firestore ? doc(firestore, 'books', params.id) : null
+  ), [firestore, params.id]);
   const { data: book, isLoading: isBookLoading } = useDoc<Book>(bookRef);
 
   const commentsQuery = useMemo(() => (
@@ -40,6 +42,8 @@ export default function BookDetailsPage() {
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  const isAuthor = currentUser?.uid === book?.authorId;
 
   function handleCommentSubmit() {
     if (!newComment.trim() || !currentUser || !firestore) return;
@@ -100,9 +104,9 @@ export default function BookDetailsPage() {
                     <span className="text-xs text-muted-foreground">Dilihat</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
-                    <Download className="h-5 w-5 text-muted-foreground" />
-                    <span className="font-semibold">{isMounted ? new Intl.NumberFormat('id-ID').format(book.downloadCount) : '...'}</span>
-                    <span className="text-xs text-muted-foreground">Unduhan</span>
+                    <MessageCircle className="h-5 w-5 text-muted-foreground" />
+                    <span className="font-semibold">{isMounted ? new Intl.NumberFormat('id-ID').format(comments?.length ?? 0) : '...'}</span>
+                    <span className="text-xs text-muted-foreground">Komentar</span>
                 </div>
             </CardContent>
           </Card>
@@ -127,7 +131,11 @@ export default function BookDetailsPage() {
             <Link href={`/books/${book.id}/read`} className="flex-1">
                 <Button size="lg" className="w-full"><BookOpen className="mr-2 h-5 w-5"/> Baca Sekarang</Button>
             </Link>
-            <Button size="lg" variant="outline" className="flex-1"><Download className="mr-2 h-5 w-5"/> Unduh eBook</Button>
+            {isAuthor && (
+              <Link href={`/books/${book.id}/edit`} className="flex-1">
+                <Button size="lg" variant="outline" className="w-full"><Edit className="mr-2 h-5 w-5"/> Edit Buku</Button>
+              </Link>
+            )}
           </div>
 
           <Separator className="my-8" />

@@ -31,12 +31,19 @@ export default function ProfilePage() {
   
   const isOwnProfile = user?.uid === currentUser?.uid;
   
-  const userBooksQuery = useMemo(() => (
+  const publishedBooksQuery = useMemo(() => (
     (firestore && user) 
-      ? query(collection(firestore, 'books'), where('authorId', '==', user.uid)) 
+      ? query(collection(firestore, 'books'), where('authorId', '==', user.uid), where('status', '==', 'published')) 
       : null
   ), [firestore, user]);
-  const { data: userBooks, isLoading: areBooksLoading } = useCollection<Book>(userBooksQuery);
+  const { data: publishedBooks, isLoading: arePublishedBooksLoading } = useCollection<Book>(publishedBooksQuery);
+  
+  const draftBooksQuery = useMemo(() => (
+    (firestore && user && isOwnProfile) 
+      ? query(collection(firestore, 'books'), where('authorId', '==', user.uid), where('status', '==', 'draft')) 
+      : null
+  ), [firestore, user, isOwnProfile]);
+  const { data: draftBooks, isLoading: areDraftsLoading } = useCollection<Book>(draftBooksQuery);
 
   if (isUserLoading) {
     return <ProfileSkeleton />;
@@ -45,6 +52,8 @@ export default function ProfilePage() {
   if (!user) {
     notFound();
   }
+
+  const areBooksLoading = arePublishedBooksLoading || (isOwnProfile && areDraftsLoading);
 
   return (
     <div className="space-y-8">
@@ -79,8 +88,8 @@ export default function ProfilePage() {
             <p className="mt-4 text-center md:text-left max-w-2xl">{user.bio}</p>
             <div className="flex justify-center md:justify-start gap-6 mt-4 pt-4 border-t">
                 <div className="text-center">
-                    <p className="font-bold text-lg">{areBooksLoading ? '...' : userBooks?.length ?? 0}</p>
-                    <p className="text-sm text-muted-foreground">Buku</p>
+                    <p className="font-bold text-lg">{areBooksLoading ? '...' : publishedBooks?.length ?? 0}</p>
+                    <p className="text-sm text-muted-foreground">Buku Terbit</p>
                 </div>
                  <div className="text-center">
                     <p className="font-bold text-lg">{new Intl.NumberFormat('id-ID').format(user.followers)}</p>
@@ -97,10 +106,11 @@ export default function ProfilePage() {
       <Tabs defaultValue="published-books">
         <TabsList>
             <TabsTrigger value="published-books">Buku Terbitan</TabsTrigger>
+            {isOwnProfile && <TabsTrigger value="drafts">Draf</TabsTrigger>}
             <TabsTrigger value="favorites">Favorit</TabsTrigger>
         </TabsList>
         <TabsContent value="published-books">
-             {areBooksLoading && (
+             {arePublishedBooksLoading && (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                     {Array.from({ length: 4 }).map((_, i) => (
                       <div key={i} className="space-y-2">
@@ -112,10 +122,29 @@ export default function ProfilePage() {
                 </div>
             )}
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                {userBooks?.map(book => <BookCard key={book.id} book={book} />)}
+                {publishedBooks?.map(book => <BookCard key={book.id} book={book} />)}
             </div>
-            {!areBooksLoading && userBooks?.length === 0 && <p className="text-muted-foreground text-center py-8">Pengguna ini belum menerbitkan buku apa pun.</p>}
+            {!arePublishedBooksLoading && publishedBooks?.length === 0 && <p className="text-muted-foreground text-center py-8">{isOwnProfile ? "Anda" : "Pengguna ini"} belum menerbitkan buku apa pun.</p>}
         </TabsContent>
+        {isOwnProfile && (
+          <TabsContent value="drafts">
+               {areDraftsLoading && (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                      {Array.from({ length: 2 }).map((_, i) => (
+                        <div key={i} className="space-y-2">
+                          <Skeleton className="aspect-[2/3] w-full" />
+                          <Skeleton className="h-5 w-3/4 mt-2" />
+                          <Skeleton className="h-4 w-1/2" />
+                        </div>
+                      ))}
+                  </div>
+              )}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                  {draftBooks?.map(book => <BookCard key={book.id} book={book} />)}
+              </div>
+              {!areDraftsLoading && draftBooks?.length === 0 && <p className="text-muted-foreground text-center py-8">Anda tidak memiliki draf buku.</p>}
+          </TabsContent>
+        )}
         <TabsContent value="favorites">
             <p className="text-muted-foreground text-center py-8">Fitur ini sedang dalam pengembangan.</p>
         </TabsContent>

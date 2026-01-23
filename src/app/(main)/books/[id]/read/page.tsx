@@ -1,37 +1,58 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { notFound, useParams } from 'next/navigation';
-import { bookContentSample } from '@/lib/placeholder-data';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { ArrowLeft, Sun, Moon, Text, Menu } from 'lucide-react';
 import Link from 'next/link';
-import { useFirestore, useDoc } from '@/firebase';
-import { doc } from 'firebase/firestore';
-import type { Book } from '@/lib/types';
+import { useFirestore, useDoc, useCollection } from '@/firebase';
+import { doc, collection, query, orderBy } from 'firebase/firestore';
+import type { Book, Chapter } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function ReadPage() {
   const params = useParams<{ id: string }>();
   const firestore = useFirestore();
   const [isMounted, setIsMounted] = useState(false);
-  const [fontSize, setFontSize] = useState(16);
+  const [fontSize, setFontSize] = useState(18);
   const [isDark, setIsDark] = useState(false);
 
-  const bookRef = firestore ? doc(firestore, 'books', params.id) : null;
+  const bookRef = useMemo(() => (
+    firestore ? doc(firestore, 'books', params.id) : null
+  ), [firestore, params.id]);
   const { data: book, isLoading: isBookLoading } = useDoc<Book>(bookRef);
+
+  const chaptersQuery = useMemo(() => (
+    firestore 
+      ? query(collection(firestore, 'books', params.id, 'chapters'), orderBy('order', 'asc')) 
+      : null
+  ), [firestore, params.id]);
+  const { data: chapters, isLoading: areChaptersLoading } = useCollection<Chapter>(chaptersQuery);
 
   useEffect(() => {
     setIsMounted(true);
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    setIsDark(document.documentElement.classList.contains('dark') || prefersDark);
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const theme = localStorage.getItem('theme');
+    if (theme === 'dark' || (!theme && prefersDark)) {
+        document.documentElement.classList.add('dark');
+        setIsDark(true);
+    } else {
+        document.documentElement.classList.remove('dark');
+        setIsDark(false);
+    }
   }, []);
 
-
   const toggleTheme = () => {
-    document.documentElement.classList.toggle('dark');
-    setIsDark(prev => !prev);
+    if (document.documentElement.classList.contains('dark')) {
+        document.documentElement.classList.remove('dark');
+        localStorage.setItem('theme', 'light');
+        setIsDark(false);
+    } else {
+        document.documentElement.classList.add('dark');
+        localStorage.setItem('theme', 'dark');
+        setIsDark(true);
+    }
   };
   
   if (isBookLoading || !isMounted) {
@@ -45,7 +66,7 @@ export default function ReadPage() {
   return (
     <div className="flex flex-col h-[calc(100vh-theme(spacing.14)-2px)] -mt-6 -mx-4 md:-mx-6 bg-background">
       <header className="flex items-center justify-between p-2 border-b sticky top-0 bg-background/80 backdrop-blur-sm z-10">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 min-w-0">
           <Link href={`/books/${book.id}`}>
             <Button variant="ghost" size="icon"><ArrowLeft className="h-5 w-5" /></Button>
           </Link>
@@ -73,12 +94,32 @@ export default function ReadPage() {
       </header>
       <div className="flex-1 overflow-y-auto">
         <article 
-          className="prose dark:prose-invert max-w-3xl mx-auto p-4 md:p-8" 
+          className="prose prose-lg dark:prose-invert max-w-3xl mx-auto p-4 md:p-8" 
           style={{ fontSize: `${fontSize}px`}}
         >
-          <h1 className="font-headline">{book.title}</h1>
-          <p className="lead">{book.synopsis}</p>
-          <div dangerouslySetInnerHTML={{ __html: (book.content || bookContentSample).replace(/\n/g, '<br/>') }}/>
+          {areChaptersLoading && (
+              <div className="space-y-6">
+                  <Skeleton className="h-10 w-3/4" />
+                  <div className="space-y-3">
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-5/6" />
+                  </div>
+              </div>
+          )}
+          {chapters?.map(chapter => (
+              <section key={chapter.id} className="mb-12">
+                  <h2 className="font-headline">{chapter.title}</h2>
+                  <div dangerouslySetInnerHTML={{ __html: chapter.content.replace(/\n/g, '<br />') }} />
+              </section>
+          ))}
+          {!areChaptersLoading && chapters?.length === 0 && (
+              <>
+                <h1 className="font-headline">{book.title}</h1>
+                <p className="lead">Buku ini belum memiliki bab apa pun.</p>
+                <p>Penulis sedang mengerjakannya. Kembali lagi nanti!</p>
+              </>
+          )}
         </article>
       </div>
     </div>

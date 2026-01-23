@@ -24,7 +24,15 @@ export type Book = {
   authorId: string;
   authorName: string;
   authorAvatarUrl: string;
-  content?: string;
+  status: 'draft' | 'published';
+};
+
+export type Chapter = {
+    id: string;
+    title: string;
+    content: string;
+    order: number;
+    createdAt: Timestamp;
 };
 
 export type Comment = {
