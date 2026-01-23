@@ -5,7 +5,7 @@ import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 
 export const metadata: Metadata = {
-  title: 'LiteraVerse',
+  title: 'Litera',
   description: 'Platform sosial literasi digital modern.',
 };
 

@@ -1,26 +1,40 @@
-import { users, books } from '@/lib/placeholder-data';
-import { notFound } from 'next/navigation';
+'use client';
+
+import { notFound, useParams } from 'next/navigation';
 import Image from 'next/image';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { useFirestore, useUser, useCollection } from '@/firebase';
+import { collection, query, where, limit } from 'firebase/firestore';
+import type { User, Book } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { BookCard } from '@/components/BookCard';
-import { UserPlus, MessageCircle, Edit } from 'lucide-react';
+import { UserPlus, MessageCircle, Edit, Loader2 } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
-export default function ProfilePage({ params }: { params: { username: string } }) {
-  const user = users.find((u) => u.username === params.username);
-  const currentUser = users[0]; // Assuming current logged in user
-  const isOwnProfile = user?.id === currentUser.id;
+export default function ProfilePage() {
+  const params = useParams<{ username: string }>();
+  const firestore = useFirestore();
+  const { user: currentUser } = useUser();
+
+  const userQuery = firestore ? query(collection(firestore, 'users'), where('username', '==', params.username), limit(1)) : null;
+  const { data: users, isLoading: isUserLoading } = useCollection<User>(userQuery);
+  const user = users?.[0];
+  
+  const isOwnProfile = user?.uid === currentUser?.uid;
+  
+  const userBooksQuery = (firestore && user) ? query(collection(firestore, 'books'), where('authorId', '==', user.uid)) : null;
+  const { data: userBooks, isLoading: areBooksLoading } = useCollection<Book>(userBooksQuery);
+
+  if (isUserLoading) {
+    return <ProfileSkeleton />;
+  }
 
   if (!user) {
     notFound();
   }
-
-  const userBooks = books.filter(book => book.author.id === user.id);
-  const favoriteBooks = books.slice(0, 3); // Mock favorites
 
   return (
     <div className="space-y-8">
@@ -29,12 +43,12 @@ export default function ProfilePage({ params }: { params: { username: string } }
         <CardContent className="p-4 md:p-6 -mt-16 md:-mt-24">
             <div className="flex flex-col md:flex-row items-center md:items-end gap-4">
                 <Avatar className="w-24 h-24 md:w-32 md:h-32 border-4 border-background shadow-lg">
-                    <AvatarImage src={user.avatarUrl} alt={user.name} data-ai-hint="potret orang" />
-                    <AvatarFallback className="text-4xl">{user.name.charAt(0)}</AvatarFallback>
+                    <AvatarImage src={user.photoURL} alt={user.displayName} />
+                    <AvatarFallback className="text-4xl">{user.displayName?.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 text-center md:text-left">
                     <div className="flex items-center justify-center md:justify-start gap-2">
-                        <h1 className="text-3xl font-bold font-headline">{user.name}</h1>
+                        <h1 className="text-3xl font-bold font-headline">{user.displayName}</h1>
                         <Badge variant={user.role === 'penulis' ? 'default' : 'secondary'} className="capitalize">{user.role}</Badge>
                     </div>
                     <p className="text-muted-foreground">@{user.username}</p>
@@ -53,7 +67,7 @@ export default function ProfilePage({ params }: { params: { username: string } }
             <p className="mt-4 text-center md:text-left max-w-2xl">{user.bio}</p>
             <div className="flex justify-center md:justify-start gap-6 mt-4 pt-4 border-t">
                 <div className="text-center">
-                    <p className="font-bold text-lg">{user.role === 'penulis' ? userBooks.length : favoriteBooks.length}</p>
+                    <p className="font-bold text-lg">{areBooksLoading ? '...' : userBooks?.length ?? 0}</p>
                     <p className="text-sm text-muted-foreground">Buku</p>
                 </div>
                  <div className="text-center">
@@ -68,25 +82,71 @@ export default function ProfilePage({ params }: { params: { username: string } }
         </CardContent>
       </Card>
 
-      <Tabs defaultValue={user.role === 'penulis' ? 'my-books' : 'favorites'}>
+      <Tabs defaultValue="published-books">
         <TabsList>
-            {user.role === 'penulis' && <TabsTrigger value="my-books">Buku Saya</TabsTrigger>}
+            <TabsTrigger value="published-books">Buku Terbitan</TabsTrigger>
             <TabsTrigger value="favorites">Favorit</TabsTrigger>
         </TabsList>
-        {user.role === 'penulis' && (
-            <TabsContent value="my-books">
+        <TabsContent value="published-books">
+             {areBooksLoading && (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                    {userBooks.map(book => <BookCard key={book.id} book={book} />)}
+                    {Array.from({ length: 4 }).map((_, i) => (
+                      <div key={i} className="space-y-2">
+                        <Skeleton className="aspect-[2/3] w-full" />
+                        <Skeleton className="h-5 w-3/4 mt-2" />
+                        <Skeleton className="h-4 w-1/2" />
+                      </div>
+                    ))}
                 </div>
-                {userBooks.length === 0 && <p className="text-muted-foreground text-center py-8">Penulis ini belum menerbitkan buku apa pun.</p>}
-            </TabsContent>
-        )}
-        <TabsContent value="favorites">
+            )}
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                {favoriteBooks.map(book => <BookCard key={book.id} book={book} />)}
+                {userBooks?.map(book => <BookCard key={book.id} book={book} />)}
             </div>
+            {!areBooksLoading && userBooks?.length === 0 && <p className="text-muted-foreground text-center py-8">Pengguna ini belum menerbitkan buku apa pun.</p>}
+        </TabsContent>
+        <TabsContent value="favorites">
+            <p className="text-muted-foreground text-center py-8">Fitur ini sedang dalam pengembangan.</p>
         </TabsContent>
       </Tabs>
     </div>
   )
+}
+
+
+function ProfileSkeleton() {
+    return (
+        <div className="space-y-8 animate-pulse">
+            <Card>
+                <Skeleton className="h-32 md:h-48 w-full" />
+                <CardContent className="p-4 md:p-6 -mt-16 md:-mt-24">
+                     <div className="flex flex-col md:flex-row items-center md:items-end gap-4">
+                        <Skeleton className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-background" />
+                        <div className="flex-1 text-center md:text-left space-y-2">
+                             <Skeleton className="h-9 w-48 mx-auto md:mx-0" />
+                             <Skeleton className="h-5 w-24 mx-auto md:mx-0" />
+                        </div>
+                         <div className="flex gap-2">
+                             <Skeleton className="h-10 w-24" />
+                        </div>
+                    </div>
+                     <Skeleton className="h-4 w-full max-w-lg mt-4" />
+                     <div className="flex justify-center md:justify-start gap-6 mt-4 pt-4 border-t">
+                        <Skeleton className="h-10 w-16" />
+                        <Skeleton className="h-10 w-16" />
+                        <Skeleton className="h-10 w-16" />
+                    </div>
+                </CardContent>
+            </Card>
+            <Skeleton className="h-10 w-48" />
+             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                {Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="space-y-2">
+                    <Skeleton className="aspect-[2/3] w-full" />
+                    <Skeleton className="h-5 w-3/4 mt-2" />
+                    <Skeleton className="h-4 w-1/2" />
+                    </div>
+                ))}
+            </div>
+        </div>
+    )
 }

@@ -18,7 +18,6 @@ import {
 } from '@/components/ui/avatar';
 import {
   Settings,
-  User,
   LogOut,
   BookUser,
   Info,
@@ -26,6 +25,7 @@ import {
   UserPlus,
   Moon,
   Sun,
+  Loader2,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -39,13 +39,20 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { useUser } from '@/firebase';
+import { useUser, useDoc, useFirestore } from '@/firebase';
 import { signOut } from '@/firebase/auth/service';
 import { useRouter } from 'next/navigation';
+import { doc } from 'firebase/firestore';
+import type { User as AppUser } from '@/lib/types';
+
 
 export function UserNav() {
-  const { user } = useUser();
+  const { user, isLoading } = useUser();
   const router = useRouter();
+  const firestore = useFirestore();
+
+  const userProfileRef = (firestore && user) ? doc(firestore, 'users', user.uid) : null;
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc<AppUser>(userProfileRef);
   
   // In a real app, you'd use a theme provider context
   const toggleTheme = () => {
@@ -57,19 +64,18 @@ export function UserNav() {
     router.push('/login');
   };
   
-  if (!user) {
+  if (isLoading || !user) {
     return null;
   }
 
   const userInitial = user.displayName ? user.displayName.charAt(0) : (user.email ? user.email.charAt(0) : 'U');
-  const profileUsername = user.email?.split('@')[0] || user.uid;
 
   return (
     <Sheet>
       <SheetTrigger asChild>
         <Button variant="ghost" size="icon" className="rounded-full">
           <Avatar className="h-8 w-8">
-            <AvatarImage src={user.photoURL ?? ''} alt={user.displayName ?? 'User'} data-ai-hint="man portrait"/>
+            <AvatarImage src={user.photoURL ?? ''} alt={user.displayName ?? 'User'} />
             <AvatarFallback>{userInitial}</AvatarFallback>
           </Avatar>
         </Button>
@@ -155,15 +161,21 @@ export function UserNav() {
         </div>
         <SheetFooter className="p-4 border-t mt-auto">
           <SheetClose asChild>
-            <Link href={`/profile/${profileUsername}`} className="flex items-center gap-3 w-full p-2 rounded-md hover:bg-accent">
+            <Link href={userProfile ? `/profile/${userProfile.username}` : '#'} className="flex items-center gap-3 w-full p-2 rounded-md hover:bg-accent"
+              aria-disabled={isProfileLoading}
+            >
                 <Avatar>
-                    <AvatarImage src={user.photoURL ?? ''} alt={user.displayName ?? ''} data-ai-hint="man portrait"/>
+                    <AvatarImage src={user.photoURL ?? ''} alt={user.displayName ?? ''} />
                     <AvatarFallback>{userInitial}</AvatarFallback>
                 </Avatar>
-                <div className="flex flex-col">
-                    <span className="font-semibold">{user.displayName || 'Pengguna'}</span>
-                    <span className="text-sm text-muted-foreground">Lihat profil</span>
-                </div>
+                {isProfileLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin"/>
+                ) : (
+                  <div className="flex flex-col overflow-hidden">
+                      <span className="font-semibold truncate">{user.displayName || 'Pengguna'}</span>
+                      <span className="text-sm text-muted-foreground">Lihat profil</span>
+                  </div>
+                )}
             </Link>
           </SheetClose>
         </SheetFooter>

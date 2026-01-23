@@ -3,55 +3,65 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { books, users, comments as placeholderComments } from '@/lib/placeholder-data';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { notFound, useParams } from 'next/navigation';
+import { useFirestore, useUser, useDoc, useCollection } from '@/firebase';
+import { doc, collection, addDoc, serverTimestamp, query, orderBy } from 'firebase/firestore';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
-import { Eye, Download, BookOpen, Send, MessageCircle } from 'lucide-react';
-import type { Comment } from '@/lib/types';
+import { Eye, Download, BookOpen, Send, MessageCircle, Loader2 } from 'lucide-react';
+import type { Book, Comment } from '@/lib/types';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function BookDetailsPage() {
   const params = useParams<{ id: string }>();
-  const book = books.find((b) => b.id === params.id);
-  const currentUser = users[0];
+  const firestore = useFirestore();
+  const { user: currentUser } = useUser();
 
-  const [comments, setComments] = useState<Comment[]>(
-    placeholderComments.filter((c) => c.bookId === params.id)
-  );
+  const bookRef = firestore ? doc(firestore, 'books', params.id) : null;
+  const { data: book, isLoading: isBookLoading } = useDoc<Book>(bookRef);
+
+  const commentsQuery = firestore ? query(collection(firestore, 'books', params.id, 'comments'), orderBy('createdAt', 'desc')) : null;
+  const { data: comments, isLoading: areCommentsLoading } = useCollection<Comment>(commentsQuery);
+
   const [newComment, setNewComment] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  if (!book) {
-    notFound();
-  }
-  
-  const handleCommentSubmit = () => {
-    if (newComment.trim()) {
-      const newCommentObject: Comment = {
-        id: `c${Date.now()}`,
-        bookId: params.id,
-        user: currentUser,
+  async function handleCommentSubmit() {
+    if (!newComment.trim() || !currentUser || !firestore) return;
+
+    setIsSubmitting(true);
+    try {
+      const commentsCol = collection(firestore, 'books', params.id, 'comments');
+      await addDoc(commentsCol, {
         text: newComment,
-        timestamp: 'Baru saja',
-        replies: [],
-      };
-      setComments([newCommentObject, ...comments]);
+        userId: currentUser.uid,
+        userName: currentUser.displayName,
+        userAvatarUrl: currentUser.photoURL,
+        createdAt: serverTimestamp(),
+      });
       setNewComment('');
+    } catch (error) {
+      console.error("Error adding comment: ", error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const getImageHint = (url: string) => {
-    const image = PlaceHolderImages.find(img => img.imageUrl === url);
-    return image ? image.imageHint : 'sampul buku';
+  if (isBookLoading) {
+    return <BookDetailsSkeleton />;
+  }
+
+  if (!book) {
+    notFound();
   }
 
   return (
@@ -64,8 +74,7 @@ export default function BookDetailsPage() {
                 src={book.coverUrl}
                 alt={`Sampul ${book.title}`}
                 fill
-                className="object-cover"
-                data-ai-hint={getImageHint(book.coverUrl)}
+                className="object-cover bg-muted"
                 sizes="(max-width: 768px) 100vw, 33vw"
               />
             </div>
@@ -89,10 +98,10 @@ export default function BookDetailsPage() {
             <h1 className="text-4xl font-headline font-bold mt-2">{book.title}</h1>
             <div className="flex items-center gap-2 mt-4">
               <Avatar>
-                <AvatarImage src={book.author.avatarUrl} alt={book.author.name} data-ai-hint="potret orang"/>
-                <AvatarFallback>{book.author.name.charAt(0)}</AvatarFallback>
+                <AvatarImage src={book.authorAvatarUrl} alt={book.authorName} />
+                <AvatarFallback>{book.authorName?.charAt(0)}</AvatarFallback>
               </Avatar>
-              <span className="font-medium">oleh {book.author.name}</span>
+              <Link href={`/profile/${book.authorName}`} className="font-medium hover:underline">{book.authorName}</Link>
             </div>
           </div>
           <div className="space-y-4">
@@ -110,61 +119,93 @@ export default function BookDetailsPage() {
 
           <div className="space-y-6">
             <h2 className="text-2xl font-headline font-bold flex items-center gap-2"><MessageCircle/> Komentar</h2>
-            <div className="flex items-start gap-3">
-              <Avatar>
-                <AvatarImage src={currentUser.avatarUrl} alt={currentUser.name} data-ai-hint="potret pria"/>
-                <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
-              </Avatar>
-              <div className="w-full relative">
-                <Textarea 
-                  placeholder="Tambahkan komentar..." 
-                  className="w-full pr-12"
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                />
-                <Button size="icon" className="absolute top-2 right-2 h-8 w-8" onClick={handleCommentSubmit}><Send className="h-4 w-4"/></Button>
+            {currentUser && (
+              <div className="flex items-start gap-3">
+                <Avatar>
+                  <AvatarImage src={currentUser.photoURL ?? ''} alt={currentUser.displayName ?? ''} />
+                  <AvatarFallback>{currentUser.displayName?.charAt(0) ?? 'U'}</AvatarFallback>
+                </Avatar>
+                <div className="w-full relative">
+                  <Textarea 
+                    placeholder="Tambahkan komentar..." 
+                    className="w-full pr-12"
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    disabled={isSubmitting}
+                  />
+                  <Button size="icon" className="absolute top-2 right-2 h-8 w-8" onClick={handleCommentSubmit} disabled={isSubmitting || !newComment.trim()}>
+                    {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin"/> : <Send className="h-4 w-4"/>}
+                  </Button>
+                </div>
               </div>
-            </div>
+            )}
             
             <div className="space-y-6">
-                {comments.map(comment => (
+                {areCommentsLoading && <div className="text-center py-4"><Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" /></div>}
+                {comments?.map(comment => (
                     <div key={comment.id} className="flex items-start gap-3">
                         <Avatar className="h-9 w-9">
-                            <AvatarImage src={comment.user.avatarUrl} alt={comment.user.name} data-ai-hint="potret orang" />
-                            <AvatarFallback>{comment.user.name.charAt(0)}</AvatarFallback>
+                            <AvatarImage src={comment.userAvatarUrl} alt={comment.userName} />
+                            <AvatarFallback>{comment.userName?.charAt(0)}</AvatarFallback>
                         </Avatar>
                         <div className="flex-1">
                             <div className="bg-muted p-3 rounded-lg rounded-tl-none">
                                 <div className="flex items-baseline gap-2">
-                                    <span className="font-semibold text-sm">{comment.user.name}</span>
-                                    <span className="text-xs text-muted-foreground">{comment.timestamp}</span>
+                                    <span className="font-semibold text-sm">{comment.userName}</span>
+                                    <span className="text-xs text-muted-foreground">
+                                        {isMounted && comment.createdAt ? comment.createdAt.toDate().toLocaleDateString('id-ID', { day: 'numeric', month: 'long' }) : '...'}
+                                    </span>
                                 </div>
                                 <p className="text-sm mt-1">{comment.text}</p>
                             </div>
-                             {comment.replies.map(reply => (
-                                <div key={reply.id} className="flex items-start gap-3 mt-4">
-                                     <Avatar className="h-8 w-8">
-                                        <AvatarImage src={reply.user.avatarUrl} alt={reply.user.name} data-ai-hint="potret orang" />
-                                        <AvatarFallback>{reply.user.name.charAt(0)}</AvatarFallback>
-                                    </Avatar>
-                                     <div className="flex-1">
-                                        <div className="bg-card border p-3 rounded-lg rounded-tl-none">
-                                            <div className="flex items-baseline gap-2">
-                                                <span className="font-semibold text-sm">{reply.user.name}</span>
-                                                <span className="text-xs text-muted-foreground">{reply.timestamp}</span>
-                                            </div>
-                                            <p className="text-sm mt-1">{reply.text}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
                         </div>
                     </div>
                 ))}
+                {!areCommentsLoading && comments?.length === 0 && (
+                    <p className="text-sm text-muted-foreground text-center py-4">Jadilah yang pertama berkomentar.</p>
+                )}
             </div>
           </div>
         </div>
       </div>
     </div>
   );
+}
+
+function BookDetailsSkeleton() {
+    return (
+        <div className="space-y-8 animate-pulse">
+            <div className="grid md:grid-cols-3 gap-8">
+                <div className="md:col-span-1">
+                    <Card className="overflow-hidden sticky top-20">
+                        <Skeleton className="aspect-[2/3] w-full" />
+                        <CardContent className="p-4 grid grid-cols-2 gap-4">
+                            <Skeleton className="h-10 w-full" />
+                            <Skeleton className="h-10 w-full" />
+                        </CardContent>
+                    </Card>
+                </div>
+                <div className="md:col-span-2 space-y-6">
+                    <Skeleton className="h-6 w-24 rounded-md" />
+                    <Skeleton className="h-12 w-3/4 rounded-md" />
+                    <div className="flex items-center gap-2 mt-4">
+                        <Skeleton className="h-12 w-12 rounded-full" />
+                        <Skeleton className="h-6 w-48 rounded-md" />
+                    </div>
+                    <div className="space-y-4 pt-4">
+                        <Skeleton className="h-8 w-32 rounded-md" />
+                        <div className="space-y-2">
+                            <Skeleton className="h-4 w-full rounded-md" />
+                            <Skeleton className="h-4 w-full rounded-md" />
+                            <Skeleton className="h-4 w-5/6 rounded-md" />
+                        </div>
+                    </div>
+                    <div className="flex gap-4 pt-4">
+                        <Skeleton className="h-12 w-full rounded-md" />
+                        <Skeleton className="h-12 w-full rounded-md" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
 }

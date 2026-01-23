@@ -1,10 +1,10 @@
 // IMPORTANT: Replace this with your own Firebase configuration.
 // You can get this from the Firebase console.
 export const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyDnjEibYpC8CbKEZaPpAsWqXg3_XDZLSiQ",
+  authDomain: "studio-5468975670-8627e.firebaseapp.com",
+  projectId: "studio-5468975670-8627e",
+  storageBucket: "studio-5468975670-8627e.appspot.com",
+  messagingSenderId: "1011553518837",
+  appId: "1:1011553518837:web:a7f5a1df05ef4c29f2f1bc"
 };

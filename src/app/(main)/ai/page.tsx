@@ -22,13 +22,6 @@ const initialHistory: AiChatMessage[] = [
     { role: 'assistant', content: 'Halo! Saya Litera AI. Ada yang bisa saya bantu dengan tulisan, riset, atau rekomendasi buku Anda hari ini?' }
 ];
 
-const chatHistories = [
-    { id: '1', title: 'Brainstorming Plot Fiksi Ilmiah' },
-    { id: '2', title: 'Ide Nama Karakter' },
-    { id: '3', title: 'Ringkas "Dune"' },
-    { id: '4', title: 'Puisi tentang hujan' },
-];
-
 export default function AiPage() {
   return (
     <div className="h-[calc(100vh-theme(spacing.14)-2px)] -mt-6 -mx-4 md:-mx-6">
@@ -47,16 +40,7 @@ export default function AiPage() {
                 </SidebarHeader>
                 <SidebarContent>
                     <SidebarMenu>
-                        {chatHistories.map(chat => (
-                             <SidebarMenuItem key={chat.id}>
-                                <SidebarMenuButton tooltip={chat.title} isActive={chat.id === '1'}>
-                                    <span>{chat.title}</span>
-                                </SidebarMenuButton>
-                                <SidebarMenuAction showOnHover>
-                                    <Trash2 className="w-4 h-4 text-muted-foreground hover:text-destructive"/>
-                                </SidebarMenuAction>
-                            </SidebarMenuItem>
-                        ))}
+                        {/* Chat history list can be implemented here */}
                     </SidebarMenu>
                 </SidebarContent>
                  <SidebarFooter className="mt-auto border-t p-2">
@@ -68,7 +52,7 @@ export default function AiPage() {
             <SidebarInset className="p-0 m-0 !min-h-0 rounded-none shadow-none">
                  <div className="flex items-center gap-2 p-2 border-b h-[var(--sidebar-header-height)]">
                     <SidebarTrigger className="md:hidden"/>
-                    <h3 className="font-semibold">Brainstorming Plot Fiksi Ilmiah</h3>
+                    <h3 className="font-semibold">Obrolan Baru</h3>
                 </div>
                 <ChatClient history={initialHistory} />
             </SidebarInset>

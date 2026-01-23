@@ -9,6 +9,10 @@
           "type": "string",
           "description": "The user's unique ID from Firebase Auth."
         },
+        "username": {
+            "type": "string",
+            "description": "The user's unique username."
+        },
         "displayName": {
           "type": "string",
           "description": "The user's display name."
@@ -27,9 +31,51 @@
             "type": "string",
             "enum": ["pembaca", "penulis"],
             "description": "The role of the user."
+        },
+        "bio": {
+            "type": "string",
+            "description": "A short bio of the user."
+        },
+        "followers": {
+            "type": "number",
+            "description": "Number of followers."
+        },
+        "following": {
+            "type": "number",
+            "description": "Number of users being followed."
         }
       },
-      "required": ["uid", "email", "displayName"]
+      "required": ["uid", "email", "displayName", "username"]
+    },
+    "Book": {
+      "title": "Book",
+      "description": "Represents a book in the system.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "synopsis": { "type": "string" },
+        "genre": { "type": "string" },
+        "coverUrl": { "type": "string", "format": "uri" },
+        "viewCount": { "type": "number" },
+        "downloadCount": { "type": "number" },
+        "authorId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "authorAvatarUrl": { "type": "string", "format": "uri" }
+      },
+      "required": ["title", "authorId", "authorName"]
+    },
+    "Comment": {
+        "title": "Comment",
+        "description": "A comment on a book.",
+        "type": "object",
+        "properties": {
+            "text": { "type": "string" },
+            "userId": { "type": "string" },
+            "userName": { "type": "string" },
+            "userAvatarUrl": { "type": "string", "format": "uri" },
+            "createdAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["text", "userId", "userName", "createdAt"]
     }
   },
   "auth": {
@@ -41,6 +87,18 @@
         "$ref": "#/backend/entities/UserProfile"
       },
       "description": "Stores user profile information, keyed by their Firebase Auth UID."
+    },
+    "/books/{bookId}": {
+      "schema": {
+        "$ref": "#/backend/entities/Book"
+      },
+      "description": "Stores book information."
+    },
+    "/books/{bookId}/comments/{commentId}": {
+      "schema": {
+        "$ref": "#/backend/entities/Comment"
+      },
+      "description": "Stores comments for a specific book."
     }
   }
 }

@@ -32,9 +32,9 @@ const prompt = ai.definePrompt({
   name: 'chatWithLiteraAIPrompt',
   input: {schema: ChatWithLiteraAIInputSchema},
   output: {schema: ChatWithLiteraAIOutputSchema},
-  prompt: `Anda adalah Litera AI, asisten AI yang membantu untuk platform LiteraVerse.
+  prompt: `Anda adalah Litera AI, asisten AI yang membantu untuk platform Litera.
 
-  Tujuan Anda adalah membantu pengguna dengan penulisan, penelitian, dan menjelajahi rekomendasi buku dalam platform LiteraVerse.
+  Tujuan Anda adalah membantu pengguna dengan penulisan, penelitian, dan menjelajahi rekomendasi buku dalam platform Litera.
   Pertahankan nada yang ramah dan menarik.
 
   {{#if chatHistory}}

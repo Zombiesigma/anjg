@@ -22,15 +22,15 @@ import { UploadCloud, File, X } from "lucide-react"
 
 export default function UploadPage() {
   // Mock state for progress bar and file preview
-  const progress = 65;
-  const fileName = "buku-keren-saya.pdf";
+  const progress = 0;
+  const fileName = "";
 
   return (
     <div className="max-w-3xl mx-auto">
       <Card>
         <CardHeader>
           <CardTitle className="font-headline text-3xl">Unggah Buku Anda</CardTitle>
-          <CardDescription>Isi detail di bawah ini untuk menerbitkan karya Anda di LiteraVerse.</CardDescription>
+          <CardDescription>Isi detail di bawah ini untuk menerbitkan karya Anda di Litera.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
@@ -89,22 +89,24 @@ export default function UploadPage() {
           </div>
 
           {/* Mock upload progress */}
-          <div className="space-y-2 pt-4">
-            <Label>Progres Unggahan</Label>
-            <div className="border rounded-lg p-3 flex items-center gap-4">
-              <File className="h-8 w-8 text-primary" />
-              <div className="flex-1">
-                <div className="flex justify-between items-center">
-                  <p className="text-sm font-medium">{fileName}</p>
-                  <p className="text-sm text-muted-foreground">{progress}%</p>
+          {fileName && (
+            <div className="space-y-2 pt-4">
+              <Label>Progres Unggahan</Label>
+              <div className="border rounded-lg p-3 flex items-center gap-4">
+                <File className="h-8 w-8 text-primary" />
+                <div className="flex-1">
+                  <div className="flex justify-between items-center">
+                    <p className="text-sm font-medium">{fileName}</p>
+                    <p className="text-sm text-muted-foreground">{progress}%</p>
+                  </div>
+                  <Progress value={progress} className="h-2 mt-1" />
                 </div>
-                <Progress value={progress} className="h-2 mt-1" />
+                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive">
+                  <X className="h-4 w-4" />
+                </Button>
               </div>
-              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive">
-                <X className="h-4 w-4" />
-              </Button>
             </div>
-          </div>
+          )}
 
         </CardContent>
         <CardFooter>

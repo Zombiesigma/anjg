@@ -50,7 +50,7 @@ export default function RegisterPage() {
     } else {
       toast({
         title: 'Pendaftaran Berhasil',
-        description: 'Selamat bergabung di LiteraVerse!',
+        description: 'Selamat bergabung di Litera!',
       });
       router.push('/');
     }
@@ -70,7 +70,7 @@ export default function RegisterPage() {
     } else {
       toast({
         title: 'Berhasil Masuk',
-        description: 'Selamat datang di LiteraVerse!',
+        description: 'Selamat datang di Litera!',
       });
       router.push('/');
     }

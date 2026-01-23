@@ -14,21 +14,6 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-
-// Placeholder data
-const authorRequests = [
-  { id: 1, name: "Budi Santoso", email: "budi.s@example.com", status: "Menunggu", date: "2023-10-26" },
-  { id: 2, name: "Citra Lestari", email: "citra.l@example.com", status: "Menunggu", date: "2023-10-25" },
-]
-
-const bookUploads = [
-  { id: 1, title: "Journey to the West", author: "Wu Cheng'en", status: "Menunggu", date: "2023-10-26" },
-  { id: 2, title: "The Three-Body Problem", author: "Cixin Liu", status: "Disetujui", date: "2023-10-24" },
-  { id: 3, title: "Klara and the Sun", author: "Kazuo Ishiguro", status: "Menunggu", date: "2023-10-26" },
-]
 
 export default function AdminPage() {
   return (
@@ -62,23 +47,11 @@ export default function AdminPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {authorRequests.map((req) => (
-                    <TableRow key={req.id}>
-                      <TableCell className="font-medium">{req.name}</TableCell>
-                      <TableCell>{req.email}</TableCell>
-                      <TableCell>
-                        <Badge variant={req.status === "Menunggu" ? "secondary" : "default"}>
-                          {req.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{req.date}</TableCell>
-                      <TableCell className="text-right space-x-2">
-                        <Button size="sm" variant="outline">Lihat</Button>
-                        <Button size="sm">Setujui</Button>
-                        <Button size="sm" variant="destructive">Tolak</Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  <TableRow>
+                    <TableCell colSpan={5} className="h-24 text-center">
+                      Tidak ada permintaan.
+                    </TableCell>
+                  </TableRow>
                 </TableBody>
               </Table>
             </CardContent>
@@ -104,23 +77,11 @@ export default function AdminPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {bookUploads.map((book) => (
-                    <TableRow key={book.id}>
-                      <TableCell className="font-medium">{book.title}</TableCell>
-                      <TableCell>{book.author}</TableCell>
-                      <TableCell>
-                         <Badge variant={book.status === "Menunggu" ? "secondary" : "default"}>
-                          {book.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{book.date}</TableCell>
-                      <TableCell className="text-right space-x-2">
-                        <Button size="sm" variant="outline">Pratinjau</Button>
-                        <Button size="sm">Setujui</Button>
-                        <Button size="sm" variant="destructive">Tolak</Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                   <TableRow>
+                    <TableCell colSpan={5} className="h-24 text-center">
+                      Tidak ada unggahan.
+                    </TableCell>
+                  </TableRow>
                 </TableBody>
               </Table>
             </CardContent>

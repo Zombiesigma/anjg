@@ -41,7 +41,7 @@ export default function JoinAuthorPage() {
             <Input id="portfolio" placeholder="https://portofolio-anda.com" />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="motivation">Mengapa Anda ingin menjadi penulis di LiteraVerse?</Label>
+            <Label htmlFor="motivation">Mengapa Anda ingin menjadi penulis di Litera?</Label>
             <Textarea id="motivation" placeholder="Ceritakan tentang hasrat menulis Anda dan apa yang Anda rencanakan untuk diterbitkan..." rows={5}/>
           </div>
           <div className="space-y-2">

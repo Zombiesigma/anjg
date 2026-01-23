@@ -1,7 +1,8 @@
-import type { User as FirebaseUser } from 'firebase/auth';
+import type { Timestamp } from 'firebase/firestore';
 
 export type User = {
   id: string;
+  uid: string;
   name: string;
   username: string;
   avatarUrl: string;
@@ -9,41 +10,32 @@ export type User = {
   role: 'penulis' | 'pembaca';
   followers: number;
   following: number;
+  photoURL: string;
+  displayName: string;
+  email: string;
 };
-
-// This combines the Firebase user with your custom profile data
-export type UserProfile = User & {
-  // any additional fields from your Firestore user document
-};
-
-// A version of the user type that can be composed with the FirebaseUser type.
-export type AppUser = Omit<User, 'id' | 'name' | 'username' | 'avatarUrl'> & {
-  uid: string;
-  displayName: string | null;
-  email: string | null;
-  photoURL: string | null;
-}
-
 
 export type Book = {
   id: string;
   title: string;
-  author: User;
   genre: string;
   synopsis: string;
   coverUrl: string;
   viewCount: number;
   downloadCount: number;
+  authorId: string;
+  authorName: string;
+  authorAvatarUrl: string;
   content?: string;
 };
 
 export type Comment = {
   id: string;
-  bookId: string;
-  user: User;
   text: string;
-  timestamp: string;
-  replies: Comment[];
+  userId: string;
+  userName: string;
+  userAvatarUrl: string;
+  createdAt: Timestamp;
 };
 
 export type Message = {

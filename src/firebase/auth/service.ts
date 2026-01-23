@@ -6,13 +6,14 @@ import {
   GoogleAuthProvider,
   signOut as firebaseSignOut,
   updateProfile,
+  type User,
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 const { auth, firestore } = initializeFirebase();
 const provider = new GoogleAuthProvider();
 
-async function createUserProfile(user: { uid: string; email: string | null; displayName: string | null; photoURL: string | null; }) {
+async function createUserProfile(user: User) {
   const userDocRef = doc(firestore, 'users', user.uid);
   const userDoc = await getDoc(userDocRef);
 
@@ -23,6 +24,10 @@ async function createUserProfile(user: { uid: string; email: string | null; disp
       displayName: user.displayName,
       photoURL: user.photoURL,
       role: 'pembaca', // default role
+      username: user.email?.split('@')[0] || user.uid,
+      bio: 'Pengguna baru Litera',
+      followers: 0,
+      following: 0,
     });
   }
 }
@@ -31,14 +36,19 @@ export async function signUpWithEmail(email: string, password: string, displayNa
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
-    await updateProfile(user, { displayName });
-    await createUserProfile({
-        uid: user.uid,
-        email: user.email,
-        displayName: displayName,
-        photoURL: user.photoURL
-    });
-    return { user };
+    // Generate a default photoURL
+    const photoURL = `https://api.dicebear.com/8.x/identicon/svg?seed=${user.uid}`;
+    await updateProfile(user, { displayName, photoURL });
+    
+    // Create a new user object to pass to createUserProfile
+    const userWithProfile = {
+      ...user,
+      displayName: displayName,
+      photoURL: photoURL
+    };
+
+    await createUserProfile(userWithProfile);
+    return { user: userWithProfile };
   } catch (error) {
     return { error };
   }

@@ -6,13 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Logo } from '@/components/Logo';
-import { users } from '@/lib/placeholder-data';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Github, Globe, Mail, Phone, Send } from 'lucide-react';
 
-const developer = users[0];
 const devPortfolio = "https://github.com/Guntur-s"; // Replace with actual portfolio URL
-const devImage = PlaceHolderImages.find(img => img.id === 'user-avatar-1');
+const devImage = "https://images.unsplash.com/photo-1636377985931-898218afd306?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8bWFuJTIwcG9ydHJhaXR8ZW58MHx8fHwxNzY5MTAzMjcxfDA&ixlib=rb-4.1.0&q=80&w=1080";
+const devName = "Guntur P.";
+const devBio = "Pengembang Aplikasi Litera. Pengembang tumpukan penuh dengan hasrat untuk menciptakan aplikasi web yang indah dan fungsional.";
 
 export default function AboutPage() {
   return (
@@ -22,7 +21,7 @@ export default function AboutPage() {
             <div className="mx-auto mb-4">
                 <Logo className="w-16 h-16" />
             </div>
-          <CardTitle className="text-4xl font-headline text-primary">Tentang LiteraVerse</CardTitle>
+          <CardTitle className="text-4xl font-headline text-primary">Tentang Litera</CardTitle>
           <CardDescription className="text-lg text-foreground/80 mt-2">
             Menghubungkan pembaca dan penulis di alam semesta digital modern.
           </CardDescription>
@@ -40,12 +39,12 @@ export default function AboutPage() {
         </CardHeader>
         <CardContent className="flex flex-col md:flex-row items-center gap-8">
           <Avatar className="w-32 h-32 border-4 border-primary">
-            <AvatarImage src={devImage?.imageUrl} alt={developer.name} data-ai-hint={devImage?.imageHint} />
-            <AvatarFallback>{developer.name.charAt(0)}</AvatarFallback>
+            <AvatarImage src={devImage} alt={devName} data-ai-hint="man portrait" />
+            <AvatarFallback>{devName.charAt(0)}</AvatarFallback>
           </Avatar>
           <div className="space-y-2 text-center md:text-left">
-            <h3 className="text-2xl font-bold">{developer.name}</h3>
-            <p className="text-muted-foreground">{developer.bio}</p>
+            <h3 className="text-2xl font-bold">{devName}</h3>
+            <p className="text-muted-foreground">{devBio}</p>
             <div className="flex justify-center md:justify-start gap-2 pt-2">
                 <a href={devPortfolio} target="_blank" rel="noopener noreferrer">
                     <Button variant="outline" size="sm"><Globe className="mr-2 h-4 w-4"/>Portofolio</Button>
@@ -78,7 +77,7 @@ export default function AboutPage() {
                 </a>
                 <div className="pt-4">
                     <h3 className="font-bold text-lg">Unduh Aplikasinya</h3>
-                    <p className="text-muted-foreground text-sm mt-1">Dapatkan pengalaman LiteraVerse lengkap di perangkat seluler Anda.</p>
+                    <p className="text-muted-foreground text-sm mt-1">Dapatkan pengalaman Litera lengkap di perangkat seluler Anda.</p>
                      <Button className="mt-4">Unduh Litera.apk</Button>
                 </div>
             </div>
