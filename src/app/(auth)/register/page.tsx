@@ -1,32 +1,80 @@
 'use client';
 
 import Link from 'next/link';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Logo } from '@/components/Logo';
-import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
+import { useToast } from '@/hooks/use-toast';
+import { signUpWithEmail, signInWithGoogle } from '@/firebase/auth/service';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { Loader2 } from 'lucide-react';
+import { useAuthRedirect } from '@/hooks/use-auth-redirect';
+
+const formSchema = z.object({
+  fullName: z.string().min(3, { message: 'Nama lengkap minimal 3 karakter.' }),
+  email: z.string().email({ message: 'Email tidak valid.' }),
+  password: z.string().min(6, { message: 'Kata sandi minimal 6 karakter.' }),
+});
 
 export default function RegisterPage() {
+  useAuthRedirect();
   const { toast } = useToast();
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleRegister = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Simulate successful registration
-    toast({
-      title: 'Selamat Bergabung Di Litera!',
-      description: 'Semoga harimu menyenangkan.',
-    });
-    // Here you would typically redirect the user or handle the next step
-  };
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      fullName: '',
+      email: '',
+      password: '',
+    },
+  });
+
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    setIsLoading(true);
+    const { error } = await signUpWithEmail(values.email, values.password, values.fullName);
+    if (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Gagal Mendaftar',
+        description: 'Email ini mungkin sudah digunakan. Silakan coba lagi.',
+      });
+    } else {
+      toast({
+        title: 'Pendaftaran Berhasil',
+        description: 'Selamat bergabung di LiteraVerse!',
+      });
+      router.push('/');
+    }
+    setIsLoading(false);
+  }
+
+  async function handleGoogleSignIn() {
+    setIsLoading(true);
+    const { error } = await signInWithGoogle();
+    if (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Gagal Masuk dengan Google',
+        description: 'Terjadi kesalahan. Silakan coba lagi.',
+      });
+       setIsLoading(false);
+    } else {
+      toast({
+        title: 'Berhasil Masuk',
+        description: 'Selamat datang di LiteraVerse!',
+      });
+      router.push('/');
+    }
+  }
 
   return (
     <Card className="mx-auto max-w-sm w-full">
@@ -38,31 +86,58 @@ export default function RegisterPage() {
         <CardDescription>Masukkan informasi Anda untuk membuat akun</CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleRegister} className="grid gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="full-name">Nama Lengkap</Label>
-            <Input id="full-name" placeholder="Guntur Padilah" required />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" placeholder="m@example.com" required />
-          </div>
-           <div className="grid gap-2">
-            <Label htmlFor="picture">Foto Profil</Label>
-            <Input id="picture" type="file" />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="password">Kata Sandi</Label>
-            <Input id="password" type="password" required />
-          </div>
-          <Button type="submit" className="w-full">
-            Buat akun
-          </Button>
-           <Separator className="my-2" />
-           <Button variant="outline" className="w-full">
-            Daftar dengan Google
-          </Button>
-        </form>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
+            <FormField
+              control={form.control}
+              name="fullName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nama Lengkap</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Guntur Padilah" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input placeholder="m@example.com" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="password"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Kata Sandi</FormLabel>
+                  <FormControl>
+                    <Input type="password" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Buat akun
+            </Button>
+          </form>
+        </Form>
+        <Separator className="my-4" />
+        <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading}>
+          {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          Daftar dengan Google
+        </Button>
         <div className="mt-4 text-center text-sm">
           Sudah punya akun?{' '}
           <Link href="/login" className="underline">

@@ -1,8 +1,6 @@
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/Logo';
-import { UserNav } from './UserNav';
-import { MessageSquare, Bell } from 'lucide-react';
+import { HeaderActions } from './HeaderActions';
 
 export function Header() {
   return (
@@ -17,21 +15,7 @@ export function Header() {
           </Link>
         </div>
         <div className="flex flex-1 items-center justify-end space-x-2">
-          <nav className="flex items-center gap-2">
-            <Link href="/messages">
-              <Button variant="ghost" size="icon">
-                <MessageSquare className="h-5 w-5" />
-                <span className="sr-only">Pesan</span>
-              </Button>
-            </Link>
-            <Link href="/notifications">
-              <Button variant="ghost" size="icon">
-                <Bell className="h-5 w-5" />
-                <span className="sr-only">Notifikasi</span>
-              </Button>
-            </Link>
-            <UserNav />
-          </nav>
+          <HeaderActions />
         </div>
       </div>
     </header>

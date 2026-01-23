@@ -28,7 +28,6 @@ import {
   Sun,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
-import { users } from '@/lib/placeholder-data';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,22 +39,38 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-
-const currentUser = users[0];
+import { useUser } from '@/firebase';
+import { signOut } from '@/firebase/auth/service';
+import { useRouter } from 'next/navigation';
 
 export function UserNav() {
+  const { user } = useUser();
+  const router = useRouter();
+  
   // In a real app, you'd use a theme provider context
   const toggleTheme = () => {
     document.documentElement.classList.toggle('dark');
   };
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push('/login');
+  };
+  
+  if (!user) {
+    return null;
+  }
+
+  const userInitial = user.displayName ? user.displayName.charAt(0) : (user.email ? user.email.charAt(0) : 'U');
+  const profileUsername = user.email?.split('@')[0] || user.uid;
 
   return (
     <Sheet>
       <SheetTrigger asChild>
         <Button variant="ghost" size="icon" className="rounded-full">
           <Avatar className="h-8 w-8">
-            <AvatarImage src={currentUser.avatarUrl} alt={currentUser.name} data-ai-hint="man portrait"/>
-            <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
+            <AvatarImage src={user.photoURL ?? ''} alt={user.displayName ?? 'User'} data-ai-hint="man portrait"/>
+            <AvatarFallback>{userInitial}</AvatarFallback>
           </Avatar>
         </Button>
       </SheetTrigger>
@@ -132,11 +147,7 @@ export function UserNav() {
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Batal</AlertDialogCancel>
-                  <SheetClose asChild>
-                    <Link href="/login">
-                      <AlertDialogAction className="bg-destructive hover:bg-destructive/90">Keluar</AlertDialogAction>
-                    </Link>
-                  </SheetClose>
+                  <AlertDialogAction onClick={handleSignOut} className="bg-destructive hover:bg-destructive/90">Keluar</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
@@ -144,13 +155,13 @@ export function UserNav() {
         </div>
         <SheetFooter className="p-4 border-t mt-auto">
           <SheetClose asChild>
-            <Link href={`/profile/${currentUser.username}`} className="flex items-center gap-3 w-full p-2 rounded-md hover:bg-accent">
+            <Link href={`/profile/${profileUsername}`} className="flex items-center gap-3 w-full p-2 rounded-md hover:bg-accent">
                 <Avatar>
-                    <AvatarImage src={currentUser.avatarUrl} alt={currentUser.name} data-ai-hint="man portrait"/>
-                    <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
+                    <AvatarImage src={user.photoURL ?? ''} alt={user.displayName ?? ''} data-ai-hint="man portrait"/>
+                    <AvatarFallback>{userInitial}</AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col">
-                    <span className="font-semibold">{currentUser.name}</span>
+                    <span className="font-semibold">{user.displayName || 'Pengguna'}</span>
                     <span className="text-sm text-muted-foreground">Lihat profil</span>
                 </div>
             </Link>

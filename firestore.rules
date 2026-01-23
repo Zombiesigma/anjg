@@ -1,0 +1,13 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId} {
+      // Public read access for profiles
+      allow read;
+      // Users can only create and update their own profile
+      allow create, update: if request.auth != null && request.auth.uid == userId;
+      // Users cannot delete their profile through the client
+      allow delete: if false;
+    }
+  }
+}
