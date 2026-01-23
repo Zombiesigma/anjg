@@ -2,52 +2,44 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // 1. Aturan Paling Umum: Tolak semua akses secara default.
-    match /{document=**} {
-      allow read, write: if false;
-    }
-
-    // 2. Aturan BACA PUBLIK: Izinkan siapa saja untuk membaca data dari koleksi-koleksi ini.
-    // Ini aman untuk konten publik seperti profil, buku, bab, dan komentar.
-    match /users/{userId} {
-      allow read: if true;
-    }
-    match /books/{bookId} {
-      allow read: if true;
-    }
-    match /books/{bookId}/chapters/{chapterId} {
-      allow read: if true;
-    }
-     match /books/{bookId}/comments/{commentId} {
-      allow read: if true;
-    }
-
-    // 3. Aturan TULIS AMAN: Tentukan izin tulis yang spesifik.
+    // Helper function to check if a user is signed in
     function isSignedIn() {
       return request.auth != null;
     }
 
+    // Rules for the 'users' collection
     match /users/{userId} {
-      // Pengguna hanya dapat menulis ke dokumen mereka sendiri.
+      // Anyone can read user profiles
+      allow read: if true;
+      // Only the authenticated user can write to their own profile
       allow write: if isSignedIn() && request.auth.uid == userId;
     }
 
+    // Rules for the 'books' collection
     match /books/{bookId} {
-      // Pengguna hanya dapat membuat buku untuk diri mereka sendiri.
+      // Anyone can read published books
+      allow read: if true;
+      // Authors can create books for themselves
       allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid;
-      // Pengguna hanya dapat memperbarui buku mereka sendiri.
+      // Only the author can update their own book
       allow update: if isSignedIn() && get(/databases/$(database)/documents/books/$(bookId)).data.authorId == request.auth.uid;
     }
 
+    // Rules for the 'chapters' subcollection
     match /books/{bookId}/chapters/{chapterId} {
-        // Penulis buku dapat menulis bab ke buku mereka sendiri.
+        // Anyone can read chapters of a book
+        allow read: if true;
+        // Only the author of the book can write chapters
         allow write: if isSignedIn() && get(/databases/$(database)/documents/books/$(bookId)).data.authorId == request.auth.uid;
     }
 
+    // Rules for the 'comments' subcollection
     match /books/{bookId}/comments/{commentId} {
-      // Pengguna dapat membuat komentar untuk diri mereka sendiri.
+      // Anyone can read comments
+      allow read: if true;
+      // Signed-in users can create comments for themselves
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      // Pengguna hanya dapat memperbarui/menghapus komentar mereka sendiri.
+      // Users can only update or delete their own comments
       allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
   }
