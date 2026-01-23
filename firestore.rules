@@ -3,24 +3,21 @@ service cloud.firestore {
   match /databases/{database}/documents {
     // --- Aturan Pengguna ---
     match /users/{userId} {
-      // Siapa pun dapat mengambil profil pengguna tunggal
-      allow get: if true;
-
-      // Izinkan pengguna yang diautentikasi untuk melakukan kueri pada koleksi pengguna
-      // (diperlukan untuk mencari pengguna berdasarkan nama pengguna)
-      allow list: if request.auth != null;
+      // Siapa pun dapat membaca data profil pengguna (baik satu per satu atau dalam daftar)
+      // Ini diperlukan agar halaman profil dapat diakses secara publik
+      allow read: if true;
 
       // Pengguna hanya dapat membuat dan memperbarui profil mereka sendiri
       allow create, update: if request.auth != null && request.auth.uid == userId;
 
-      // Tidak ada yang bisa menghapus profil dari klien
+      // Profil tidak dapat dihapus dari klien
       allow delete: if false;
     }
 
     // --- Aturan Buku ---
     match /books/{bookId} {
-      // Siapa pun dapat mengambil atau membuat daftar buku
-      allow get, list: if true;
+      // Siapa pun dapat membaca data buku
+      allow read: if true;
 
       // Hanya pengguna dengan peran 'penulis' yang dapat membuat buku
       allow create: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'penulis';
@@ -30,8 +27,8 @@ service cloud.firestore {
 
       // --- Aturan Subkoleksi Komentar ---
       match /comments/{commentId} {
-        // Siapa pun dapat mengambil atau membuat daftar komentar untuk sebuah buku
-        allow get, list: if true;
+        // Siapa pun dapat membaca komentar
+        allow read: if true;
 
         // Setiap pengguna yang diautentikasi dapat membuat komentar
         allow create: if request.auth != null;
