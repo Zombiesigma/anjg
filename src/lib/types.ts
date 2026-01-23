@@ -3,9 +3,7 @@ import type { Timestamp } from 'firebase/firestore';
 export type User = {
   id: string;
   uid: string;
-  name: string;
   username: string;
-  avatarUrl: string;
   bio: string;
   role: 'penulis' | 'pembaca';
   followers: number;

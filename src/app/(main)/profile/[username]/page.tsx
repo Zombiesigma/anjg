@@ -2,6 +2,7 @@
 
 import { notFound, useParams } from 'next/navigation';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useFirestore, useUser, useCollection } from '@/firebase';
 import { collection, query, where, limit } from 'firebase/firestore';
 import type { User, Book } from '@/lib/types';
@@ -55,7 +56,9 @@ export default function ProfilePage() {
                 </div>
                 <div className="flex gap-2">
                     {isOwnProfile ? (
-                        <Button><Edit className="mr-2 h-4 w-4"/> Edit Profil</Button>
+                        <Link href="/settings">
+                          <Button><Edit className="mr-2 h-4 w-4"/> Edit Profil</Button>
+                        </Link>
                     ) : (
                         <>
                             <Button><UserPlus className="mr-2 h-4 w-4"/> Ikuti</Button>
