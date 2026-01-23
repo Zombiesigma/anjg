@@ -60,7 +60,8 @@
         "downloadCount": { "type": "number" },
         "authorId": { "type": "string" },
         "authorName": { "type": "string" },
-        "authorAvatarUrl": { "type": "string", "format": "uri" }
+        "authorAvatarUrl": { "type": "string", "format": "uri" },
+        "content": { "type": "string", "description": "The full content of the book." }
       },
       "required": ["title", "authorId", "authorName"]
     },
