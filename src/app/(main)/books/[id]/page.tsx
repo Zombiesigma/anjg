@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { books, users, comments as placeholderComments } from '@/lib/placeholder-data';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -15,7 +15,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Eye, Download, BookOpen, Send, MessageCircle } from 'lucide-react';
 import type { Comment } from '@/lib/types';
 
-export default function BookDetailsPage({ params }: { params: { id: string } }) {
+export default function BookDetailsPage() {
+  const params = useParams<{ id: string }>();
   const book = books.find((b) => b.id === params.id);
   const currentUser = users[0];
 
