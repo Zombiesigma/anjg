@@ -29,7 +29,7 @@ export default function ProfilePage({ params }: { params: { username: string } }
         <CardContent className="p-4 md:p-6 -mt-16 md:-mt-24">
             <div className="flex flex-col md:flex-row items-center md:items-end gap-4">
                 <Avatar className="w-24 h-24 md:w-32 md:h-32 border-4 border-background shadow-lg">
-                    <AvatarImage src={user.avatarUrl} alt={user.name} data-ai-hint="person portrait" />
+                    <AvatarImage src={user.avatarUrl} alt={user.name} data-ai-hint="potret orang" />
                     <AvatarFallback className="text-4xl">{user.name.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 text-center md:text-left">
@@ -57,11 +57,11 @@ export default function ProfilePage({ params }: { params: { username: string } }
                     <p className="text-sm text-muted-foreground">Buku</p>
                 </div>
                  <div className="text-center">
-                    <p className="font-bold text-lg">{new Intl.NumberFormat().format(user.followers)}</p>
+                    <p className="font-bold text-lg">{new Intl.NumberFormat('id-ID').format(user.followers)}</p>
                     <p className="text-sm text-muted-foreground">Pengikut</p>
                 </div>
                  <div className="text-center">
-                    <p className="font-bold text-lg">{new Intl.NumberFormat().format(user.following)}</p>
+                    <p className="font-bold text-lg">{new Intl.NumberFormat('id-ID').format(user.following)}</p>
                     <p className="text-sm text-muted-foreground">Mengikuti</p>
                 </div>
             </div>

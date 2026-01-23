@@ -12,7 +12,7 @@ type BookCardProps = {
 
 const getImageHint = (url: string) => {
     const image = PlaceHolderImages.find(img => img.imageUrl === url);
-    return image ? image.imageHint : 'book cover';
+    return image ? image.imageHint : 'sampul buku';
 }
 
 export function BookCard({ book }: BookCardProps) {
@@ -22,7 +22,7 @@ export function BookCard({ book }: BookCardProps) {
         <div className="aspect-[2/3] relative">
           <Image
             src={book.coverUrl}
-            alt={`Cover of ${book.title}`}
+            alt={`Sampul ${book.title}`}
             fill
             className="object-cover"
             data-ai-hint={getImageHint(book.coverUrl)}
@@ -35,7 +35,7 @@ export function BookCard({ book }: BookCardProps) {
           </h3>
           <div className="flex items-center gap-2 mt-2">
             <Avatar className="h-6 w-6">
-              <AvatarImage src={book.author.avatarUrl} alt={book.author.name} data-ai-hint="person portrait"/>
+              <AvatarImage src={book.author.avatarUrl} alt={book.author.name} data-ai-hint="potret orang"/>
               <AvatarFallback>{book.author.name.charAt(0)}</AvatarFallback>
             </Avatar>
             <p className="text-sm text-muted-foreground truncate">{book.author.name}</p>
@@ -43,11 +43,11 @@ export function BookCard({ book }: BookCardProps) {
           <div className="flex items-center gap-4 text-sm text-muted-foreground mt-4 pt-4 border-t flex-grow items-end">
             <div className="flex items-center gap-1.5">
               <Eye className="h-4 w-4" />
-              <span>{new Intl.NumberFormat().format(book.viewCount)}</span>
+              <span>{new Intl.NumberFormat('id-ID').format(book.viewCount)}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <Download className="h-4 w-4" />
-              <span>{new Intl.NumberFormat().format(book.downloadCount)}</span>
+              <span>{new Intl.NumberFormat('id-ID').format(book.downloadCount)}</span>
             </div>
           </div>
         </CardContent>

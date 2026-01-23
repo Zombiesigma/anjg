@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { books, users, comments as placeholderComments } from '@/lib/placeholder-data';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { notFound, useParams } from 'next/navigation';
@@ -24,6 +24,11 @@ export default function BookDetailsPage() {
     placeholderComments.filter((c) => c.bookId === params.id)
   );
   const [newComment, setNewComment] = useState('');
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   if (!book) {
     notFound();
@@ -46,7 +51,7 @@ export default function BookDetailsPage() {
 
   const getImageHint = (url: string) => {
     const image = PlaceHolderImages.find(img => img.imageUrl === url);
-    return image ? image.imageHint : 'book cover';
+    return image ? image.imageHint : 'sampul buku';
   }
 
   return (
@@ -57,7 +62,7 @@ export default function BookDetailsPage() {
             <div className="aspect-[2/3] relative">
               <Image
                 src={book.coverUrl}
-                alt={`Cover of ${book.title}`}
+                alt={`Sampul ${book.title}`}
                 fill
                 className="object-cover"
                 data-ai-hint={getImageHint(book.coverUrl)}
@@ -67,12 +72,12 @@ export default function BookDetailsPage() {
             <CardContent className="p-4 grid grid-cols-2 gap-4 text-sm text-center">
                 <div className="flex flex-col items-center gap-1">
                     <Eye className="h-5 w-5 text-muted-foreground" />
-                    <span className="font-semibold">{new Intl.NumberFormat().format(book.viewCount)}</span>
+                    <span className="font-semibold">{isMounted ? new Intl.NumberFormat('id-ID').format(book.viewCount) : '...'}</span>
                     <span className="text-xs text-muted-foreground">Dilihat</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
                     <Download className="h-5 w-5 text-muted-foreground" />
-                    <span className="font-semibold">{new Intl.NumberFormat().format(book.downloadCount)}</span>
+                    <span className="font-semibold">{isMounted ? new Intl.NumberFormat('id-ID').format(book.downloadCount) : '...'}</span>
                     <span className="text-xs text-muted-foreground">Unduhan</span>
                 </div>
             </CardContent>
@@ -84,7 +89,7 @@ export default function BookDetailsPage() {
             <h1 className="text-4xl font-headline font-bold mt-2">{book.title}</h1>
             <div className="flex items-center gap-2 mt-4">
               <Avatar>
-                <AvatarImage src={book.author.avatarUrl} alt={book.author.name} data-ai-hint="person portrait"/>
+                <AvatarImage src={book.author.avatarUrl} alt={book.author.name} data-ai-hint="potret orang"/>
                 <AvatarFallback>{book.author.name.charAt(0)}</AvatarFallback>
               </Avatar>
               <span className="font-medium">oleh {book.author.name}</span>
@@ -107,7 +112,7 @@ export default function BookDetailsPage() {
             <h2 className="text-2xl font-headline font-bold flex items-center gap-2"><MessageCircle/> Komentar</h2>
             <div className="flex items-start gap-3">
               <Avatar>
-                <AvatarImage src={currentUser.avatarUrl} alt={currentUser.name} data-ai-hint="man portrait"/>
+                <AvatarImage src={currentUser.avatarUrl} alt={currentUser.name} data-ai-hint="potret pria"/>
                 <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
               </Avatar>
               <div className="w-full relative">
@@ -125,7 +130,7 @@ export default function BookDetailsPage() {
                 {comments.map(comment => (
                     <div key={comment.id} className="flex items-start gap-3">
                         <Avatar className="h-9 w-9">
-                            <AvatarImage src={comment.user.avatarUrl} alt={comment.user.name} data-ai-hint="person portrait" />
+                            <AvatarImage src={comment.user.avatarUrl} alt={comment.user.name} data-ai-hint="potret orang" />
                             <AvatarFallback>{comment.user.name.charAt(0)}</AvatarFallback>
                         </Avatar>
                         <div className="flex-1">
@@ -139,7 +144,7 @@ export default function BookDetailsPage() {
                              {comment.replies.map(reply => (
                                 <div key={reply.id} className="flex items-start gap-3 mt-4">
                                      <Avatar className="h-8 w-8">
-                                        <AvatarImage src={reply.user.avatarUrl} alt={reply.user.name} data-ai-hint="person portrait" />
+                                        <AvatarImage src={reply.user.avatarUrl} alt={reply.user.name} data-ai-hint="potret orang" />
                                         <AvatarFallback>{reply.user.name.charAt(0)}</AvatarFallback>
                                     </Avatar>
                                      <div className="flex-1">
