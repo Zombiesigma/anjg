@@ -6,13 +6,16 @@ import { collection, query, orderBy, limit } from 'firebase/firestore';
 import { BookCard } from '@/components/BookCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { Book } from '@/lib/types';
+import { useMemo } from 'react';
 
 export default function HomePage() {
   const firestore = useFirestore();
 
-  const booksQuery = firestore
+  const booksQuery = useMemo(() => (
+    firestore
     ? query(collection(firestore, 'books'), orderBy('viewCount', 'desc'), limit(12))
-    : null;
+    : null
+  ), [firestore]);
   
   const { data: books, isLoading } = useCollection<Book>(booksQuery);
 

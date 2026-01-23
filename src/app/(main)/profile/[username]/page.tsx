@@ -3,6 +3,7 @@
 import { notFound, useParams } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useMemo } from 'react';
 import { useFirestore, useUser, useCollection } from '@/firebase';
 import { collection, query, where, limit } from 'firebase/firestore';
 import type { User, Book } from '@/lib/types';
@@ -20,13 +21,21 @@ export default function ProfilePage() {
   const firestore = useFirestore();
   const { user: currentUser } = useUser();
 
-  const userQuery = firestore ? query(collection(firestore, 'users'), where('username', '==', params.username), limit(1)) : null;
+  const userQuery = useMemo(() => (
+    firestore 
+      ? query(collection(firestore, 'users'), where('username', '==', params.username), limit(1)) 
+      : null
+  ), [firestore, params.username]);
   const { data: users, isLoading: isUserLoading } = useCollection<User>(userQuery);
   const user = users?.[0];
   
   const isOwnProfile = user?.uid === currentUser?.uid;
   
-  const userBooksQuery = (firestore && user) ? query(collection(firestore, 'books'), where('authorId', '==', user.uid)) : null;
+  const userBooksQuery = useMemo(() => (
+    (firestore && user) 
+      ? query(collection(firestore, 'books'), where('authorId', '==', user.uid)) 
+      : null
+  ), [firestore, user]);
   const { data: userBooks, isLoading: areBooksLoading } = useCollection<Book>(userBooksQuery);
 
   if (isUserLoading) {

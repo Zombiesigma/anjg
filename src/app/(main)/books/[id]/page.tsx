@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { notFound, useParams } from 'next/navigation';
 import { useFirestore, useUser, useDoc, useCollection } from '@/firebase';
 import { doc, collection, addDoc, serverTimestamp, query, orderBy } from 'firebase/firestore';
@@ -26,7 +26,11 @@ export default function BookDetailsPage() {
   const bookRef = firestore ? doc(firestore, 'books', params.id) : null;
   const { data: book, isLoading: isBookLoading } = useDoc<Book>(bookRef);
 
-  const commentsQuery = firestore ? query(collection(firestore, 'books', params.id, 'comments'), orderBy('createdAt', 'desc')) : null;
+  const commentsQuery = useMemo(() => (
+    firestore 
+      ? query(collection(firestore, 'books', params.id, 'comments'), orderBy('createdAt', 'desc')) 
+      : null
+  ), [firestore, params.id]);
   const { data: comments, isLoading: areCommentsLoading } = useCollection<Comment>(commentsQuery);
 
   const [newComment, setNewComment] = useState('');

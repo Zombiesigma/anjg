@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import type { Query, DocumentData, FirestoreError } from 'firebase/firestore';
 import { onSnapshot } from 'firebase/firestore';
 import { useAuth } from '../provider';
@@ -12,20 +12,18 @@ export function useCollection<T>(query: Query<DocumentData> | null) {
   const [error, setError] = useState<FirestoreError | null>(null);
   const auth = useAuth();
 
-  // Note: JSON.stringify is not a reliable way to memoize a query object.
-  // For this app's simplicity, it might work, but in a real-world scenario,
-  // dependencies of the query (e.g., collection path, where clauses) should be in the dependency array.
-  const memoizedQuery = useMemo(() => query, [JSON.stringify(query)]);
-
   useEffect(() => {
-    if (!memoizedQuery) {
+    if (!query) {
       setData([]);
       setIsLoading(false);
       return;
     }
 
+    // The query object is now a dependency of useEffect.
+    // The component using this hook should memoize the query
+    // to prevent re-fetching on every render.
     const unsubscribe = onSnapshot(
-      memoizedQuery,
+      query,
       (snapshot) => {
         const result: T[] = [];
         snapshot.forEach((doc) => {
@@ -49,7 +47,7 @@ export function useCollection<T>(query: Query<DocumentData> | null) {
     );
 
     return () => unsubscribe();
-  }, [memoizedQuery, auth]);
+  }, [query, auth]);
 
   return { data, isLoading, error };
 }
