@@ -1,40 +1,10 @@
+// Versi untuk development/testing:
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // --- Aturan Pengguna ---
-    match /users/{userId} {
-      // Siapa pun dapat membaca profil pengguna.
-      allow read: if true;
-
-      // Pengguna hanya dapat membuat dan memperbarui profil mereka sendiri.
-      // Operasi hapus tidak diizinkan dari sisi klien.
-      allow create, update: if request.auth != null && request.auth.uid == userId;
-      allow delete: if false;
-    }
-
-    // --- Aturan Buku ---
-    match /books/{bookId} {
-      // Siapa pun dapat membaca buku.
-      allow read: if true;
-
-      // Hanya pengguna dengan peran 'penulis' yang dapat membuat buku.
-      allow create: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'penulis';
-
-      // Hanya penulis asli buku yang dapat memperbarui atau menghapusnya.
-      allow update, delete: if request.auth != null && resource.data.authorId == request.auth.uid;
-    }
-    
-    // --- Aturan Komentar ---
-    match /books/{bookId}/comments/{commentId} {
-        // Siapa pun dapat membaca komentar.
-        allow read: if true;
-
-        // Setiap pengguna yang diautentikasi dapat membuat komentar.
-        allow create: if request.auth != null;
-
-        // Hanya penulis asli komentar yang dapat memperbarui atau menghapusnya.
-        allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    // Izinkan akses publik (HANYA untuk development!)
+    match /{document=**} {
+      allow read, write: if true;
     }
   }
 }
