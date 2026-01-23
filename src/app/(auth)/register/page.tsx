@@ -45,7 +45,7 @@ export default function RegisterPage() {
       toast({
         variant: 'destructive',
         title: 'Gagal Mendaftar',
-        description: 'Email ini mungkin sudah digunakan. Silakan coba lagi.',
+        description: (error as Error).message || 'Email ini mungkin sudah digunakan. Silakan coba lagi.',
       });
     } else {
       toast({
@@ -64,7 +64,7 @@ export default function RegisterPage() {
       toast({
         variant: 'destructive',
         title: 'Gagal Masuk dengan Google',
-        description: 'Terjadi kesalahan. Silakan coba lagi.',
+        description: (error as Error).message || 'Terjadi kesalahan. Silakan coba lagi.',
       });
        setIsLoading(false);
     } else {

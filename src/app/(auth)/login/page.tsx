@@ -62,7 +62,7 @@ export default function LoginPage() {
       toast({
         variant: 'destructive',
         title: 'Gagal Masuk dengan Google',
-        description: 'Terjadi kesalahan. Silakan coba lagi.',
+        description: (error as Error).message || 'Terjadi kesalahan. Silakan coba lagi.',
       });
       setIsLoading(false);
     } else {
