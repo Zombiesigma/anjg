@@ -1,24 +1,23 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // --- Aturan Baca Global ---
-    // Izinkan siapa pun untuk membaca dokumen apa pun di seluruh database.
-    // Ini menyederhanakan izin baca dan memastikan data publik dapat diakses.
-    match /{document=**} {
-      allow read: if true;
-    }
 
-    // --- Aturan Tulis Pengguna ---
+    // --- Aturan Pengguna ---
     match /users/{userId} {
+      // Siapa pun dapat membaca profil pengguna.
+      allow read: if true;
+
       // Pengguna hanya dapat membuat dan memperbarui profil mereka sendiri.
       // Operasi hapus tidak diizinkan dari sisi klien.
       allow create, update: if request.auth != null && request.auth.uid == userId;
       allow delete: if false;
     }
 
-    // --- Aturan Tulis Buku ---
+    // --- Aturan Buku ---
     match /books/{bookId} {
+      // Siapa pun dapat membaca buku.
+      allow read: if true;
+
       // Hanya pengguna dengan peran 'penulis' yang dapat membuat buku.
       allow create: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'penulis';
 
@@ -26,8 +25,11 @@ service cloud.firestore {
       allow update, delete: if request.auth != null && resource.data.authorId == request.auth.uid;
     }
     
-    // --- Aturan Tulis Komentar ---
+    // --- Aturan Komentar ---
     match /books/{bookId}/comments/{commentId} {
+        // Siapa pun dapat membaca komentar.
+        allow read: if true;
+
         // Setiap pengguna yang diautentikasi dapat membuat komentar.
         allow create: if request.auth != null;
 
