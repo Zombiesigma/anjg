@@ -1,41 +1,38 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // --- Aturan Pengguna ---
-    match /users/{userId} {
-      // Siapa pun dapat membaca data profil pengguna (baik satu per satu atau dalam daftar)
-      // Ini diperlukan agar halaman profil dapat diakses secara publik
+    
+    // --- Aturan Baca Global ---
+    // Izinkan siapa pun untuk membaca dokumen apa pun di seluruh database.
+    // Ini menyederhanakan izin baca dan memastikan data publik dapat diakses.
+    match /{document=**} {
       allow read: if true;
+    }
 
-      // Pengguna hanya dapat membuat dan memperbarui profil mereka sendiri
+    // --- Aturan Tulis Pengguna ---
+    match /users/{userId} {
+      // Pengguna hanya dapat membuat dan memperbarui profil mereka sendiri.
+      // Operasi hapus tidak diizinkan dari sisi klien.
       allow create, update: if request.auth != null && request.auth.uid == userId;
-
-      // Profil tidak dapat dihapus dari klien
       allow delete: if false;
     }
 
-    // --- Aturan Buku ---
+    // --- Aturan Tulis Buku ---
     match /books/{bookId} {
-      // Siapa pun dapat membaca data buku
-      allow read: if true;
-
-      // Hanya pengguna dengan peran 'penulis' yang dapat membuat buku
+      // Hanya pengguna dengan peran 'penulis' yang dapat membuat buku.
       allow create: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'penulis';
 
-      // Hanya penulis buku yang dapat memperbarui atau menghapusnya
+      // Hanya penulis asli buku yang dapat memperbarui atau menghapusnya.
       allow update, delete: if request.auth != null && resource.data.authorId == request.auth.uid;
-
-      // --- Aturan Subkoleksi Komentar ---
-      match /comments/{commentId} {
-        // Siapa pun dapat membaca komentar
-        allow read: if true;
-
-        // Setiap pengguna yang diautentikasi dapat membuat komentar
+    }
+    
+    // --- Aturan Tulis Komentar ---
+    match /books/{bookId}/comments/{commentId} {
+        // Setiap pengguna yang diautentikasi dapat membuat komentar.
         allow create: if request.auth != null;
 
-        // Hanya penulis komentar yang dapat memperbarui atau menghapusnya
+        // Hanya penulis asli komentar yang dapat memperbarui atau menghapusnya.
         allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
-      }
     }
   }
 }
