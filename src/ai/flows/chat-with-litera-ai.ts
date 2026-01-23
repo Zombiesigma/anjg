@@ -37,13 +37,13 @@ const prompt = ai.definePrompt({
   Your purpose is to assist users with writing, research, and exploring book recommendations within the LiteraVerse platform.
   Maintain a friendly and engaging tone.
 
-  {% if chatHistory %}
+  {{#if chatHistory}}
   Here is the chat history:
   {{#each chatHistory}}
-  {{#if (eq role \"user\")}}User: {{content}}{{/if}}
-  {{#if (eq role \"assistant\")}}Litera AI: {{content}}{{/if}}
+  {{#if isUser}}User: {{content}}{{/if}}
+  {{#if isAssistant}}Litera AI: {{content}}{{/if}}
   {{/each}}
-  {% endif %}
+  {{/if}}
 
   User: {{{message}}}
   Litera AI: `,
@@ -56,7 +56,15 @@ const chatWithLiteraAIFlow = ai.defineFlow(
     outputSchema: ChatWithLiteraAIOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
+    const transformedInput = {
+      ...input,
+      chatHistory: input.chatHistory?.map((item) => ({
+        ...item,
+        isUser: item.role === 'user',
+        isAssistant: item.role === 'assistant',
+      })),
+    };
+    const {output} = await prompt(transformedInput);
     return output!;
   }
 );
