@@ -15,6 +15,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Eye, Download, BookOpen, Send, MessageCircle, Loader2 } from 'lucide-react';
 import type { Book, Comment } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 export default function BookDetailsPage() {
   const params = useParams<{ id: string }>();
@@ -35,25 +37,34 @@ export default function BookDetailsPage() {
     setIsMounted(true);
   }, []);
 
-  async function handleCommentSubmit() {
+  function handleCommentSubmit() {
     if (!newComment.trim() || !currentUser || !firestore) return;
 
     setIsSubmitting(true);
-    try {
-      const commentsCol = collection(firestore, 'books', params.id, 'comments');
-      await addDoc(commentsCol, {
-        text: newComment,
-        userId: currentUser.uid,
-        userName: currentUser.displayName,
-        userAvatarUrl: currentUser.photoURL,
-        createdAt: serverTimestamp(),
+    const commentsCol = collection(firestore, 'books', params.id, 'comments');
+    const commentData = {
+      text: newComment,
+      userId: currentUser.uid,
+      userName: currentUser.displayName,
+      userAvatarUrl: currentUser.photoURL,
+      createdAt: serverTimestamp(),
+    };
+
+    addDoc(commentsCol, commentData)
+      .then(() => {
+        setNewComment('');
+      })
+      .catch((serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: commentsCol.path,
+          operation: 'create',
+          requestResourceData: commentData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      })
+      .finally(() => {
+        setIsSubmitting(false);
       });
-      setNewComment('');
-    } catch (error) {
-      console.error("Error adding comment: ", error);
-    } finally {
-      setIsSubmitting(false);
-    }
   };
 
   if (isBookLoading) {

@@ -3,6 +3,9 @@ import { useState, useEffect, useMemo } from 'react';
 import type { DocumentReference, DocumentData, FirestoreError } from 'firebase/firestore';
 import { onSnapshot } from 'firebase/firestore';
 import { useAuth } from '../provider';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
+
 
 export function useDoc<T>(ref: DocumentReference<DocumentData> | null) {
   const [data, setData] = useState<T | null>(null);
@@ -30,8 +33,12 @@ export function useDoc<T>(ref: DocumentReference<DocumentData> | null) {
         setIsLoading(false);
         setError(null);
       },
-      (err) => {
-        console.error(err);
+      async (err) => {
+        const permissionError = new FirestorePermissionError({
+          path: memoizedRef.path,
+          operation: 'get',
+        });
+        errorEmitter.emit('permission-error', permissionError);
         setError(err);
         setIsLoading(false);
       }

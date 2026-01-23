@@ -9,5 +9,23 @@ service cloud.firestore {
       // Users cannot delete their profile through the client
       allow delete: if false;
     }
+
+    match /books/{bookId} {
+      // Allow anyone to read books
+      allow read;
+      // Only authenticated users with the 'penulis' role can create books.
+      allow create: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'penulis';
+      // Only the author of the book can update or delete it.
+      allow update, delete: if request.auth != null && resource.data.authorId == request.auth.uid;
+    }
+
+    match /books/{bookId}/comments/{commentId} {
+      // Allow anyone to read comments
+      allow read;
+      // Any authenticated user can create a comment
+      allow create: if request.auth != null;
+      // Only the user who created the comment can update or delete it
+      allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
   }
 }
