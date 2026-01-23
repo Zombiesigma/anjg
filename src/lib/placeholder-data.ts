@@ -104,12 +104,14 @@ export const books: Book[] = [
 export const comments: Comment[] = [
     {
         id: 'c1',
+        bookId: '1',
         user: users[1],
         text: 'Buku ini benar-benar mengubah perspektif saya tentang kehidupan. Wajib dibaca!',
         timestamp: '2 hari yang lalu',
         replies: [
             {
                 id: 'r1',
+                bookId: '1',
                 user: users[2],
                 text: "Saya senang Anda menikmatinya! Sangat menyenangkan untuk menulisnya.",
                 timestamp: '1 hari yang lalu',
@@ -119,9 +121,26 @@ export const comments: Comment[] = [
     },
     {
         id: 'c2',
+        bookId: '1',
         user: users[0],
         text: "Tidak bisa berhenti membacanya. Alur ceritanya ditangani dengan sangat ahli.",
         timestamp: '5 jam yang lalu',
+        replies: []
+    },
+    {
+        id: 'c3',
+        bookId: '2',
+        user: users[2],
+        text: "Setiap orang harus membaca buku ini. Kebiasaan kecil benar-benar membuat perbedaan besar!",
+        timestamp: '1 hari yang lalu',
+        replies: []
+    },
+    {
+        id: 'c4',
+        bookId: '3',
+        user: users[1],
+        text: "Meniup pikiran! Saya tidak bisa meletakkannya.",
+        timestamp: '4 hari yang lalu',
         replies: []
     }
 ];

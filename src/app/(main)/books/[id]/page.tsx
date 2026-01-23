@@ -1,23 +1,47 @@
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
-import { books, users, comments } from '@/lib/placeholder-data';
+import { useState } from 'react';
+import { books, users, comments as placeholderComments } from '@/lib/placeholder-data';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { notFound } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { Eye, Download, BookOpen, Send, MessageCircle } from 'lucide-react';
+import type { Comment } from '@/lib/types';
 
 export default function BookDetailsPage({ params }: { params: { id: string } }) {
   const book = books.find((b) => b.id === params.id);
   const currentUser = users[0];
 
+  const [comments, setComments] = useState<Comment[]>(
+    placeholderComments.filter((c) => c.bookId === params.id)
+  );
+  const [newComment, setNewComment] = useState('');
+
   if (!book) {
     notFound();
   }
+  
+  const handleCommentSubmit = () => {
+    if (newComment.trim()) {
+      const newCommentObject: Comment = {
+        id: `c${Date.now()}`,
+        bookId: params.id,
+        user: currentUser,
+        text: newComment,
+        timestamp: 'Baru saja',
+        replies: [],
+      };
+      setComments([newCommentObject, ...comments]);
+      setNewComment('');
+    }
+  };
 
   const getImageHint = (url: string) => {
     const image = PlaceHolderImages.find(img => img.imageUrl === url);
@@ -86,8 +110,13 @@ export default function BookDetailsPage({ params }: { params: { id: string } }) 
                 <AvatarFallback>{currentUser.name.charAt(0)}</AvatarFallback>
               </Avatar>
               <div className="w-full relative">
-                <Textarea placeholder="Tambahkan komentar..." className="w-full pr-12"/>
-                <Button size="icon" className="absolute top-2 right-2 h-8 w-8"><Send className="h-4 w-4"/></Button>
+                <Textarea 
+                  placeholder="Tambahkan komentar..." 
+                  className="w-full pr-12"
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                />
+                <Button size="icon" className="absolute top-2 right-2 h-8 w-8" onClick={handleCommentSubmit}><Send className="h-4 w-4"/></Button>
               </div>
             </div>
             

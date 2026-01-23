@@ -23,6 +23,7 @@ export type Book = {
 
 export type Comment = {
   id: string;
+  bookId: string;
   user: User;
   text: string;
   timestamp: string;
