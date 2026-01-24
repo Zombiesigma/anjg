@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -6,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useUser, useCollection } from '@/firebase';
+import { useFirestore, useUser, useCollection, useDoc } from '@/firebase';
 import { doc, collection, query, orderBy, serverTimestamp, writeBatch, increment, addDoc, deleteDoc } from 'firebase/firestore';
 import type { Story, StoryComment, StoryLike, User as AppUser } from '@/lib/types';
 import { X, Heart, MessageCircle, Send, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
