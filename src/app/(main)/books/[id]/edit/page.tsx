@@ -76,15 +76,28 @@ export default function EditBookPage() {
   }, [chapters, activeChapterId, form]);
 
   const handlePublish = async () => {
-    if (!bookRef) return;
+    if (!firestore || !bookRef) return;
     setIsPublishing(true);
     try {
-      await updateDoc(bookRef, { status: 'published' });
-      toast({ title: "Buku Diterbitkan!", description: "Buku Anda sekarang dapat dilihat oleh semua orang." });
-      router.push(`/books/${params.id}`);
+        const batch = writeBatch(firestore);
+
+        // Save the current chapter's content if one is active
+        if (activeChapterId) {
+            const chapterRef = doc(firestore, 'books', params.id, 'chapters', activeChapterId);
+            const currentChapterValues = form.getValues();
+            batch.update(chapterRef, currentChapterValues);
+        }
+
+        // Update the book's status to published
+        batch.update(bookRef, { status: 'published' });
+
+        await batch.commit();
+      
+        toast({ title: "Buku Diterbitkan!", description: "Buku Anda sekarang dapat dilihat oleh semua orang." });
+        router.push(`/books/${params.id}`);
     } catch (error) {
-      console.error(error);
-      toast({ variant: "destructive", title: "Gagal Menerbitkan", description: "Terjadi kesalahan." });
+      console.error("Error publishing book:", error);
+      toast({ variant: "destructive", title: "Gagal Menerbitkan", description: "Terjadi kesalahan saat menyimpan dan menerbitkan." });
     } finally {
       setIsPublishing(false);
     }
