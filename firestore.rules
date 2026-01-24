@@ -13,7 +13,8 @@ service cloud.firestore {
     // --- Users ---
     match /users/{userId} {
       allow read: if true;
-      allow update: if isSignedIn() && request.auth.uid == userId; // Users can update their own profile
+      // Users can update their own profile, or other users can update their follower count.
+      allow update: if isSignedIn() && (request.auth.uid == userId || (request.writeFields.size() == 1 && 'followers' in request.writeFields));
       
       match /favorites/{bookId} {
         allow read, write: if isSignedIn() && request.auth.uid == userId;
@@ -40,12 +41,19 @@ service cloud.firestore {
 
     // --- Books & Chapters ---
     match /books/{bookId} {
-      // Anyone can read published books. Author can read their own draft/published books.
+      // Anyone can read published books. Author/Admin can read their own non-published books.
       allow read: if resource.data.status == 'published' || (isSignedIn() && request.auth.uid == resource.data.authorId) || isAdmin();
-      // Author can update their book, or an admin can.
-      allow update: if (isSignedIn() && get(/databases/$(database)/documents/books/$(bookId)).data.authorId == request.auth.uid) || isAdmin();
-      // Signed in users can create books (role is checked in app).
-      allow create: if isSignedIn();
+      
+      // Author/Admin can update their book. Any signed-in user can update favoriteCount.
+      allow update: if isSignedIn() && (
+                      (get(/databases/$(database)/documents/books/$(bookId)).data.authorId == request.auth.uid) ||
+                      isAdmin() ||
+                      (request.writeFields.size() == 1 && 'favoriteCount' in request.writeFields)
+                    );
+                    
+      // Signed in users with 'penulis' or 'admin' role can create books.
+      allow create: if isSignedIn() && (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'penulis' || isAdmin());
+      
       // No one can delete books from the client.
       allow delete: if false;
       
