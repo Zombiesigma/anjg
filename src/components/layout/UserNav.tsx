@@ -26,6 +26,7 @@ import {
   Moon,
   Sun,
   Loader2,
+  Shield,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -54,6 +55,8 @@ export function UserNav() {
   const userProfileRef = (firestore && user) ? doc(firestore, 'users', user.uid) : null;
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<AppUser>(userProfileRef);
   
+  const isAdmin = userProfile?.role === 'admin';
+
   // In a real app, you'd use a theme provider context
   const toggleTheme = () => {
     document.documentElement.classList.toggle('dark');
@@ -86,6 +89,17 @@ export function UserNav() {
         </SheetHeader>
         <div className="flex-grow overflow-y-auto">
           <nav className="flex flex-col gap-1 p-4">
+            {isAdmin && (
+               <SheetClose asChild>
+                <Link href="/admin" className="flex items-center justify-between p-2 rounded-md hover:bg-accent bg-accent/50 border border-primary/20 mb-2">
+                  <div className="flex items-center gap-3">
+                    <Shield className="h-5 w-5 text-primary" />
+                    <span className="font-semibold text-primary">Dasbor Admin</span>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                </Link>
+              </SheetClose>
+            )}
             <SheetClose asChild>
               <Link href="/settings" className="flex items-center justify-between p-2 rounded-md hover:bg-accent">
                 <div className="flex items-center gap-3">

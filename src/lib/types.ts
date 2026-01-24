@@ -5,7 +5,7 @@ export type User = {
   uid: string;
   username: string;
   bio: string;
-  role: 'penulis' | 'pembaca';
+  role: 'penulis' | 'pembaca' | 'admin';
   followers: number;
   following: number;
   photoURL: string;

@@ -29,7 +29,7 @@
         },
         "role": {
             "type": "string",
-            "enum": ["pembaca", "penulis"],
+            "enum": ["pembaca", "penulis", "admin"],
             "description": "The role of the user."
         },
         "bio": {
