@@ -61,6 +61,7 @@ export interface ChatParticipant {
   uid: string;
   displayName: string;
   photoURL: string;
+  username: string;
 }
 
 export type Chat = {

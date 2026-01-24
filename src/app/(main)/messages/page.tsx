@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useFirestore, useUser, useCollection } from '@/firebase';
 import { collection, query, where, orderBy, addDoc, serverTimestamp, doc, updateDoc, type Timestamp, writeBatch, increment } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -9,12 +10,20 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
-import { MoreVertical, MessageSquare, Loader2, Send, Search, ArrowLeft } from 'lucide-react';
+import { MoreVertical, MessageSquare, Loader2, Send, Search, ArrowLeft, User, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Chat, ChatMessage } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
 import { id } from 'date-fns/locale';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+
 
 export default function MessagesPage() {
   const firestore = useFirestore();
@@ -240,7 +249,26 @@ export default function MessagesPage() {
                    </div>
                 )}
                 <div className="ml-auto">
-                    <Button variant="ghost" size="icon"><MoreVertical /></Button>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon"><MoreVertical /></Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            {otherParticipant?.username && (
+                                <DropdownMenuItem asChild>
+                                    <Link href={`/profile/${otherParticipant.username}`}>
+                                        <User className="mr-2 h-4 w-4" />
+                                        <span>Lihat Profil</span>
+                                    </Link>
+                                </DropdownMenuItem>
+                            )}
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className="text-destructive" disabled>
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                <span>Hapus Obrolan</span>
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
               </div>
               

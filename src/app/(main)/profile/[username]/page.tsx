@@ -86,7 +86,7 @@ export default function ProfilePage() {
 
 
   const handleStartChat = async () => {
-    if (!firestore || !currentUser || !user) return;
+    if (!firestore || !currentUser || !user || !currentUserProfile) return;
     setIsCreatingChat(true);
 
     const existingChat = userChats?.find(chat => chat.participantUids.includes(user.uid));
@@ -100,8 +100,8 @@ export default function ProfilePage() {
         const newChatData = {
             participantUids: [currentUser.uid, user.uid],
             participants: [
-                { uid: currentUser.uid, displayName: currentUser.displayName!, photoURL: currentUser.photoURL! },
-                { uid: user.uid, displayName: user.displayName, photoURL: user.photoURL }
+                { uid: currentUser.uid, displayName: currentUser.displayName!, photoURL: currentUser.photoURL!, username: currentUserProfile.username },
+                { uid: user.uid, displayName: user.displayName, photoURL: user.photoURL, username: user.username }
             ],
             unreadCounts: {
                 [currentUser.uid]: 0,
@@ -225,8 +225,8 @@ export default function ProfilePage() {
                               )}
                               {isFollowing ? 'Berhenti Mengikuti' : 'Ikuti'}
                             </Button>
-                            <Button variant="outline" onClick={handleStartChat} disabled={isCreatingChat || areChatsLoading}>
-                                {(isCreatingChat || areChatsLoading) ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <MessageCircle className="mr-2 h-4 w-4"/>}
+                            <Button variant="outline" onClick={handleStartChat} disabled={isCreatingChat || areChatsLoading || isCurrentUserProfileLoading}>
+                                {(isCreatingChat || areChatsLoading || isCurrentUserProfileLoading) ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <MessageCircle className="mr-2 h-4 w-4"/>}
                                 Pesan
                             </Button>
                         </>
