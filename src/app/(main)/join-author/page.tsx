@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useFirestore, useUser } from '@/firebase';
-import { collection, addDoc, serverTimestamp, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
+import { collection, serverTimestamp, query, where, getDocs, doc, getDoc, writeBatch } from 'firebase/firestore';
 import {
   Card,
   CardContent,
@@ -87,13 +87,44 @@ export default function JoinAuthorPage() {
         if (!firestore || !user) return;
         setIsSubmitting(true);
         try {
+            const batch = writeBatch(firestore);
+
+            const requestRef = doc(collection(firestore, 'authorRequests'));
             const requestData = {
                 ...values,
                 userId: user.uid,
                 status: 'pending' as const,
                 requestedAt: serverTimestamp(),
             };
-            await addDoc(collection(firestore, 'authorRequests'), requestData);
+            batch.set(requestRef, requestData);
+
+            // Find all admins and create notifications
+            const adminsQuery = query(collection(firestore, 'users'), where('role', '==', 'admin'));
+            const adminSnapshot = await getDocs(adminsQuery);
+
+            if (!adminSnapshot.empty) {
+                const notificationData = {
+                    type: 'author_request' as const,
+                    text: `${values.name} telah meminta untuk menjadi penulis.`,
+                    link: `/admin`,
+                    actor: {
+                        uid: user.uid,
+                        displayName: user.displayName!,
+                        photoURL: user.photoURL!,
+                    },
+                    read: false,
+                    createdAt: serverTimestamp(),
+                };
+                
+                adminSnapshot.forEach(adminDoc => {
+                    const adminId = adminDoc.id;
+                    const notificationRef = doc(collection(firestore, `users/${adminId}/notifications`));
+                    batch.set(notificationRef, notificationData);
+                });
+            }
+            
+            await batch.commit();
+
             toast({
                 title: "Lamaran Terkirim",
                 description: "Terima kasih! Kami akan meninjau lamaran Anda segera.",

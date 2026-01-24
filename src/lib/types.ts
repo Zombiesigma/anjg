@@ -84,7 +84,7 @@ export type ChatMessage = {
 
 export type Notification = {
   id: string;
-  type: 'comment' | 'follow' | 'favorite';
+  type: 'comment' | 'follow' | 'favorite' | 'author_request';
   text: string;
   link: string;
   actor: {

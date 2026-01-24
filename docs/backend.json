@@ -181,7 +181,7 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["comment", "follow", "favorite"]
+          "enum": ["comment", "follow", "favorite", "author_request"]
         },
         "text": { "type": "string" },
         "link": { "type": "string", "description": "The URL to navigate to when the notification is clicked." },
