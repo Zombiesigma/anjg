@@ -52,17 +52,23 @@ export default function ProfilePage() {
     setIsFollowing(!!followingDoc);
   }, [followingDoc]);
   
-  // Single query for all books by author to avoid composite index
-  const booksByAuthorQuery = useMemo(() => (
+  // Fetch published books for the user's profile
+  const publishedBooksQuery = useMemo(() => (
     (firestore && user) 
-      ? query(collection(firestore, 'books'), where('authorId', '==', user.uid)) 
+      ? query(collection(firestore, 'books'), where('authorId', '==', user.uid), where('status', '==', 'published')) 
       : null
   ), [firestore, user]);
-  const { data: allBooks, isLoading: areBooksLoading } = useCollection<Book>(booksByAuthorQuery);
+  const { data: publishedBooks, isLoading: arePublishedBooksLoading } = useCollection<Book>(publishedBooksQuery);
 
-  // Filter books on the client
-  const publishedBooks = useMemo(() => allBooks?.filter(book => book.status === 'published'), [allBooks]);
-  const draftBooks = useMemo(() => (isOwnProfile ? allBooks?.filter(book => book.status === 'draft') : []), [allBooks, isOwnProfile]);
+  // Fetch non-published books (drafts, pending, rejected) only for the user's own profile
+  const otherBooksQuery = useMemo(() => (
+    (firestore && user && isOwnProfile)
+      ? query(collection(firestore, 'books'), where('authorId', '==', user.uid), where('status', 'in', ['draft', 'pending_review', 'rejected']))
+      : null
+  ), [firestore, user, isOwnProfile]);
+  const { data: otherBooks, isLoading: areOtherBooksLoading } = useCollection<Book>(otherBooksQuery);
+
+  const areBooksLoading = arePublishedBooksLoading || (isOwnProfile && areOtherBooksLoading);
 
   const chatsByUserQuery = useMemo(() => (
       (firestore && currentUser) 
@@ -71,17 +77,20 @@ export default function ProfilePage() {
     ), [firestore, currentUser]);
   const { data: userChats, isLoading: areChatsLoading } = useCollection<Chat>(chatsByUserQuery);
 
+  // Favorites should only be fetched and displayed for the user's own profile
   const favoritesQuery = useMemo(() => (
-    (firestore && user) ? query(collection(firestore, 'users', user.uid, 'favorites')) : null
-  ), [firestore, user]);
+    (firestore && user && isOwnProfile) ? query(collection(firestore, 'users', user.uid, 'favorites')) : null
+  ), [firestore, user, isOwnProfile]);
   const { data: favorites, isLoading: areFavoritesLoading } = useCollection<Favorite>(favoritesQuery);
 
   const favoriteBookIds = useMemo(() => favorites?.map(f => f.id) || [], [favorites]);
 
   const favoriteBooksQuery = useMemo(() => {
-      if (!firestore || favoriteBookIds.length === 0) return null;
-      return query(collection(firestore, 'books'), where(documentId(), 'in', favoriteBookIds));
-  }, [firestore, favoriteBookIds]);
+      if (!firestore || favoriteBookIds.length === 0 || !isOwnProfile) return null;
+      const chunks = favoriteBookIds.slice(0, 30); // Firestore 'in' query limit
+      if (chunks.length === 0) return null;
+      return query(collection(firestore, 'books'), where(documentId(), 'in', chunks));
+  }, [firestore, favoriteBookIds, isOwnProfile]);
   const { data: favoriteBooks, isLoading: areFavoriteBooksLoading } = useCollection<Book>(favoriteBooksQuery);
 
 
@@ -255,10 +264,10 @@ export default function ProfilePage() {
         <TabsList>
             <TabsTrigger value="published-books">Buku Terbitan</TabsTrigger>
             {isOwnProfile && <TabsTrigger value="drafts">Draf</TabsTrigger>}
-            <TabsTrigger value="favorites">Favorit</TabsTrigger>
+            {isOwnProfile && <TabsTrigger value="favorites">Favorit</TabsTrigger>}
         </TabsList>
         <TabsContent value="published-books">
-             {areBooksLoading && (
+             {arePublishedBooksLoading && (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                     {Array.from({ length: 4 }).map((_, i) => (
                       <div key={i} className="space-y-2">
@@ -272,11 +281,11 @@ export default function ProfilePage() {
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                 {publishedBooks?.map(book => <BookCard key={book.id} book={book} />)}
             </div>
-            {!areBooksLoading && publishedBooks?.length === 0 && <p className="text-muted-foreground text-center py-8">{isOwnProfile ? "Anda" : "Pengguna ini"} belum menerbitkan buku apa pun.</p>}
+            {!arePublishedBooksLoading && publishedBooks?.length === 0 && <p className="text-muted-foreground text-center py-8">{isOwnProfile ? "Anda" : "Pengguna ini"} belum menerbitkan buku apa pun.</p>}
         </TabsContent>
         {isOwnProfile && (
           <TabsContent value="drafts">
-               {areBooksLoading && (
+               {areOtherBooksLoading && (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                       {Array.from({ length: 2 }).map((_, i) => (
                         <div key={i} className="space-y-2">
@@ -288,28 +297,30 @@ export default function ProfilePage() {
                   </div>
               )}
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                  {draftBooks?.map(book => <BookCard key={book.id} book={book} />)}
+                  {otherBooks?.map(book => <BookCard key={book.id} book={book} />)}
               </div>
-              {!areBooksLoading && draftBooks?.length === 0 && <p className="text-muted-foreground text-center py-8">Anda tidak memiliki draf buku.</p>}
+              {!areOtherBooksLoading && otherBooks?.length === 0 && <p className="text-muted-foreground text-center py-8">Anda tidak memiliki draf buku.</p>}
           </TabsContent>
         )}
-        <TabsContent value="favorites">
-            {(areFavoritesLoading || areFavoriteBooksLoading) && (
+        {isOwnProfile && (
+            <TabsContent value="favorites">
+                {(areFavoritesLoading || areFavoriteBooksLoading) && (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                        {Array.from({ length: 4 }).map((_, i) => (
+                            <div key={i} className="space-y-2">
+                            <Skeleton className="aspect-[2/3] w-full" />
+                            <Skeleton className="h-5 w-3/4 mt-2" />
+                            <Skeleton className="h-4 w-1/2" />
+                            </div>
+                        ))}
+                    </div>
+                )}
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                    {Array.from({ length: 4 }).map((_, i) => (
-                        <div key={i} className="space-y-2">
-                        <Skeleton className="aspect-[2/3] w-full" />
-                        <Skeleton className="h-5 w-3/4 mt-2" />
-                        <Skeleton className="h-4 w-1/2" />
-                        </div>
-                    ))}
+                    {favoriteBooks?.map(book => <BookCard key={book.id} book={book} />)}
                 </div>
-            )}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                {favoriteBooks?.map(book => <BookCard key={book.id} book={book} />)}
-            </div>
-            {!(areFavoritesLoading || areFavoriteBooksLoading) && favoriteBooks?.length === 0 && <p className="text-muted-foreground text-center py-8">{isOwnProfile ? "Anda" : "Pengguna ini"} belum memfavoritkan buku apa pun.</p>}
-        </TabsContent>
+                {!(areFavoritesLoading || areFavoriteBooksLoading) && favoriteBooks?.length === 0 && <p className="text-muted-foreground text-center py-8">Anda belum memfavoritkan buku apa pun.</p>}
+            </TabsContent>
+        )}
       </Tabs>
     </div>
   )
