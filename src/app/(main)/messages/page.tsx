@@ -13,6 +13,8 @@ import { MoreVertical, MessageSquare, Loader2, Send, Search, ArrowLeft } from 'l
 import { cn } from '@/lib/utils';
 import type { Chat, ChatMessage } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
+import { formatDistanceToNow } from 'date-fns';
+import { id } from 'date-fns/locale';
 
 export default function MessagesPage() {
   const firestore = useFirestore();
@@ -24,6 +26,7 @@ export default function MessagesPage() {
   const [newMessage, setNewMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // 1. Fetch user's chat threads
   const chatThreadsQuery = useMemo(() => (
@@ -80,6 +83,15 @@ export default function MessagesPage() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+    // Auto-resize textarea
+  useEffect(() => {
+      if (textareaRef.current) {
+          textareaRef.current.style.height = 'auto';
+          const scrollHeight = textareaRef.current.scrollHeight;
+          textareaRef.current.style.height = `${scrollHeight}px`;
+      }
+  }, [newMessage]);
   
   const handleSelectChat = (chatId: string) => {
     router.push(`/messages?chatId=${chatId}`, { scroll: false });
@@ -91,7 +103,8 @@ export default function MessagesPage() {
     setSelectedChatId(null);
   };
 
-  const handleSendMessage = async () => {
+  const handleSendMessage = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     if (!newMessage.trim() || !currentUser || !selectedChatId || !firestore || !otherParticipant) return;
     setIsSending(true);
 
@@ -133,21 +146,23 @@ export default function MessagesPage() {
       <div className="grid grid-cols-12 h-full">
         {/* Chat List */}
         <div className={cn(
-          "col-span-12 md:col-span-4 lg:col-span-3 border-r h-full flex-col",
+          "col-span-12 md:col-span-4 lg:col-span-3 border-r h-full flex flex-col",
           selectedChatId ? "hidden md:flex" : "flex"
         )}>
           <div className="p-4 border-b">
             <h1 className="text-2xl font-headline font-bold">Pesan</h1>
             <div className="relative mt-2">
-                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Cari obrolan" className="pl-8" />
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input placeholder="Cari obrolan atau mulai yang baru" className="pl-8" />
             </div>
           </div>
           <ScrollArea className="flex-1">
             {isLoadingThreads && <div className="p-4 text-center text-sm text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></div>}
             {!isLoadingThreads && chatThreads?.length === 0 && (
-              <div className="p-4 text-center text-sm text-muted-foreground">
-                Tidak ada pesan. Mulai percakapan di halaman profil seseorang.
+              <div className="p-8 text-center text-sm text-muted-foreground">
+                <MessageSquare className="mx-auto h-10 w-10 text-muted-foreground/30 mb-4" />
+                <h3 className="font-semibold text-base text-foreground">Tidak Ada Pesan</h3>
+                <p>Mulai percakapan di halaman profil seseorang untuk melihatnya di sini.</p>
               </div>
             )}
             <div className="flex flex-col">
@@ -161,16 +176,23 @@ export default function MessagesPage() {
                     key={chat.id}
                     onClick={() => handleSelectChat(chat.id)}
                     className={cn(
-                      "flex items-center gap-3 p-4 text-left hover:bg-accent w-full",
-                      selectedChatId === chat.id && "bg-accent"
+                      "flex items-start gap-3 p-4 text-left hover:bg-accent w-full transition-colors",
+                      selectedChatId === chat.id && "bg-accent/50"
                     )}
                   >
-                    <Avatar>
+                    <Avatar className="border">
                       <AvatarImage src={otherP.photoURL} alt={otherP.displayName} />
                       <AvatarFallback>{otherP.displayName.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold truncate">{otherP.displayName}</p>
+                        <div className="flex items-center justify-between">
+                            <p className="font-semibold truncate">{otherP.displayName}</p>
+                            {chat.lastMessage?.timestamp && (
+                                <p className="text-xs text-muted-foreground whitespace-nowrap">
+                                    {formatDistanceToNow(chat.lastMessage.timestamp.toDate(), { locale: id })}
+                                </p>
+                            )}
+                        </div>
                       <p className={cn(
                           "text-sm text-muted-foreground truncate",
                           unreadCount > 0 && "font-bold text-foreground"
@@ -179,7 +201,7 @@ export default function MessagesPage() {
                       </p>
                     </div>
                     {unreadCount > 0 && (
-                      <Badge className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full p-0">
+                      <Badge className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full p-0 self-center">
                         {unreadCount}
                       </Badge>
                     )}
@@ -192,32 +214,30 @@ export default function MessagesPage() {
 
         {/* Chat Box */}
         <div className={cn(
-            "col-span-12 md:col-span-8 lg:col-span-9 h-full flex-col bg-muted/20",
+            "col-span-12 md:col-span-8 lg:col-span-9 h-full flex flex-col",
             selectedChatId ? 'flex' : 'hidden md:flex'
         )}>
           {!selectedChatId && !searchParams.get('chatId') ? (
-            <div className="items-center justify-center h-full text-center hidden md:flex">
-              <div>
-                <MessageSquare className="h-16 w-16 mx-auto text-muted-foreground/50" />
-                <h2 className="mt-4 text-xl font-semibold">Pilih obrolan</h2>
-                <p className="text-muted-foreground mt-1">Pilih dari obrolan yang ada, atau mulai yang baru.</p>
-              </div>
+            <div className="items-center justify-center h-full text-center hidden md:flex flex-col gap-2 bg-muted/30">
+              <MessageSquare className="h-16 w-16 mx-auto text-muted-foreground/30" />
+              <h2 className="mt-2 text-xl font-semibold">Pesan Litera Anda</h2>
+              <p className="text-muted-foreground max-w-sm">Pilih dari obrolan yang ada, atau mulai percakapan baru di halaman profil pengguna.</p>
             </div>
           ) : (
-            <div className="flex flex-col h-full">
+            <div className="flex flex-col h-full bg-muted/20">
               {/* Chat Header */}
-              <div className="flex items-center p-4 border-b bg-background">
+              <div className="flex items-center p-2.5 border-b bg-background shadow-sm">
                 <Button variant="ghost" size="icon" className="md:hidden mr-2" onClick={handleGoBack}>
                     <ArrowLeft />
                 </Button>
                 {otherParticipant && (
-                   <>
+                   <div className="flex items-center gap-3">
                     <Avatar>
                       <AvatarImage src={otherParticipant.photoURL} alt={otherParticipant.displayName} />
                       <AvatarFallback>{otherParticipant.displayName.charAt(0)}</AvatarFallback>
                     </Avatar>
-                    <h2 className="ml-3 font-semibold">{otherParticipant.displayName}</h2>
-                   </>
+                    <h2 className="font-semibold">{otherParticipant.displayName}</h2>
+                   </div>
                 )}
                 <div className="ml-auto">
                     <Button variant="ghost" size="icon"><MoreVertical /></Button>
@@ -225,11 +245,11 @@ export default function MessagesPage() {
               </div>
               
               {/* Messages Area */}
-              <ScrollArea className="flex-1 p-4 bg-muted/20">
-                {isLoadingMessages && <div className="flex justify-center items-center h-full"><Loader2 className="h-6 w-6 animate-spin"/></div>}
-                <div className="space-y-4">
+              <ScrollArea className="flex-1">
+                {isLoadingMessages && <div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin text-primary"/></div>}
+                <div className="space-y-4 p-4 md:p-6">
                   {messages?.map(msg => (
-                    <div key={msg.id} className={cn("flex items-end gap-2", msg.senderId === currentUser?.uid && "justify-end")}>
+                    <div key={msg.id} className={cn("flex items-end gap-2.5", msg.senderId === currentUser?.uid && "justify-end")}>
                       {msg.senderId !== currentUser?.uid && (
                         <Avatar className="h-8 w-8">
                           <AvatarImage src={otherParticipant?.photoURL} alt={otherParticipant?.displayName} />
@@ -237,12 +257,12 @@ export default function MessagesPage() {
                         </Avatar>
                       )}
                        <div className={cn(
-                        "max-w-md p-3 rounded-xl",
+                        "max-w-lg p-3 rounded-2xl",
                         msg.senderId === currentUser?.uid
-                          ? "bg-primary text-primary-foreground rounded-br-none"
-                          : "bg-background rounded-bl-none shadow-sm"
+                          ? "bg-primary text-primary-foreground rounded-br-lg"
+                          : "bg-background rounded-bl-lg shadow-sm"
                       )}>
-                          <p className="leading-relaxed">{msg.text}</p>
+                          <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>
                       </div>
                     </div>
                   ))}
@@ -251,17 +271,25 @@ export default function MessagesPage() {
               </ScrollArea>
 
               {/* Message Input */}
-              <div className="p-4 border-t bg-background">
-                  <form onSubmit={(e) => { e.preventDefault(); handleSendMessage(); }} className="relative">
+              <div className="p-2 border-t bg-background/80 backdrop-blur-sm">
+                  <form onSubmit={handleSendMessage} className="relative">
                       <Textarea 
+                        ref={textareaRef}
                         placeholder="Ketik sebuah pesan..." 
-                        className="pr-14"
+                        className="w-full resize-none rounded-lg border-input bg-background p-3 pr-14 min-h-0"
+                        rows={1}
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                handleSendMessage(e as unknown as React.FormEvent<HTMLFormElement>);
+                            }
+                        }}
                         disabled={isSending}
                       />
-                      <Button type="submit" size="icon" className="absolute top-1/2 right-3 -translate-y-1/2 h-8 w-8" disabled={isSending || !newMessage.trim()}>
-                        {isSending ? <Loader2 className="animate-spin" /> : <Send />}
+                      <Button type="submit" size="icon" className="absolute top-1/2 right-2.5 -translate-y-1/2 h-9 w-9" disabled={isSending || !newMessage.trim()}>
+                        {isSending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5"/>}
                       </Button>
                   </form>
               </div>
