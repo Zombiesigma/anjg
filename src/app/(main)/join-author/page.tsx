@@ -1,11 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useFirestore, useUser } from '@/firebase';
-import { collection, serverTimestamp, query, where, getDocs, doc, getDoc, writeBatch } from 'firebase/firestore';
+import { useFirestore, useUser, useCollection } from '@/firebase';
+import { collection, serverTimestamp, query, where, getDocs, doc, getDoc, writeBatch, orderBy } from 'firebase/firestore';
+import type { User as AppUser } from '@/lib/types';
 import {
   Card,
   CardContent,
@@ -19,8 +21,10 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { BookUser, Loader2, Send, Info } from "lucide-react";
+import { BookUser, Loader2, Send, Info, Users, UserCheck } from "lucide-react";
 import { Skeleton } from '@/components/ui/skeleton';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+
 
 const formSchema = z.object({
   name: z.string().min(3, { message: "Nama lengkap minimal 3 karakter." }),
@@ -46,6 +50,13 @@ export default function JoinAuthorPage() {
             motivation: "",
         },
     });
+    
+    // Fetch authors only when the current user is an author or admin
+    const authorsQuery = useMemo(() => {
+        if (!firestore || applicationStatus !== 'author') return null;
+        return query(collection(firestore, 'users'), where('role', '==', 'penulis'), orderBy('displayName', 'asc'));
+    }, [firestore, applicationStatus]);
+    const { data: authors, isLoading: areAuthorsLoading } = useCollection<AppUser>(authorsQuery);
 
     useEffect(() => {
         if (user && firestore) {
@@ -59,20 +70,22 @@ export default function JoinAuthorPage() {
 
             // Check application status
             const checkStatus = async () => {
+                setIsLoadingStatus(true);
                 const userDocRef = doc(firestore, 'users', user.uid);
                 const userDoc = await getDoc(userDocRef);
-                if (userDoc.exists() && userDoc.data().role === 'penulis') {
+
+                if (userDoc.exists() && (userDoc.data().role === 'penulis' || userDoc.data().role === 'admin')) {
                     setApplicationStatus('author');
-                    setIsLoadingStatus(false);
-                    return;
-                }
+                } else {
+                    const requestsRef = collection(firestore, 'authorRequests');
+                    const q = query(requestsRef, where('userId', '==', user.uid), where('status', '==', 'pending'));
+                    const querySnapshot = await getDocs(q);
 
-                const requestsRef = collection(firestore, 'authorRequests');
-                const q = query(requestsRef, where('userId', '==', user.uid), where('status', '==', 'pending'));
-                const querySnapshot = await getDocs(q);
-
-                if (!querySnapshot.empty) {
-                    setApplicationStatus('pending');
+                    if (!querySnapshot.empty) {
+                        setApplicationStatus('pending');
+                    } else {
+                        setApplicationStatus('not_applied');
+                    }
                 }
                 setIsLoadingStatus(false);
             };
@@ -171,18 +184,64 @@ export default function JoinAuthorPage() {
 
     if (applicationStatus === 'author') {
          return (
-            <div className="max-w-2xl mx-auto">
-                <Card className="text-center">
-                    <CardHeader>
-                        <div className="mx-auto bg-primary/10 p-3 rounded-full w-fit mb-4">
-                            <BookUser className="h-8 w-8 text-primary" />
-                        </div>
-                        <CardTitle className="font-headline text-2xl">Anda Sudah Menjadi Penulis</CardTitle>
-                        <CardDescription>
-                            Anda sudah menjadi bagian dari tim penulis kami. Mulailah menulis cerita Anda!
-                        </CardDescription>
-                    </CardHeader>
-                </Card>
+            <div className="space-y-8">
+                <div className="text-center">
+                    <h1 className="text-4xl font-headline font-bold text-primary">Temui Para Penulis Kami</h1>
+                    <p className="mt-2 text-lg text-muted-foreground">Jelajahi profil para penulis berbakat yang membentuk komunitas Litera.</p>
+                </div>
+                {areAuthorsLoading ? (
+                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {Array.from({length: 6}).map((_, i) => (
+                             <Card key={i}>
+                                <CardContent className="p-6 text-center flex flex-col items-center">
+                                    <Skeleton className="w-24 h-24 rounded-full mb-4"/>
+                                    <Skeleton className="h-6 w-3/4 mb-1"/>
+                                    <Skeleton className="h-4 w-1/2"/>
+                                    <Skeleton className="h-4 w-full mt-4"/>
+                                    <Skeleton className="h-4 w-5/6 mt-1"/>
+                                </CardContent>
+                                <CardFooter className="flex justify-around bg-muted/50 p-4">
+                                    <Skeleton className="h-8 w-16" />
+                                    <Skeleton className="h-8 w-16" />
+                                </CardFooter>
+                            </Card>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {authors?.map(author => (
+                            <Link href={`/profile/${author.username}`} key={author.id}>
+                                <Card className="hover:shadow-xl transition-shadow duration-300 h-full flex flex-col">
+                                    <CardContent className="p-6 text-center flex flex-col items-center flex-grow">
+                                        <Avatar className="w-24 h-24 mb-4 border-4 border-primary/20">
+                                            <AvatarImage src={author.photoURL} alt={author.displayName} />
+                                            <AvatarFallback>{author.displayName.charAt(0)}</AvatarFallback>
+                                        </Avatar>
+                                        <h3 className="font-headline text-xl font-bold">{author.displayName}</h3>
+                                        <p className="text-sm text-muted-foreground">@{author.username}</p>
+                                        <p className="mt-4 text-sm text-muted-foreground text-center flex-grow">{author.bio}</p>
+                                    </CardContent>
+                                    <CardFooter className="flex justify-around bg-muted/50 p-4 mt-auto">
+                                        <div className="text-center flex items-center gap-2">
+                                            <Users className="h-4 w-4 text-muted-foreground"/>
+                                            <div>
+                                                <p className="font-bold">{new Intl.NumberFormat('id-ID').format(author.followers)}</p>
+                                                <p className="text-xs text-muted-foreground -mt-1">Pengikut</p>
+                                            </div>
+                                        </div>
+                                        <div className="text-center flex items-center gap-2">
+                                            <UserCheck className="h-4 w-4 text-muted-foreground"/>
+                                            <div>
+                                                <p className="font-bold">{new Intl.NumberFormat('id-ID').format(author.following)}</p>
+                                                <p className="text-xs text-muted-foreground -mt-1">Mengikuti</p>
+                                            </div>
+                                        </div>
+                                    </CardFooter>
+                                </Card>
+                            </Link>
+                        ))}
+                    </div>
+                )}
             </div>
         )
     }
