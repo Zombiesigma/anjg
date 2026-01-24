@@ -55,7 +55,7 @@ export function UserNav() {
   const userProfileRef = (firestore && user) ? doc(firestore, 'users', user.uid) : null;
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<AppUser>(userProfileRef);
   
-  const isAdmin = userProfile?.role === 'admin';
+  const isAdmin = userProfile?.role?.toLowerCase() === 'admin';
 
   // In a real app, you'd use a theme provider context
   const toggleTheme = () => {
