@@ -28,6 +28,7 @@ export default function ProfilePage() {
   const [isCreatingChat, setIsCreatingChat] = useState(false);
   const [isTogglingFollow, setIsTogglingFollow] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [followsBack, setFollowsBack] = useState(false);
   const [isStoryViewerOpen, setIsStoryViewerOpen] = useState(false);
 
   const userQuery = useMemo(() => (
@@ -51,9 +52,20 @@ export default function ProfilePage() {
   ), [firestore, currentUser, user, isOwnProfile]);
   const { data: followingDoc, isLoading: isFollowingLoading } = useDoc<Follow>(followingRef);
   
+  const followerRef = useMemo(() => (
+    (firestore && currentUser && user && !isOwnProfile)
+      ? doc(firestore, 'users', user.uid, 'following', currentUser.uid)
+      : null
+  ), [firestore, currentUser, user, isOwnProfile]);
+  const { data: isFollowerDoc, isLoading: isFollowerLoading } = useDoc<Follow>(followerRef);
+
   useEffect(() => {
     setIsFollowing(!!followingDoc);
   }, [followingDoc]);
+  
+  useEffect(() => {
+    setFollowsBack(!!isFollowerDoc);
+  }, [isFollowerDoc]);
   
   const publishedBooksQuery = useMemo(() => (
     (firestore && user) 
@@ -265,13 +277,13 @@ export default function ProfilePage() {
                           </Link>
                       ) : (
                           <>
-                              <Button onClick={handleToggleFollow} disabled={isTogglingFollow || isFollowingLoading || isCurrentUserProfileLoading} variant={isFollowing ? "outline" : "default"}>
-                                {(isTogglingFollow || isFollowingLoading || isCurrentUserProfileLoading) ? (
+                              <Button onClick={handleToggleFollow} disabled={isTogglingFollow || isFollowingLoading || isCurrentUserProfileLoading || isFollowerLoading} variant={isFollowing ? "outline" : "default"}>
+                                {(isTogglingFollow || isFollowingLoading || isCurrentUserProfileLoading || isFollowerLoading) ? (
                                   <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
                                 ) : (
                                   isFollowing ? <UserMinus className="mr-2 h-4 w-4" /> : <UserPlus className="mr-2 h-4 w-4"/>
                                 )}
-                                {isFollowing ? 'Berhenti Mengikuti' : 'Ikuti'}
+                                {isFollowing ? 'Berhenti Mengikuti' : (followsBack ? 'Follback' : 'Ikuti')}
                               </Button>
                               <Button variant="outline" onClick={handleStartChat} disabled={isCreatingChat || areChatsLoading || isCurrentUserProfileLoading}>
                                   {(isCreatingChat || areChatsLoading || isCurrentUserProfileLoading) ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <MessageCircle className="mr-2 h-4 w-4"/>}
