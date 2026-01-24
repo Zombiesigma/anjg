@@ -15,7 +15,7 @@ import { MoreVertical, MessageSquare, Loader2, Send, Search, ArrowLeft, User, Tr
 import { cn } from '@/lib/utils';
 import type { Chat, ChatMessage, TextMessage } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
-import { formatDistanceToNow, isSameDay, format } from 'date-fns';
+import { formatDistanceToNow, isSameDay, format, isToday, isYesterday } from 'date-fns';
 import { id } from 'date-fns/locale';
 import {
   DropdownMenu,
@@ -180,6 +180,12 @@ export default function MessagesPage() {
       setIsSending(false);
     }
   };
+
+  const formatDateMarker = (date: Date) => {
+    if (isToday(date)) return 'Hari Ini';
+    if (isYesterday(date)) return 'Kemarin';
+    return format(date, 'eeee, d MMMM yyyy', { locale: id });
+  }
   
   return (
     <div className="h-[calc(100vh-theme(spacing.14)-2px)] -mt-6 -mx-4 md:-mx-6 border rounded-lg overflow-hidden">
@@ -322,7 +328,7 @@ export default function MessagesPage() {
                           >
                             <div className="h-px bg-border flex-1" />
                             <span className="text-xs text-muted-foreground px-3">
-                              {format(item.date, 'eeee, d MMMM yyyy', { locale: id })}
+                              {formatDateMarker(item.date)}
                             </span>
                             <div className="h-px bg-border flex-1" />
                           </motion.div>
@@ -428,3 +434,5 @@ export default function MessagesPage() {
     </div>
   )
 }
+
+    
