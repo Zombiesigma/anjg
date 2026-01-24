@@ -18,7 +18,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Loader2, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import type { Book, Chat } from '@/lib/types';
+import type { Book, Chat, BookShareMessage } from '@/lib/types';
 
 interface ShareDialogProps {
   book: Book;
@@ -44,19 +44,24 @@ export function ShareDialog({ book, children }: ShareDialogProps) {
   const handleSend = async () => {
     if (!firestore || !currentUser || !selectedChatId || !book) return;
     
+    setIsSending(true);
     const otherParticipant = chatThreads?.find(c => c.id === selectedChatId)?.participants.find(p => p.uid !== currentUser.uid);
     if (!otherParticipant) {
       toast({ variant: 'destructive', title: 'Gagal mengirim.' });
       setIsSending(false);
       return;
     }
-
-    setIsSending(true);
-    const messageText = `Lihat buku ini: ${book.title}\n${window.location.origin}/books/${book.id}`;
-    const messageData = {
-      text: messageText,
+    
+    const messageData: Omit<BookShareMessage, 'id' | 'createdAt'> & { createdAt: any } = {
+      type: 'book_share',
       senderId: currentUser.uid,
       createdAt: serverTimestamp(),
+      book: {
+        id: book.id,
+        title: book.title,
+        coverUrl: book.coverUrl,
+        authorName: book.authorName,
+      },
     };
 
     try {

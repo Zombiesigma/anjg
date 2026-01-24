@@ -76,12 +76,33 @@ export type Chat = {
   unreadCounts?: { [key: string]: number };
 };
 
-export type ChatMessage = {
+export type TextMessage = {
   id: string;
+  type: 'text';
   text: string;
   senderId: string;
   createdAt: Timestamp;
 };
+
+export type BookShareMessage = {
+  id: string;
+  type: 'book_share';
+  senderId: string;
+  createdAt: Timestamp;
+  book: {
+    id: string;
+    title: string;
+    coverUrl: string;
+    authorName: string;
+  };
+};
+
+export type ChatMessage = (TextMessage | BookShareMessage) & {
+  id: string;
+  senderId: string;
+  createdAt: Timestamp;
+};
+
 
 export type Notification = {
   id: string;

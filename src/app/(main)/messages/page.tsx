@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect, useRef, Fragment } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useFirestore, useUser, useCollection } from '@/firebase';
 import { collection, query, where, orderBy, addDoc, serverTimestamp, doc, updateDoc, type Timestamp, writeBatch, increment } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -12,7 +13,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
 import { MoreVertical, MessageSquare, Loader2, Send, Search, ArrowLeft, User, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { Chat, ChatMessage } from '@/lib/types';
+import type { Chat, ChatMessage, TextMessage } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow, isSameDay, format } from 'date-fns';
 import { id } from 'date-fns/locale';
@@ -81,7 +82,8 @@ export default function MessagesPage() {
   const messageGroups = useMemo(() => {
     if (!messages) return [];
     
-    const grouped: (ChatMessage | { type: 'date_marker', id: string, date: Date })[] = [];
+    type MessageGroupItem = ChatMessage | { type: 'date_marker', id: string, date: Date };
+    const grouped: MessageGroupItem[] = [];
     
     messages.forEach((msg, index) => {
         if (!msg.createdAt) return; 
@@ -145,7 +147,8 @@ export default function MessagesPage() {
     if (!newMessage.trim() || !currentUser || !selectedChatId || !firestore || !otherParticipant) return;
     setIsSending(true);
 
-    const messageData = {
+    const messageData: Omit<TextMessage, 'id' | 'createdAt'> & { createdAt: any } = {
+      type: 'text',
       text: newMessage,
       senderId: currentUser.uid,
       createdAt: serverTimestamp(),
@@ -327,6 +330,8 @@ export default function MessagesPage() {
                       }
 
                       const msg = item as ChatMessage;
+                      const isSender = msg.senderId === currentUser?.uid;
+
                       return (
                         <motion.div
                           key={msg.id}
@@ -335,26 +340,51 @@ export default function MessagesPage() {
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: 10 }}
                           transition={{ duration: 0.3, ease: 'easeOut' }}
-                          className={cn(
-                            "flex items-end gap-2.5",
-                            msg.senderId === currentUser?.uid && "justify-end"
-                          )}
+                          className={cn("flex items-end gap-2.5", isSender && "justify-end")}
                         >
-                          {msg.senderId !== currentUser?.uid && (
+                          {!isSender && otherParticipant && (
                             <Avatar className="h-8 w-8 self-end">
                               <AvatarImage src={otherParticipant?.photoURL} alt={otherParticipant?.displayName} />
                               <AvatarFallback>{otherParticipant?.displayName.charAt(0)}</AvatarFallback>
                             </Avatar>
                           )}
-                           <div className={cn(
-                            "max-w-lg p-3 rounded-2xl",
-                            msg.senderId === currentUser?.uid
-                              ? "bg-primary text-primary-foreground rounded-br-lg"
-                              : "bg-background rounded-bl-lg shadow-sm"
-                          )}>
-                              <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>
-                          </div>
-                          {msg.senderId === currentUser?.uid && currentUser && (
+                          
+                           {msg.type === 'book_share' && msg.book ? (
+                                <div className={cn(
+                                    "max-w-xs rounded-2xl overflow-hidden shadow-sm w-full",
+                                    isSender
+                                    ? "bg-primary text-primary-foreground rounded-br-none"
+                                    : "bg-background rounded-bl-none border"
+                                )}>
+                                <Link href={`/books/${msg.book.id}`} className="block hover:bg-black/10 transition-colors">
+                                    <div className="p-3">
+                                        <p className="text-sm font-medium">Lihat buku yang saya bagikan:</p>
+                                    </div>
+                                    <div className={cn("p-3 flex gap-3 items-start", isSender ? "bg-black/20" : "bg-muted")}>
+                                        <div className="relative h-20 w-14 flex-shrink-0">
+                                            <Image src={msg.book.coverUrl} alt={msg.book.title} fill className="object-cover rounded-sm bg-muted"/>
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="font-bold truncate">{msg.book.title}</p>
+                                            <p className={cn("text-sm", isSender ? "text-primary-foreground/90" : "text-muted-foreground")}>
+                                                oleh {msg.book.authorName}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </Link>
+                                </div>
+                           ) : (
+                               <div className={cn(
+                                "max-w-lg p-3 rounded-2xl",
+                                isSender
+                                ? "bg-primary text-primary-foreground rounded-br-lg"
+                                : "bg-background rounded-bl-lg shadow-sm"
+                               )}>
+                                  <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>
+                               </div>
+                           )}
+
+                          {isSender && currentUser && (
                             <Avatar className="h-8 w-8 self-end">
                                 <AvatarImage src={currentUser.photoURL ?? ''} alt={currentUser.displayName ?? ''}/>
                                 <AvatarFallback>{currentUser.displayName?.charAt(0) ?? 'U'}</AvatarFallback>
