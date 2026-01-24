@@ -15,7 +15,7 @@ service cloud.firestore {
       allow get: if true;
       allow list: if isSignedIn();
       // Users can update their own profile, or other users can update their follower count.
-      allow update: if isSignedIn() && (request.auth.uid == userId || (request.writeFields.size() == 1 && 'followers' in request.writeFields));
+      allow update: if isSignedIn() && (request.auth.uid == userId || (request.writeFields.size() == 1 && 'followers' in request.writeFields) || (request.writeFields.size() == 1 && 'following' in request.writeFields));
       
       match /favorites/{bookId} {
         allow read, write: if isSignedIn() && request.auth.uid == userId;
@@ -72,8 +72,12 @@ service cloud.firestore {
     
     // --- Author Requests ---
     match /authorRequests/{requestId} {
+      // A user can create their own request.
       allow create: if isSignedIn() && request.auth.uid == request.resource.data.userId;
-      allow read, write: if isAdmin();
+      // Admin can read any request, user can read their own.
+      allow read: if isAdmin() || (get(/databases/$(database)/documents/authorRequests/$(requestId)).data.userId == request.auth.uid);
+      // Only an admin can update or delete a request.
+      allow update, delete: if isAdmin();
     }
     
     // --- Chats & Messages ---

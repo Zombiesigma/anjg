@@ -5,9 +5,9 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useFirestore, useUser, useCollection } from '@/firebase';
-import { collection, serverTimestamp, query, where, getDocs, doc, getDoc, writeBatch, orderBy } from 'firebase/firestore';
-import type { User as AppUser } from '@/lib/types';
+import { useFirestore, useUser, useCollection, useDoc } from '@/firebase';
+import { collection, serverTimestamp, query, where, getDocs, doc, writeBatch } from 'firebase/firestore';
+import type { AuthorRequest, User as AppUser } from '@/lib/types';
 import {
   Card,
   CardContent,
@@ -38,8 +38,8 @@ export default function JoinAuthorPage() {
     const firestore = useFirestore();
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [applicationStatus, setApplicationStatus] = useState<'not_applied' | 'pending' | 'author'>('not_applied');
-    const [isLoadingStatus, setIsLoadingStatus] = useState(true);
+
+    const [applicationStatus, setApplicationStatus] = useState<'loading' | 'not_applied' | 'pending' | 'author'>('loading');
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -50,51 +50,49 @@ export default function JoinAuthorPage() {
             motivation: "",
         },
     });
+
+    const { data: userProfile, isLoading: isProfileLoading } = useDoc<AppUser>(
+      (firestore && user) ? doc(firestore, 'users', user.uid) : null
+    );
+
+    const pendingRequestQuery = useMemo(() => (
+        (firestore && user) 
+        ? query(collection(firestore, 'authorRequests'), where('userId', '==', user.uid), where('status', '==', 'pending')) 
+        : null
+    ), [firestore, user]);
+    const { data: pendingRequests, isLoading: isRequestsLoading } = useCollection<AuthorRequest>(pendingRequestQuery);
     
     // Fetch authors only when the current user is an author or admin
     const authorsQuery = useMemo(() => {
         if (!firestore || applicationStatus !== 'author') return null;
-        return query(collection(firestore, 'users'), where('role', '==', 'penulis'), orderBy('displayName', 'asc'));
+        return query(collection(firestore, 'users'), where('role', '==', 'penulis'), where('displayName', 'asc'));
     }, [firestore, applicationStatus]);
     const { data: authors, isLoading: areAuthorsLoading } = useCollection<AppUser>(authorsQuery);
 
     useEffect(() => {
-        if (user && firestore) {
-            // Pre-fill form
-            form.reset({
-                name: user.displayName || '',
-                email: user.email || '',
-                portfolio: '',
-                motivation: '',
-            });
+      if (isUserLoading || isProfileLoading || isRequestsLoading) {
+          setApplicationStatus('loading');
+          return;
+      }
 
-            // Check application status
-            const checkStatus = async () => {
-                setIsLoadingStatus(true);
-                const userDocRef = doc(firestore, 'users', user.uid);
-                const userDoc = await getDoc(userDocRef);
+      if (user && userProfile) {
+          form.reset({
+              name: user.displayName || '',
+              email: user.email || '',
+          });
 
-                if (userDoc.exists() && (userDoc.data().role === 'penulis' || userDoc.data().role === 'admin')) {
-                    setApplicationStatus('author');
-                } else {
-                    const requestsRef = collection(firestore, 'authorRequests');
-                    const q = query(requestsRef, where('userId', '==', user.uid), where('status', '==', 'pending'));
-                    const querySnapshot = await getDocs(q);
+          if (userProfile.role === 'penulis' || userProfile.role === 'admin') {
+              setApplicationStatus('author');
+          } else if (pendingRequests && pendingRequests.length > 0) {
+              setApplicationStatus('pending');
+          } else {
+              setApplicationStatus('not_applied');
+          }
+      } else if (!isUserLoading) {
+          setApplicationStatus('not_applied');
+      }
+    }, [user, isUserLoading, userProfile, isProfileLoading, pendingRequests, isRequestsLoading, form]);
 
-                    if (!querySnapshot.empty) {
-                        setApplicationStatus('pending');
-                    } else {
-                        setApplicationStatus('not_applied');
-                    }
-                }
-                setIsLoadingStatus(false);
-            };
-
-            checkStatus();
-        } else if (!isUserLoading) {
-            setIsLoadingStatus(false);
-        }
-    }, [user, firestore, form, isUserLoading]);
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
         if (!firestore || !user) return;
@@ -155,7 +153,7 @@ export default function JoinAuthorPage() {
         }
     }
     
-    if (isUserLoading || isLoadingStatus) {
+    if (applicationStatus === 'loading') {
         return (
              <div className="max-w-2xl mx-auto">
                 <Card>
