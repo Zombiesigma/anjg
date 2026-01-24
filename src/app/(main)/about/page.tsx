@@ -9,7 +9,7 @@ import { Logo } from '@/components/Logo';
 import { Github, Globe, Mail, Phone, Send } from 'lucide-react';
 
 const devPortfolio = "https://github.com/Guntur-s"; // Replace with actual portfolio URL
-const devImage = "https://images.unsplash.com/photo-1636377985931-898218afd306?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8bWFuJTIwcG9ydHJhaXR8ZW58MHx8fHwxNzY5MTAzMjcxfDA&ixlib=rb-4.1.0&q=80&w=1080";
+const devImage = "https://www.gunturpadilah.web.id/pp.jpg";
 const devName = "Guntur P.";
 const devBio = "Pengembang Aplikasi Litera. Pengembang tumpukan penuh dengan hasrat untuk menciptakan aplikasi web yang indah dan fungsional.";
 
