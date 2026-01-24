@@ -4,9 +4,42 @@ import './globals.css';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 
+// TODO: Ganti dengan domain produksi Anda yang sebenarnya
+const productionUrl = 'https://litera.app';
+
 export const metadata: Metadata = {
-  title: 'Litera',
-  description: 'Platform sosial literasi digital modern.',
+  metadataBase: new URL(productionUrl),
+  title: {
+    default: 'Litera - Platform Sosial Literasi Digital',
+    template: '%s | Litera',
+  },
+  description: 'Temukan, baca, dan tulis cerita. Terhubung dengan komunitas pembaca dan penulis yang bersemangat di Litera, platform sosial literasi digital modern.',
+  keywords: ['buku', 'novel', 'cerita', 'membaca', 'menulis', 'literasi', 'komunitas', 'platform sosial'],
+  authors: [{ name: 'Guntur P.', url: 'https://github.com/Guntur-s' }],
+  creator: 'Guntur P.',
+  openGraph: {
+    title: {
+      default: 'Litera - Platform Sosial Literasi Digital',
+      template: '%s | Litera',
+    },
+    description: 'Temukan, baca, dan tulis cerita. Terhubung dengan komunitas pembaca dan penulis.',
+    siteName: 'Litera',
+    url: productionUrl,
+    locale: 'id_ID',
+    type: 'website',
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
+   twitter: {
+    card: 'summary',
+    title: {
+      default: 'Litera - Platform Sosial Literasi Digital',
+      template: '%s | Litera',
+    },
+    description: 'Temukan, baca, dan tulis cerita. Terhubung dengan komunitas pembaca dan penulis.',
+  },
 };
 
 export default function RootLayout({
