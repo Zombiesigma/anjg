@@ -133,6 +133,11 @@
             "timestamp": { "type": "string", "format": "date-time" },
             "senderId": { "type": "string" }
           }
+        },
+        "unreadCounts": {
+            "type": "object",
+            "description": "Map of userId to their unread message count in this chat.",
+            "additionalProperties": { "type": "number" }
         }
       },
       "required": ["participantUids", "participants"]

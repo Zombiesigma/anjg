@@ -99,6 +99,15 @@ export default function ProfilePage() {
                 { uid: currentUser.uid, displayName: currentUser.displayName!, photoURL: currentUser.photoURL! },
                 { uid: user.uid, displayName: user.displayName, photoURL: user.photoURL }
             ],
+            unreadCounts: {
+                [currentUser.uid]: 0,
+                [user.uid]: 0,
+            },
+            lastMessage: {
+                text: 'Percakapan dimulai.',
+                senderId: 'system',
+                timestamp: serverTimestamp()
+            }
         };
         const chatsCollection = collection(firestore, 'chats');
         const docRef = await addDoc(chatsCollection, newChatData);

@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useFirestore, useUser, useCollection } from '@/firebase';
-import { collection, query, where, orderBy, addDoc, serverTimestamp, doc, updateDoc, type Timestamp } from 'firebase/firestore';
+import { collection, query, where, orderBy, addDoc, serverTimestamp, doc, updateDoc, type Timestamp, writeBatch, increment } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { MoreVertical, MessageSquare, Loader2, Send, Search, ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Chat, ChatMessage } from '@/lib/types';
+import { Badge } from '@/components/ui/badge';
 
 export default function MessagesPage() {
   const firestore = useFirestore();
@@ -24,6 +25,29 @@ export default function MessagesPage() {
   const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // 1. Fetch user's chat threads
+  const chatThreadsQuery = useMemo(() => (
+    (firestore && currentUser)
+      ? query(collection(firestore, 'chats'), where('participantUids', 'array-contains', currentUser.uid))
+      : null
+  ), [firestore, currentUser]);
+  const { data: chatThreads, isLoading: isLoadingThreads } = useCollection<Chat>(chatThreadsQuery);
+
+  // Effect to reset unread count when a chat is opened
+  useEffect(() => {
+    if (!firestore || !currentUser?.uid || !selectedChatId || !chatThreads) return;
+
+    const chatDocRef = doc(firestore, 'chats', selectedChatId);
+    const selectedChatData = chatThreads.find(c => c.id === selectedChatId);
+    
+    if (selectedChatData?.unreadCounts?.[currentUser.uid] > 0) {
+      updateDoc(chatDocRef, {
+        [`unreadCounts.${currentUser.uid}`]: 0
+      }).catch(error => console.error("Failed to reset unread count:", error));
+    }
+  }, [selectedChatId, currentUser?.uid, firestore, chatThreads]);
+
+
   useEffect(() => {
     const chatIdFromUrl = searchParams.get('chatId');
     if (chatIdFromUrl) {
@@ -32,14 +56,6 @@ export default function MessagesPage() {
       setSelectedChatId(null);
     }
   }, [searchParams]);
-
-  // 1. Fetch user's chat threads
-  const chatThreadsQuery = useMemo(() => (
-    (firestore && currentUser)
-      ? query(collection(firestore, 'chats'), where('participantUids', 'array-contains', currentUser.uid))
-      : null
-  ), [firestore, currentUser]);
-  const { data: chatThreads, isLoading: isLoadingThreads } = useCollection<Chat>(chatThreadsQuery);
 
   // 2. Fetch messages for the selected chat
   const messagesQuery = useMemo(() => (
@@ -76,7 +92,7 @@ export default function MessagesPage() {
   };
 
   const handleSendMessage = async () => {
-    if (!newMessage.trim() || !currentUser || !selectedChatId || !firestore) return;
+    if (!newMessage.trim() || !currentUser || !selectedChatId || !firestore || !otherParticipant) return;
     setIsSending(true);
 
     const messageData = {
@@ -86,17 +102,23 @@ export default function MessagesPage() {
     };
 
     try {
+      const batch = writeBatch(firestore);
+
       const messagesCol = collection(firestore, 'chats', selectedChatId, 'messages');
-      await addDoc(messagesCol, messageData);
+      const newMessageRef = doc(messagesCol);
+      batch.set(newMessageRef, messageData);
       
       const chatDocRef = doc(firestore, 'chats', selectedChatId);
-      await updateDoc(chatDocRef, {
+      batch.update(chatDocRef, {
         lastMessage: {
           text: newMessage,
           senderId: currentUser.uid,
           timestamp: serverTimestamp(),
-        }
+        },
+        [`unreadCounts.${otherParticipant.uid}`]: increment(1)
       });
+      
+      await batch.commit();
       
       setNewMessage("");
     } catch (error) {
@@ -132,13 +154,14 @@ export default function MessagesPage() {
               {chatThreads?.sort((a, b) => (b.lastMessage?.timestamp?.toMillis() || 0) - (a.lastMessage?.timestamp?.toMillis() || 0)).map(chat => {
                 const otherP = chat.participants.find(p => p.uid !== currentUser?.uid);
                 if (!otherP) return null;
+                const unreadCount = chat.unreadCounts?.[currentUser?.uid ?? ''] ?? 0;
                 
                 return (
                   <button
                     key={chat.id}
                     onClick={() => handleSelectChat(chat.id)}
                     className={cn(
-                      "flex items-center gap-3 p-4 text-left hover:bg-accent",
+                      "flex items-center gap-3 p-4 text-left hover:bg-accent w-full",
                       selectedChatId === chat.id && "bg-accent"
                     )}
                   >
@@ -148,8 +171,18 @@ export default function MessagesPage() {
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold truncate">{otherP.displayName}</p>
-                      <p className="text-sm text-muted-foreground truncate">{chat.lastMessage?.text}</p>
+                      <p className={cn(
+                          "text-sm text-muted-foreground truncate",
+                          unreadCount > 0 && "font-bold text-foreground"
+                      )}>
+                        {chat.lastMessage?.senderId === currentUser?.uid && 'Anda: '}{chat.lastMessage?.text}
+                      </p>
                     </div>
+                    {unreadCount > 0 && (
+                      <Badge className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full p-0">
+                        {unreadCount}
+                      </Badge>
+                    )}
                   </button>
                 )
               })}

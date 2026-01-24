@@ -71,6 +71,7 @@ export type Chat = {
     timestamp: Timestamp;
     senderId: string;
   };
+  unreadCounts?: { [key: string]: number };
 };
 
 export type ChatMessage = {

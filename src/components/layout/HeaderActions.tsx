@@ -1,13 +1,33 @@
 'use client';
-import { useUser } from '@/firebase';
+import { useUser, useFirestore, useCollection } from '@/firebase';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { MessageSquare, Bell } from 'lucide-react';
 import { UserNav } from './UserNav';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useMemo } from 'react';
+import type { Chat } from '@/lib/types';
+import { collection, query, where } from 'firebase/firestore';
+
 
 export function HeaderActions() {
   const { user, isLoading } = useUser();
+  const firestore = useFirestore();
+
+  const chatThreadsQuery = useMemo(() => (
+    (firestore && user)
+      ? query(collection(firestore, 'chats'), where('participantUids', 'array-contains', user.uid))
+      : null
+  ), [firestore, user]);
+  const { data: chatThreads } = useCollection<Chat>(chatThreadsQuery);
+
+  const totalUnreadCount = useMemo(() => {
+    if (!chatThreads || !user) return 0;
+    return chatThreads.reduce((total, chat) => {
+      return total + (chat.unreadCounts?.[user.uid] ?? 0);
+    }, 0);
+  }, [chatThreads, user]);
+
 
   if (isLoading) {
     return (
@@ -21,11 +41,17 @@ export function HeaderActions() {
   if (user) {
     return (
       <nav className="flex items-center gap-2">
-        <Link href="/messages">
+        <Link href="/messages" className="relative">
           <Button variant="ghost" size="icon">
             <MessageSquare className="h-5 w-5" />
             <span className="sr-only">Pesan</span>
           </Button>
+          {totalUnreadCount > 0 && (
+            <span className="absolute top-1.5 right-1.5 flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary"></span>
+            </span>
+          )}
         </Link>
         <Link href="/notifications">
           <Button variant="ghost" size="icon">
