@@ -12,7 +12,8 @@ service cloud.firestore {
 
     // --- Users ---
     match /users/{userId} {
-      allow read: if true;
+      allow get: if true;
+      allow list: if isSignedIn();
       // Users can update their own profile, or other users can update their follower count.
       allow update: if isSignedIn() && (request.auth.uid == userId || (request.writeFields.size() == 1 && 'followers' in request.writeFields));
       
