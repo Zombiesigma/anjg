@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useFirestore, useUser, useCollection, useDoc } from '@/firebase';
+import { useFirestore, useUser, useDoc, useCollection } from '@/firebase';
 import { collection, serverTimestamp, doc, writeBatch, getDocs, query, where, orderBy } from 'firebase/firestore';
 import type { AuthorRequest, User as AppUser } from '@/lib/types';
 import {
@@ -21,7 +21,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { BookUser, Loader2, Send, Info, Users, UserCheck } from "lucide-react";
+import { BookUser, Loader2, Send, Info } from "lucide-react";
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
@@ -38,6 +38,7 @@ export default function JoinAuthorPage() {
     const firestore = useFirestore();
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    
     const [applicationStatus, setApplicationStatus] = useState<'loading' | 'not_applied' | 'pending' | 'author'>('loading');
 
     const form = useForm<z.infer<typeof formSchema>>({
@@ -54,21 +55,18 @@ export default function JoinAuthorPage() {
       (firestore && user) ? doc(firestore, 'users', user.uid) : null
     );
 
-    const requestsQuery = useMemo(() => (
-      (firestore && user) ? collection(firestore, 'authorRequests') : null
+    const authorRequestsQuery = useMemo(() => (
+      (firestore && user) ? query(collection(firestore, 'authorRequests'), where('userId', '==', user.uid)) : null
     ), [firestore, user]);
-    const { data: allRequests, isLoading: areRequestsLoading } = useCollection<AuthorRequest>(requestsQuery);
-    const pendingRequests = useMemo(() => (
-        allRequests?.filter(req => req.userId === user?.uid && req.status === 'pending')
-    ), [allRequests, user]);
+    const { data: pendingRequests, isLoading: areRequestsLoading } = useCollection<AuthorRequest>(authorRequestsQuery);
     
     const usersQuery = useMemo(() => (
-        firestore ? collection(firestore, 'users') : null
+        firestore ? query(collection(firestore, 'users'), orderBy('displayName', 'asc')) : null
     ), [firestore]);
     const { data: allUsers, isLoading: areUsersLoading } = useCollection<AppUser>(usersQuery);
     
     const authors = useMemo(() => (
-      allUsers?.filter(u => u.role === 'penulis').sort((a,b) => a.displayName.localeCompare(b.displayName))
+      allUsers?.filter(u => u.role === 'penulis')
     ), [allUsers]);
 
     useEffect(() => {
@@ -85,7 +83,7 @@ export default function JoinAuthorPage() {
 
           if (userProfile.role === 'penulis' || userProfile.role === 'admin') {
               setApplicationStatus('author');
-          } else if (pendingRequests && pendingRequests.length > 0) {
+          } else if (pendingRequests && pendingRequests.find(r => r.status === 'pending')) {
               setApplicationStatus('pending');
           } else {
               setApplicationStatus('not_applied');
@@ -210,33 +208,32 @@ export default function JoinAuthorPage() {
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {authors?.map(author => (
-                            <Link href={`/profile/${author.username}`} key={author.id}>
-                                <Card className="hover:shadow-xl transition-shadow duration-300 h-full flex flex-col">
-                                    <CardContent className="p-6 text-center flex flex-col items-center flex-grow">
-                                        <Avatar className="w-24 h-24 mb-4 border-4 border-primary/20">
+                            <Link href={`/profile/${author.username}`} key={author.id} className="block group">
+                                <Card className="relative overflow-hidden rounded-xl border-2 border-transparent transition-all duration-300 h-full group-hover:border-primary group-hover:shadow-2xl group-hover:-translate-y-2">
+                                    <div className="absolute -top-1/3 -right-1/4 w-48 h-48 bg-primary/10 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                    <div className="absolute -bottom-1/3 -left-1/4 w-48 h-48 bg-accent/10 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+                                    <CardContent className="relative z-10 p-6 text-center flex flex-col items-center h-full">
+                                        <Avatar className="w-24 h-24 mb-4 border-4 border-background shadow-md transition-all duration-300 group-hover:border-primary/20 group-hover:scale-105">
                                             <AvatarImage src={author.photoURL} alt={author.displayName} />
                                             <AvatarFallback>{author.displayName.charAt(0)}</AvatarFallback>
                                         </Avatar>
-                                        <h3 className="font-headline text-xl font-bold">{author.displayName}</h3>
+                                        <h3 className="font-headline text-xl font-bold text-foreground">{author.displayName}</h3>
                                         <p className="text-sm text-muted-foreground">@{author.username}</p>
-                                        <p className="mt-4 text-sm text-muted-foreground text-center flex-grow">{author.bio}</p>
+                                        
+                                        <p className="mt-4 text-sm text-muted-foreground text-center line-clamp-3 flex-grow min-h-[60px]">{author.bio || 'Tidak ada bio.'}</p>
+                                        
+                                        <div className="mt-auto pt-4 flex justify-center gap-6 text-foreground w-full">
+                                            <div className="text-center">
+                                                <p className="font-bold text-lg">{new Intl.NumberFormat('id-ID').format(author.followers)}</p>
+                                                <p className="text-xs text-muted-foreground">Pengikut</p>
+                                            </div>
+                                            <div className="text-center">
+                                                <p className="font-bold text-lg">{new Intl.NumberFormat('id-ID').format(author.following)}</p>
+                                                <p className="text-xs text-muted-foreground">Mengikuti</p>
+                                            </div>
+                                        </div>
                                     </CardContent>
-                                    <CardFooter className="flex justify-around bg-muted/50 p-4 mt-auto">
-                                        <div className="text-center flex items-center gap-2">
-                                            <Users className="h-4 w-4 text-muted-foreground"/>
-                                            <div>
-                                                <p className="font-bold">{new Intl.NumberFormat('id-ID').format(author.followers)}</p>
-                                                <p className="text-xs text-muted-foreground -mt-1">Pengikut</p>
-                                            </div>
-                                        </div>
-                                        <div className="text-center flex items-center gap-2">
-                                            <UserCheck className="h-4 w-4 text-muted-foreground"/>
-                                            <div>
-                                                <p className="font-bold">{new Intl.NumberFormat('id-ID').format(author.following)}</p>
-                                                <p className="text-xs text-muted-foreground -mt-1">Mengikuti</p>
-                                            </div>
-                                        </div>
-                                    </CardFooter>
                                 </Card>
                             </Link>
                         ))}
