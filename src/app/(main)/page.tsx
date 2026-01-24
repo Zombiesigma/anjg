@@ -1,20 +1,26 @@
 'use client';
 
-import { useFirestore, useCollection } from '@/firebase';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { useFirestore, useCollection, useUser, useDoc } from '@/firebase';
+import { collection, query, where, orderBy, doc } from 'firebase/firestore';
 import { useMemo, useState, useEffect } from 'react';
-import type { Book } from '@/lib/types';
+import type { Book, Story, User as AppUser } from '@/lib/types';
 import { BookCarousel } from '@/components/BookCarousel';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Sparkles, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { StoriesReel } from '@/components/stories/StoriesReel';
 
 const WELCOME_HERO_KEY = 'hasSeenWelcomeHero';
 
 export default function HomePage() {
   const firestore = useFirestore();
+  const { user: currentUser } = useUser();
   const [showHero, setShowHero] = useState(false);
+
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc<AppUser>(
+    (firestore && currentUser) ? doc(firestore, 'users', currentUser.uid) : null
+  );
 
   useEffect(() => {
     // This effect runs only on the client.
@@ -49,9 +55,28 @@ export default function HomePage() {
     if (!rawBooks) return null;
     return [...rawBooks].sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis()).slice(0, 12);
   }, [rawBooks]);
+  
+  const twentyFourHoursAgo = useMemo(() => new Date(Date.now() - 24 * 60 * 60 * 1000), []);
+  const storiesQuery = useMemo(() => (
+    firestore
+    ? query(
+        collection(firestore, 'stories'), 
+        where('createdAt', '>', twentyFourHoursAgo),
+        orderBy('createdAt', 'desc')
+      )
+    : null
+  ), [firestore, twentyFourHoursAgo]);
+
+  const { data: stories, isLoading: areStoriesLoading } = useCollection<Story>(storiesQuery);
+
 
   return (
     <div className="space-y-12">
+       <StoriesReel 
+            stories={stories || []} 
+            isLoading={areStoriesLoading || isProfileLoading}
+            currentUserProfile={userProfile}
+        />
       {/* Hero Section */}
       <AnimatePresence>
         {showHero && (

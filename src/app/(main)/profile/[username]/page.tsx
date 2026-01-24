@@ -5,8 +5,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useMemo, useState, useEffect } from 'react';
 import { useFirestore, useUser, useCollection, useDoc } from '@/firebase';
-import { collection, query, where, limit, addDoc, documentId, doc, writeBatch, increment, serverTimestamp } from 'firebase/firestore';
-import type { User, Book, Chat, Favorite, Follow } from '@/lib/types';
+import { collection, query, where, limit, addDoc, documentId, doc, writeBatch, increment, serverTimestamp, orderBy } from 'firebase/firestore';
+import type { User, Book, Chat, Favorite, Follow, Story } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -16,6 +16,8 @@ import { BookCard } from '@/components/BookCard';
 import { UserPlus, MessageCircle, Edit, Loader2, UserMinus } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
+import { StoryViewer } from '@/components/stories/StoryViewer';
+import { cn } from '@/lib/utils';
 
 export default function ProfilePage() {
   const params = useParams<{ username: string }>();
@@ -26,6 +28,7 @@ export default function ProfilePage() {
   const [isCreatingChat, setIsCreatingChat] = useState(false);
   const [isTogglingFollow, setIsTogglingFollow] = useState(false);
   const [isFollowing, setIsFollowing] = useState(false);
+  const [isStoryViewerOpen, setIsStoryViewerOpen] = useState(false);
 
   const userQuery = useMemo(() => (
     firestore 
@@ -52,7 +55,6 @@ export default function ProfilePage() {
     setIsFollowing(!!followingDoc);
   }, [followingDoc]);
   
-  // Fetch published books for the user's profile
   const publishedBooksQuery = useMemo(() => (
     (firestore && user) 
       ? query(collection(firestore, 'books'), where('authorId', '==', user.uid), where('status', '==', 'published')) 
@@ -60,7 +62,6 @@ export default function ProfilePage() {
   ), [firestore, user]);
   const { data: publishedBooks, isLoading: arePublishedBooksLoading } = useCollection<Book>(publishedBooksQuery);
 
-  // Fetch non-published books (drafts, pending, rejected) only for the user's own profile
   const otherBooksQuery = useMemo(() => (
     (firestore && user && isOwnProfile)
       ? query(collection(firestore, 'books'), where('authorId', '==', user.uid), where('status', 'in', ['draft', 'pending_review', 'rejected']))
@@ -77,7 +78,6 @@ export default function ProfilePage() {
     ), [firestore, currentUser]);
   const { data: userChats, isLoading: areChatsLoading } = useCollection<Chat>(chatsByUserQuery);
 
-  // Favorites should only be fetched and displayed for the user's own profile
   const favoritesQuery = useMemo(() => (
     (firestore && user && isOwnProfile) ? query(collection(firestore, 'users', user.uid, 'favorites')) : null
   ), [firestore, user, isOwnProfile]);
@@ -87,11 +87,26 @@ export default function ProfilePage() {
 
   const favoriteBooksQuery = useMemo(() => {
       if (!firestore || favoriteBookIds.length === 0 || !isOwnProfile) return null;
-      const chunks = favoriteBookIds.slice(0, 30); // Firestore 'in' query limit
+      const chunks = favoriteBookIds.slice(0, 30);
       if (chunks.length === 0) return null;
       return query(collection(firestore, 'books'), where(documentId(), 'in', chunks));
   }, [firestore, favoriteBookIds, isOwnProfile]);
   const { data: favoriteBooks, isLoading: areFavoriteBooksLoading } = useCollection<Book>(favoriteBooksQuery);
+  
+  const twentyFourHoursAgo = useMemo(() => new Date(Date.now() - 24 * 60 * 60 * 1000), []);
+  const allActiveStoriesQuery = useMemo(() => (
+    firestore
+    ? query(
+        collection(firestore, 'stories'), 
+        where('createdAt', '>', twentyFourHoursAgo),
+        orderBy('createdAt', 'desc')
+      )
+    : null
+  ), [firestore, twentyFourHoursAgo]);
+  const { data: allActiveStories, isLoading: areStoriesLoading } = useCollection<Story>(allActiveStoriesQuery);
+  const userHasActiveStory = useMemo(() => (
+      allActiveStories?.some(story => story.authorId === user?.uid)
+  ), [allActiveStories, user]);
 
 
   const handleStartChat = async () => {
@@ -162,7 +177,6 @@ export default function ProfilePage() {
         batch.update(currentUserProfileRef, { following: increment(1) });
         batch.update(targetUserProfileRef, { followers: increment(1) });
         
-        // Add notification
         const notificationData = {
             type: 'follow' as const,
             text: `${currentUser.displayName} mulai mengikuti Anda.`,
@@ -194,7 +208,7 @@ export default function ProfilePage() {
     }
   };
 
-  if (isUserLoading) {
+  if (isUserLoading || areStoriesLoading) {
     return <ProfileSkeleton />;
   }
 
@@ -203,91 +217,91 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="space-y-8">
-      <Card className="overflow-hidden">
-        <div className="h-32 md:h-48 bg-gradient-to-r from-primary/20 to-accent/20" />
-        <CardContent className="p-4 md:p-6 -mt-16 md:-mt-24">
-            <div className="flex flex-col md:flex-row items-center md:items-end gap-4">
-                <Avatar className="w-24 h-24 md:w-32 md:h-32 border-4 border-background shadow-lg">
-                    <AvatarImage src={user.photoURL} alt={user.displayName} />
-                    <AvatarFallback className="text-4xl">{user.displayName?.charAt(0)}</AvatarFallback>
-                </Avatar>
-                <div className="flex-1 text-center md:text-left">
-                    <div className="flex items-center justify-center md:justify-start gap-2">
-                        <h1 className="text-3xl font-bold font-headline">{user.displayName}</h1>
-                        <Badge variant={user.role === 'penulis' ? 'default' : 'secondary'} className="capitalize">{user.role}</Badge>
-                    </div>
-                    <p className="text-muted-foreground">@{user.username}</p>
-                </div>
-                <div className="flex gap-2">
-                    {isOwnProfile ? (
-                        <Link href="/settings">
-                          <Button><Edit className="mr-2 h-4 w-4"/> Edit Profil</Button>
-                        </Link>
-                    ) : (
-                        <>
-                            <Button onClick={handleToggleFollow} disabled={isTogglingFollow || isFollowingLoading || isCurrentUserProfileLoading} variant={isFollowing ? "outline" : "default"}>
-                              {(isTogglingFollow || isFollowingLoading || isCurrentUserProfileLoading) ? (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
-                              ) : (
-                                isFollowing ? <UserMinus className="mr-2 h-4 w-4" /> : <UserPlus className="mr-2 h-4 w-4"/>
-                              )}
-                              {isFollowing ? 'Berhenti Mengikuti' : 'Ikuti'}
-                            </Button>
-                            <Button variant="outline" onClick={handleStartChat} disabled={isCreatingChat || areChatsLoading || isCurrentUserProfileLoading}>
-                                {(isCreatingChat || areChatsLoading || isCurrentUserProfileLoading) ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <MessageCircle className="mr-2 h-4 w-4"/>}
-                                Pesan
-                            </Button>
-                        </>
-                    )}
-                </div>
-            </div>
-            <p className="mt-4 text-center md:text-left max-w-2xl">{user.bio}</p>
-            <div className="flex justify-center md:justify-start gap-6 mt-4 pt-4 border-t">
-                <div className="text-center">
-                    <p className="font-bold text-lg">{areBooksLoading ? '...' : publishedBooks?.length ?? 0}</p>
-                    <p className="text-sm text-muted-foreground">Buku Terbit</p>
-                </div>
-                 <div className="text-center">
-                    <p className="font-bold text-lg">{new Intl.NumberFormat('id-ID').format(user.followers)}</p>
-                    <p className="text-sm text-muted-foreground">Pengikut</p>
-                </div>
-                 <div className="text-center">
-                    <p className="font-bold text-lg">{new Intl.NumberFormat('id-ID').format(user.following)}</p>
-                    <p className="text-sm text-muted-foreground">Mengikuti</p>
-                </div>
-            </div>
-        </CardContent>
-      </Card>
-
-      <Tabs defaultValue="published-books">
-        <TabsList>
-            <TabsTrigger value="published-books">Buku Terbitan</TabsTrigger>
-            {isOwnProfile && <TabsTrigger value="drafts">Draf</TabsTrigger>}
-            {isOwnProfile && <TabsTrigger value="favorites">Favorit</TabsTrigger>}
-        </TabsList>
-        <TabsContent value="published-books">
-             {arePublishedBooksLoading && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                    {Array.from({ length: 4 }).map((_, i) => (
-                      <div key={i} className="space-y-2">
-                        <Skeleton className="aspect-[2/3] w-full" />
-                        <Skeleton className="h-5 w-3/4 mt-2" />
-                        <Skeleton className="h-4 w-1/2" />
+    <>
+      {userHasActiveStory && allActiveStories && (
+        <StoryViewer
+          stories={allActiveStories}
+          initialAuthorId={user.uid}
+          isOpen={isStoryViewerOpen}
+          onClose={() => setIsStoryViewerOpen(false)}
+        />
+      )}
+      <div className="space-y-8">
+        <Card className="overflow-hidden">
+          <div className="h-32 md:h-48 bg-gradient-to-r from-primary/20 to-accent/20" />
+          <CardContent className="p-4 md:p-6 -mt-16 md:-mt-24">
+              <div className="flex flex-col md:flex-row items-center md:items-end gap-4">
+                  <button
+                    disabled={!userHasActiveStory}
+                    onClick={() => userHasActiveStory && setIsStoryViewerOpen(true)}
+                    className="relative rounded-full disabled:cursor-default"
+                  >
+                    <Avatar className={cn(
+                      "w-24 h-24 md:w-32 md:h-32 border-4 shadow-lg",
+                      userHasActiveStory ? "border-primary" : "border-background"
+                    )}>
+                        <AvatarImage src={user.photoURL} alt={user.displayName} />
+                        <AvatarFallback className="text-4xl">{user.displayName?.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                  </button>
+                  <div className="flex-1 text-center md:text-left">
+                      <div className="flex items-center justify-center md:justify-start gap-2">
+                          <h1 className="text-3xl font-bold font-headline">{user.displayName}</h1>
+                          <Badge variant={user.role === 'penulis' ? 'default' : 'secondary'} className="capitalize">{user.role}</Badge>
                       </div>
-                    ))}
-                </div>
-            )}
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                {publishedBooks?.map(book => <BookCard key={book.id} book={book} />)}
-            </div>
-            {!arePublishedBooksLoading && publishedBooks?.length === 0 && <p className="text-muted-foreground text-center py-8">{isOwnProfile ? "Anda" : "Pengguna ini"} belum menerbitkan buku apa pun.</p>}
-        </TabsContent>
-        {isOwnProfile && (
-          <TabsContent value="drafts">
-               {areOtherBooksLoading && (
+                      <p className="text-muted-foreground">@{user.username}</p>
+                  </div>
+                  <div className="flex gap-2">
+                      {isOwnProfile ? (
+                          <Link href="/settings">
+                            <Button><Edit className="mr-2 h-4 w-4"/> Edit Profil</Button>
+                          </Link>
+                      ) : (
+                          <>
+                              <Button onClick={handleToggleFollow} disabled={isTogglingFollow || isFollowingLoading || isCurrentUserProfileLoading} variant={isFollowing ? "outline" : "default"}>
+                                {(isTogglingFollow || isFollowingLoading || isCurrentUserProfileLoading) ? (
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
+                                ) : (
+                                  isFollowing ? <UserMinus className="mr-2 h-4 w-4" /> : <UserPlus className="mr-2 h-4 w-4"/>
+                                )}
+                                {isFollowing ? 'Berhenti Mengikuti' : 'Ikuti'}
+                              </Button>
+                              <Button variant="outline" onClick={handleStartChat} disabled={isCreatingChat || areChatsLoading || isCurrentUserProfileLoading}>
+                                  {(isCreatingChat || areChatsLoading || isCurrentUserProfileLoading) ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <MessageCircle className="mr-2 h-4 w-4"/>}
+                                  Pesan
+                              </Button>
+                          </>
+                      )}
+                  </div>
+              </div>
+              <p className="mt-4 text-center md:text-left max-w-2xl">{user.bio}</p>
+              <div className="flex justify-center md:justify-start gap-6 mt-4 pt-4 border-t">
+                  <div className="text-center">
+                      <p className="font-bold text-lg">{areBooksLoading ? '...' : publishedBooks?.length ?? 0}</p>
+                      <p className="text-sm text-muted-foreground">Buku Terbit</p>
+                  </div>
+                   <div className="text-center">
+                      <p className="font-bold text-lg">{new Intl.NumberFormat('id-ID').format(user.followers)}</p>
+                      <p className="text-sm text-muted-foreground">Pengikut</p>
+                  </div>
+                   <div className="text-center">
+                      <p className="font-bold text-lg">{new Intl.NumberFormat('id-ID').format(user.following)}</p>
+                      <p className="text-sm text-muted-foreground">Mengikuti</p>
+                  </div>
+              </div>
+          </CardContent>
+        </Card>
+
+        <Tabs defaultValue="published-books">
+          <TabsList>
+              <TabsTrigger value="published-books">Buku Terbitan</TabsTrigger>
+              {isOwnProfile && <TabsTrigger value="drafts">Draf</TabsTrigger>}
+              {isOwnProfile && <TabsTrigger value="favorites">Favorit</TabsTrigger>}
+          </TabsList>
+          <TabsContent value="published-books">
+               {arePublishedBooksLoading && (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                      {Array.from({ length: 2 }).map((_, i) => (
+                      {Array.from({ length: 4 }).map((_, i) => (
                         <div key={i} className="space-y-2">
                           <Skeleton className="aspect-[2/3] w-full" />
                           <Skeleton className="h-5 w-3/4 mt-2" />
@@ -297,32 +311,51 @@ export default function ProfilePage() {
                   </div>
               )}
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                  {otherBooks?.map(book => <BookCard key={book.id} book={book} />)}
+                  {publishedBooks?.map(book => <BookCard key={book.id} book={book} />)}
               </div>
-              {!areOtherBooksLoading && otherBooks?.length === 0 && <p className="text-muted-foreground text-center py-8">Anda tidak memiliki draf buku.</p>}
+              {!arePublishedBooksLoading && publishedBooks?.length === 0 && <p className="text-muted-foreground text-center py-8">{isOwnProfile ? "Anda" : "Pengguna ini"} belum menerbitkan buku apa pun.</p>}
           </TabsContent>
-        )}
-        {isOwnProfile && (
-            <TabsContent value="favorites">
-                {(areFavoritesLoading || areFavoriteBooksLoading) && (
+          {isOwnProfile && (
+            <TabsContent value="drafts">
+                 {areOtherBooksLoading && (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                        {Array.from({ length: 4 }).map((_, i) => (
-                            <div key={i} className="space-y-2">
+                        {Array.from({ length: 2 }).map((_, i) => (
+                          <div key={i} className="space-y-2">
                             <Skeleton className="aspect-[2/3] w-full" />
                             <Skeleton className="h-5 w-3/4 mt-2" />
                             <Skeleton className="h-4 w-1/2" />
-                            </div>
+                          </div>
                         ))}
                     </div>
                 )}
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                    {favoriteBooks?.map(book => <BookCard key={book.id} book={book} />)}
+                    {otherBooks?.map(book => <BookCard key={book.id} book={book} />)}
                 </div>
-                {!(areFavoritesLoading || areFavoriteBooksLoading) && favoriteBooks?.length === 0 && <p className="text-muted-foreground text-center py-8">Anda belum memfavoritkan buku apa pun.</p>}
+                {!areOtherBooksLoading && otherBooks?.length === 0 && <p className="text-muted-foreground text-center py-8">Anda tidak memiliki draf buku.</p>}
             </TabsContent>
-        )}
-      </Tabs>
-    </div>
+          )}
+          {isOwnProfile && (
+              <TabsContent value="favorites">
+                  {(areFavoritesLoading || areFavoriteBooksLoading) && (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                          {Array.from({ length: 4 }).map((_, i) => (
+                              <div key={i} className="space-y-2">
+                              <Skeleton className="aspect-[2/3] w-full" />
+                              <Skeleton className="h-5 w-3/4 mt-2" />
+                              <Skeleton className="h-4 w-1/2" />
+                              </div>
+                          ))}
+                      </div>
+                  )}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                      {favoriteBooks?.map(book => <BookCard key={book.id} book={book} />)}
+                  </div>
+                  {!(areFavoritesLoading || areFavoriteBooksLoading) && favoriteBooks?.length === 0 && <p className="text-muted-foreground text-center py-8">Anda belum memfavoritkan buku apa pun.</p>}
+              </TabsContent>
+          )}
+        </Tabs>
+      </div>
+    </>
   )
 }
 

@@ -222,7 +222,7 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["comment", "follow", "favorite", "author_request"]
+          "enum": ["comment", "follow", "favorite", "author_request", "story_comment"]
         },
         "text": { "type": "string" },
         "link": { "type": "string", "description": "The URL to navigate to when the notification is clicked." },
@@ -239,6 +239,44 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["type", "text", "link", "actor", "read", "createdAt"]
+    },
+    "Story": {
+      "title": "Story",
+      "description": "A temporary story that disappears after 24 hours.",
+      "type": "object",
+      "properties": {
+        "authorId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "authorAvatarUrl": { "type": "string", "format": "uri" },
+        "content": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "likes": { "type": "number" },
+        "commentCount": { "type": "number" }
+      },
+      "required": ["authorId", "authorName", "authorAvatarUrl", "content", "createdAt"]
+    },
+    "StoryComment": {
+      "title": "Story Comment",
+      "description": "A comment on a story.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userAvatarUrl": { "type": "string", "format": "uri" },
+        "text": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "userName", "text", "createdAt"]
+    },
+    "StoryLike": {
+      "title": "Story Like",
+      "description": "Represents a user's like on a story.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "likedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "likedAt"]
     }
   },
   "auth": {
@@ -304,6 +342,18 @@
         "$ref": "#/backend/entities/ChatMessage"
       },
       "description": "Stores messages for a specific chat."
+    },
+    "/stories/{storyId}": {
+      "schema": { "$ref": "#/backend/entities/Story" },
+      "description": "Stores user stories, which expire after 24 hours."
+    },
+    "/stories/{storyId}/comments/{commentId}": {
+      "schema": { "$ref": "#/backend/entities/StoryComment" },
+      "description": "Stores comments for a specific story."
+    },
+    "/stories/{storyId}/likes/{userId}": {
+      "schema": { "$ref": "#/backend/entities/StoryLike" },
+      "description": "Stores likes for a specific story. Document ID is the user ID."
     }
   }
 }

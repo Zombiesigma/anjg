@@ -53,7 +53,7 @@ service cloud.firestore {
                     );
                     
       // Signed in users with 'penulis' or 'admin' role can create books.
-      allow create: if isSignedIn() && (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'penulis' || isAdmin());
+      allow create: if isSignedIn() && (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['penulis', 'admin']);
       
       // No one can delete books from the client.
       allow delete: if false;
@@ -72,11 +72,8 @@ service cloud.firestore {
     
     // --- Author Requests ---
     match /authorRequests/{requestId} {
-      // Any signed in user can read/list for client-side filtering.
       allow read: if isSignedIn();
-      // A user can create their own request.
       allow create: if isSignedIn() && request.auth.uid == request.resource.data.userId;
-      // Only an admin can update or delete a request.
       allow update, delete: if isAdmin();
     }
     
@@ -93,6 +90,27 @@ service cloud.firestore {
       match /messages/{messageId} {
         allow read, create: if isParticipant(chatId);
         allow update, delete: if false;
+      }
+    }
+    
+    // --- Stories ---
+    match /stories/{storyId} {
+      function isStoryAuthor() {
+        return request.auth.uid == get(/databases/$(database)/documents/stories/$(storyId)).data.authorId;
+      }
+
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['penulis', 'admin']);
+      allow update: if isSignedIn() && (request.writeFields.size() == 1 && ('likes' in request.writeFields || 'commentCount' in request.writeFields));
+      allow delete: if isStoryAuthor() || isAdmin();
+
+      match /comments/{commentId} {
+        allow read, create: if isSignedIn();
+      }
+      
+      match /likes/{userId} {
+        allow read: if isSignedIn();
+        allow create, delete: if request.auth.uid == userId;
       }
     }
   }

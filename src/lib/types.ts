@@ -106,7 +106,7 @@ export type ChatMessage = (TextMessage | BookShareMessage) & {
 
 export type Notification = {
   id: string;
-  type: 'comment' | 'follow' | 'favorite' | 'author_request';
+  type: 'comment' | 'follow' | 'favorite' | 'author_request' | 'story_comment';
   text: string;
   link: string;
   actor: {
@@ -133,4 +133,30 @@ export type Follow = {
     id: string; // This will be the user id of the person being followed/the follower
     userId: string;
     followedAt: Timestamp;
+};
+
+export type Story = {
+  id: string;
+  authorId: string;
+  authorName: string;
+  authorAvatarUrl: string;
+  content: string;
+  createdAt: Timestamp;
+  likes: number;
+  commentCount: number;
+};
+
+export type StoryComment = {
+  id: string;
+  userId: string;
+  userName: string;
+  userAvatarUrl: string;
+  text: string;
+  createdAt: Timestamp;
+};
+
+export type StoryLike = {
+  id: string; // The userId
+  userId: string;
+  likedAt: Timestamp;
 };
