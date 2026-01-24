@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useFirestore, useCollection } from '@/firebase';
-import { collection, query, doc, writeBatch, updateDoc } from 'firebase/firestore';
+import { collection, query, doc, writeBatch, updateDoc, where } from 'firebase/firestore';
 import {
   Card,
   CardContent,
@@ -22,8 +22,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
-import type { AuthorRequest } from "@/lib/types";
+import type { AuthorRequest, Book } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
+import Link from "next/link";
 
 export default function AdminPage() {
   const firestore = useFirestore();
@@ -31,17 +32,19 @@ export default function AdminPage() {
   const [processingId, setProcessingId] = useState<string | null>(null);
 
   const authorRequestsQuery = useMemo(() => (
-    firestore ? query(collection(firestore, 'authorRequests')) : null
+    firestore ? query(collection(firestore, 'authorRequests'), where('status', '==', 'pending')) : null
   ), [firestore]);
   
-  const { data: authorRequests, isLoading } = useCollection<AuthorRequest>(authorRequestsQuery);
-
-  const pendingRequests = useMemo(() => 
-    authorRequests?.filter(req => req.status === 'pending') || [], 
-    [authorRequests]
-  );
+  const { data: authorRequests, isLoading: areAuthorRequestsLoading } = useCollection<AuthorRequest>(authorRequestsQuery);
   
-  const handleApprove = async (request: AuthorRequest) => {
+  const pendingBooksQuery = useMemo(() => (
+    firestore ? query(collection(firestore, 'books'), where('status', '==', 'pending_review')) : null
+  ), [firestore]);
+
+  const { data: pendingBooks, isLoading: areBooksLoading } = useCollection<Book>(pendingBooksQuery);
+
+
+  const handleApproveAuthor = async (request: AuthorRequest) => {
     if (!firestore) return;
     setProcessingId(request.id);
     try {
@@ -64,7 +67,7 @@ export default function AdminPage() {
     }
   };
 
-  const handleReject = async (request: AuthorRequest) => {
+  const handleRejectAuthor = async (request: AuthorRequest) => {
     if (!firestore) return;
     setProcessingId(request.id);
     try {
@@ -78,6 +81,37 @@ export default function AdminPage() {
       setProcessingId(null);
     }
   };
+  
+  const handleApproveBook = async (bookId: string, bookTitle: string) => {
+    if (!firestore) return;
+    setProcessingId(bookId);
+    try {
+      const bookRef = doc(firestore, 'books', bookId);
+      await updateDoc(bookRef, { status: 'published' });
+      toast({ title: "Buku Disetujui", description: `"${bookTitle}" telah diterbitkan.` });
+    } catch (error) {
+      console.error("Error approving book:", error);
+      toast({ variant: "destructive", title: "Gagal Menyetujui", description: "Terjadi kesalahan." });
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleRejectBook = async (bookId: string, bookTitle: string) => {
+    if (!firestore) return;
+    setProcessingId(bookId);
+    try {
+      const bookRef = doc(firestore, 'books', bookId);
+      await updateDoc(bookRef, { status: 'rejected' });
+      toast({ title: "Buku Ditolak", description: `"${bookTitle}" telah ditolak dan dikembalikan ke draf.` });
+    } catch (error) {
+      console.error("Error rejecting book:", error);
+      toast({ variant: "destructive", title: "Gagal Menolak", description: "Terjadi kesalahan." });
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
 
   return (
     <div className="space-y-6">
@@ -110,21 +144,21 @@ export default function AdminPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {isLoading && (
+                  {areAuthorRequestsLoading && (
                     <TableRow>
                       <TableCell colSpan={5} className="h-24 text-center">
                         <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
                       </TableCell>
                     </TableRow>
                   )}
-                  {!isLoading && pendingRequests.length === 0 && (
+                  {!areAuthorRequestsLoading && authorRequests?.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={5} className="h-24 text-center">
                         Tidak ada permintaan.
                       </TableCell>
                     </TableRow>
                   )}
-                  {!isLoading && pendingRequests.map(request => (
+                  {!areAuthorRequestsLoading && authorRequests?.map(request => (
                     <TableRow key={request.id}>
                       <TableCell>{request.name}</TableCell>
                       <TableCell>{request.email}</TableCell>
@@ -133,7 +167,7 @@ export default function AdminPage() {
                       <TableCell className="text-right space-x-2">
                         <Button 
                           size="sm" 
-                          onClick={() => handleApprove(request)}
+                          onClick={() => handleApproveAuthor(request)}
                           disabled={processingId === request.id}
                         >
                           {processingId === request.id && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
@@ -142,7 +176,7 @@ export default function AdminPage() {
                          <Button 
                           variant="destructive" 
                           size="sm" 
-                          onClick={() => handleReject(request)}
+                          onClick={() => handleRejectAuthor(request)}
                           disabled={processingId === request.id}
                         >
                            {processingId === request.id && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
@@ -170,17 +204,55 @@ export default function AdminPage() {
                   <TableRow>
                     <TableHead>Judul</TableHead>
                     <TableHead>Penulis</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Tanggal</TableHead>
+                    <TableHead>Diajukan</TableHead>
                     <TableHead className="text-right">Aksi</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                   <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center">
-                      Tidak ada unggahan.
-                    </TableCell>
-                  </TableRow>
+                  {areBooksLoading && (
+                    <TableRow>
+                      <TableCell colSpan={4} className="h-24 text-center">
+                        <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {!areBooksLoading && pendingBooks?.length === 0 && (
+                     <TableRow>
+                      <TableCell colSpan={4} className="h-24 text-center">
+                        Tidak ada buku yang menunggu tinjauan.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {!areBooksLoading && pendingBooks?.map(book => (
+                    <TableRow key={book.id}>
+                        <TableCell className="font-medium">
+                            <Link href={`/books/${book.id}`} className="hover:underline" target="_blank">
+                                {book.title}
+                            </Link>
+                        </TableCell>
+                        <TableCell>{book.authorName}</TableCell>
+                        <TableCell>{book.createdAt?.toDate().toLocaleDateString('id-ID')}</TableCell>
+                        <TableCell className="text-right space-x-2">
+                           <Button 
+                            size="sm" 
+                            onClick={() => handleApproveBook(book.id, book.title)}
+                            disabled={processingId === book.id}
+                           >
+                            {processingId === book.id && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                            Setujui
+                           </Button>
+                           <Button 
+                            variant="destructive" 
+                            size="sm" 
+                            onClick={() => handleRejectBook(book.id, book.title)}
+                            disabled={processingId === book.id}
+                           >
+                             {processingId === book.id && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                            Tolak
+                           </Button>
+                        </TableCell>
+                    </TableRow>
+                  ))}
                 </TableBody>
               </Table>
             </CardContent>

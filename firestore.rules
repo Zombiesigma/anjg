@@ -42,8 +42,8 @@ service cloud.firestore {
     match /books/{bookId} {
       // Anyone can read published books. Author can read their own draft/published books.
       allow read: if resource.data.status == 'published' || (isSignedIn() && request.auth.uid == resource.data.authorId);
-      // Author can update their book.
-      allow update: if isSignedIn() && request.auth.uid == resource.data.authorId;
+      // Author can update their book, or an admin can.
+      allow update: if (isSignedIn() && get(/databases/$(database)/documents/books/$(bookId)).data.authorId == request.auth.uid) || isAdmin();
       // Signed in users can create books (role is checked in app).
       allow create: if isSignedIn();
       // No one can delete books from the client.

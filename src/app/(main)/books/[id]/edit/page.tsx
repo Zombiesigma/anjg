@@ -13,10 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PlusCircle, BookUp, Trash2, GripVertical, FileEdit } from "lucide-react";
-import { Skeleton } from '@/components/ui/skeleton';
+import { Loader2, PlusCircle, BookUp, GripVertical, FileEdit, Info } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,6 +26,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 
 const chapterSchema = z.object({
   title: z.string().min(3, "Judul bab minimal 3 karakter."),
@@ -41,14 +41,14 @@ export default function EditBookPage() {
   const { user: currentUser } = useUser();
   const { toast } = useToast();
 
-  const [isPublishing, setIsPublishing] = useState(false);
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [isSavingChapter, setIsSavingChapter] = useState(false);
   const [activeChapterId, setActiveChapterId] = useState<string | null>(null);
 
   const bookRef = useMemo(() => (
     firestore ? doc(firestore, 'books', params.id) : null
   ), [firestore, params.id]);
-  const { data: book, isLoading: isBookLoading, error: bookError } = useDoc<Book>(bookRef);
+  const { data: book, isLoading: isBookLoading } = useDoc<Book>(bookRef);
 
   const chaptersQuery = useMemo(() => (
     firestore ? query(collection(firestore, 'books', params.id, 'chapters'), orderBy('order', 'asc')) : null
@@ -59,6 +59,8 @@ export default function EditBookPage() {
     resolver: zodResolver(chapterSchema),
     defaultValues: { title: '', content: '' },
   });
+  
+  const isReviewing = book?.status === 'pending_review';
 
   useEffect(() => {
     if (chapters && chapters.length > 0 && !activeChapterId) {
@@ -75,31 +77,29 @@ export default function EditBookPage() {
     }
   }, [chapters, activeChapterId, form]);
 
-  const handlePublish = async () => {
+  const handleSubmitForReview = async () => {
     if (!firestore || !bookRef) return;
-    setIsPublishing(true);
+    setIsSubmittingReview(true);
     try {
         const batch = writeBatch(firestore);
 
-        // Save the current chapter's content if one is active
         if (activeChapterId) {
             const chapterRef = doc(firestore, 'books', params.id, 'chapters', activeChapterId);
             const currentChapterValues = form.getValues();
             batch.update(chapterRef, currentChapterValues);
         }
 
-        // Update the book's status to published
-        batch.update(bookRef, { status: 'published' });
+        batch.update(bookRef, { status: 'pending_review' });
 
         await batch.commit();
       
-        toast({ title: "Buku Diterbitkan!", description: "Buku Anda sekarang dapat dilihat oleh semua orang." });
-        router.push(`/books/${params.id}`);
+        toast({ title: "Buku Dikirim untuk Ditinjau", description: "Admin akan meninjau buku Anda sebelum dipublikasikan." });
+        // router.push(`/books/${params.id}`); We stay on the page, but it becomes read-only
     } catch (error) {
-      console.error("Error publishing book:", error);
-      toast({ variant: "destructive", title: "Gagal Menerbitkan", description: "Terjadi kesalahan saat menyimpan dan menerbitkan." });
+      console.error("Error submitting for review:", error);
+      toast({ variant: "destructive", title: "Gagal Mengirim", description: "Terjadi kesalahan saat mengirim." });
     } finally {
-      setIsPublishing(false);
+      setIsSubmittingReview(false);
     }
   };
   
@@ -184,43 +184,64 @@ export default function EditBookPage() {
             </div>
         </div>
         <div className="p-2 border-t">
-            <Button variant="outline" className="w-full" onClick={handleAddChapter}><PlusCircle className="mr-2 h-4 w-4" /> Bab Baru</Button>
+            <Button variant="outline" className="w-full" onClick={handleAddChapter} disabled={isReviewing}><PlusCircle className="mr-2 h-4 w-4" /> Bab Baru</Button>
         </div>
       </div>
       <div className="md:col-span-9 lg:col-span-10 flex flex-col h-screen">
          <div className="p-4 border-b flex justify-between items-center">
             <h3 className="text-lg font-semibold flex items-center gap-2"><FileEdit/> {activeChapter?.title || "Pilih Bab"}</h3>
             <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={() => form.handleSubmit(onChapterSubmit)()} disabled={isSavingChapter}>
+                <Button variant="outline" size="sm" onClick={() => form.handleSubmit(onChapterSubmit)()} disabled={isSavingChapter || isReviewing}>
                     {isSavingChapter && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
                     Simpan Draf
                 </Button>
-                <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                        <Button size="sm" disabled={isPublishing}>
-                            {isPublishing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BookUp className="mr-2 h-4 w-4" />}
-                            Terbitkan
-                        </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                        <AlertDialogTitle>Apakah Anda siap menerbitkan buku ini?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Setelah dipublikasikan, buku ini akan dapat dilihat oleh semua orang di Litera. Anda masih dapat mengeditnya nanti.
-                        </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                        <AlertDialogCancel>Batal</AlertDialogCancel>
-                        <AlertDialogAction onClick={handlePublish}>Ya, Terbitkan</AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
+                {book.status === 'draft' || book.status === 'rejected' ? (
+                  <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                          <Button size="sm" disabled={isSubmittingReview}>
+                              {isSubmittingReview ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BookUp className="mr-2 h-4 w-4" />}
+                              Kirim Tinjauan
+                          </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                          <AlertDialogHeader>
+                          <AlertDialogTitle>Kirim buku untuk ditinjau?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                              Setelah dikirim, admin akan meninjau buku Anda sebelum dipublikasikan. Anda tidak dapat mengedit buku ini selama proses peninjauan.
+                          </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                          <AlertDialogCancel>Batal</AlertDialogCancel>
+                          <AlertDialogAction onClick={handleSubmitForReview}>Ya, Kirim</AlertDialogAction>
+                          </AlertDialogFooter>
+                      </AlertDialogContent>
+                  </AlertDialog>
+                ) : (
+                  <Badge variant={book.status === 'pending_review' ? 'secondary' : 'default'}>
+                    {book.status === 'pending_review' && 'Sedang Ditinjau'}
+                    {book.status === 'published' && 'Telah Diterbitkan'}
+                  </Badge>
+                )}
             </div>
         </div>
         <div className="flex-1 overflow-y-auto p-6">
             {activeChapter ? (
                  <Form {...form}>
                     <form onSubmit={form.handleSubmit(onChapterSubmit)} className="space-y-6 max-w-3xl mx-auto">
+                        {isReviewing && (
+                          <Alert>
+                            <Info className="h-4 w-4" />
+                            <AlertTitle>Sedang Ditinjau</AlertTitle>
+                            <AlertDescription>Buku ini sedang dalam peninjauan oleh admin dan tidak dapat diedit saat ini.</AlertDescription>
+                          </Alert>
+                        )}
+                        {book.status === 'rejected' && (
+                           <Alert variant="destructive">
+                            <Info className="h-4 w-4" />
+                            <AlertTitle>Ditolak</AlertTitle>
+                            <AlertDescription>Buku ini ditolak oleh admin. Anda dapat melakukan perubahan dan mengirimkannya kembali untuk ditinjau.</AlertDescription>
+                          </Alert>
+                        )}
                         <FormField
                             control={form.control}
                             name="title"
@@ -228,7 +249,7 @@ export default function EditBookPage() {
                             <FormItem>
                                 <FormLabel className="sr-only">Judul Bab</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="Judul Bab" {...field} className="text-2xl font-bold font-headline border-0 shadow-none px-0 focus-visible:ring-0" />
+                                    <Input placeholder="Judul Bab" {...field} className="text-2xl font-bold font-headline border-0 shadow-none px-0 focus-visible:ring-0" disabled={isReviewing} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -241,7 +262,7 @@ export default function EditBookPage() {
                             <FormItem>
                                 <FormLabel className="sr-only">Konten Bab</FormLabel>
                                 <FormControl>
-                                    <Textarea placeholder="Mulai menulis..." {...field} className="min-h-[60vh] border-0 shadow-none px-0 focus-visible:ring-0 text-lg leading-relaxed" />
+                                    <Textarea placeholder="Mulai menulis..." {...field} className="min-h-[60vh] border-0 shadow-none px-0 focus-visible:ring-0 text-lg leading-relaxed" disabled={isReviewing} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>

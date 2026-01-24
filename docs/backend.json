@@ -62,9 +62,10 @@
         "authorId": { "type": "string" },
         "authorName": { "type": "string" },
         "authorAvatarUrl": { "type": "string", "format": "uri" },
-        "status": { "type": "string", "enum": ["draft", "published"] }
+        "status": { "type": "string", "enum": ["draft", "pending_review", "published", "rejected"] },
+        "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["title", "authorId", "authorName", "status"]
+      "required": ["title", "authorId", "authorName", "status", "createdAt"]
     },
     "Chapter": {
         "title": "Chapter",

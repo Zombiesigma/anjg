@@ -25,7 +25,8 @@ export type Book = {
   authorId: string;
   authorName: string;
   authorAvatarUrl: string;
-  status: 'draft' | 'published';
+  status: 'draft' | 'pending_review' | 'published' | 'rejected';
+  createdAt: Timestamp;
 };
 
 export type Chapter = {
