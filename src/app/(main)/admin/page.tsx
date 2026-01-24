@@ -137,42 +137,50 @@ export default function AdminPage() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Pengguna</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {areUsersLoading ? <Skeleton className="h-8 w-1/2"/> : <div className="text-2xl font-bold">{userStats.total}</div>}
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Admin</CardTitle>
-            <ShieldCheck className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-             {areUsersLoading ? <Skeleton className="h-8 w-1/2"/> : <div className="text-2xl font-bold">{userStats.admins}</div>}
-          </CardContent>
-        </Card>
-         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Penulis</CardTitle>
-            <BookUser className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-             {areUsersLoading ? <Skeleton className="h-8 w-1/2"/> : <div className="text-2xl font-bold">{userStats.penulis}</div>}
-          </CardContent>
-        </Card>
-         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pembaca</CardTitle>
-            <BookCopy className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-             {areUsersLoading ? <Skeleton className="h-8 w-1/2"/> : <div className="text-2xl font-bold">{userStats.pembaca}</div>}
-          </CardContent>
-        </Card>
+        <Link href="/admin/users">
+          <Card className="hover:bg-accent transition-colors">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Pengguna</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              {areUsersLoading ? <Skeleton className="h-8 w-1/2"/> : <div className="text-2xl font-bold">{userStats.total}</div>}
+            </CardContent>
+          </Card>
+        </Link>
+        <Link href="/admin/users?role=admin">
+          <Card className="hover:bg-accent transition-colors">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Admin</CardTitle>
+              <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              {areUsersLoading ? <Skeleton className="h-8 w-1/2"/> : <div className="text-2xl font-bold">{userStats.admins}</div>}
+            </CardContent>
+          </Card>
+        </Link>
+        <Link href="/admin/users?role=penulis">
+          <Card className="hover:bg-accent transition-colors">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Penulis</CardTitle>
+              <BookUser className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              {areUsersLoading ? <Skeleton className="h-8 w-1/2"/> : <div className="text-2xl font-bold">{userStats.penulis}</div>}
+            </CardContent>
+          </Card>
+        </Link>
+        <Link href="/admin/users?role=pembaca">
+          <Card className="hover:bg-accent transition-colors">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Pembaca</CardTitle>
+              <BookCopy className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              {areUsersLoading ? <Skeleton className="h-8 w-1/2"/> : <div className="text-2xl font-bold">{userStats.pembaca}</div>}
+            </CardContent>
+          </Card>
+        </Link>
       </div>
 
       <Tabs defaultValue="authors">
