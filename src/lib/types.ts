@@ -20,7 +20,7 @@ export type Book = {
   synopsis: string;
   coverUrl: string;
   viewCount: number;
-  downloadCount: number;
+  favoriteCount: number;
   chapterCount: number;
   authorId: string;
   authorName: string;
@@ -92,4 +92,10 @@ export type Notification = {
 export type AiChatMessage = {
   role: 'user' | 'assistant';
   content: string;
+};
+
+export type Favorite = {
+    id: string; // This will be the bookId
+    userId: string;
+    addedAt: Timestamp;
 };

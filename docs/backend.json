@@ -57,7 +57,7 @@
         "genre": { "type": "string" },
         "coverUrl": { "type": "string", "format": "uri" },
         "viewCount": { "type": "number" },
-        "downloadCount": { "type": "number" },
+        "favoriteCount": { "type": "number" },
         "chapterCount": { "type": "number", "description": "Number of chapters in the book." },
         "authorId": { "type": "string" },
         "authorName": { "type": "string" },
@@ -147,6 +147,16 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["text", "senderId", "createdAt"]
+    },
+    "FavoriteBook": {
+        "title": "Favorite Book",
+        "description": "Marks a book as a favorite for a user. The document ID is the book ID.",
+        "type": "object",
+        "properties": {
+            "userId": { "type": "string" },
+            "addedAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["userId", "addedAt"]
     }
   },
   "auth": {
@@ -158,6 +168,10 @@
         "$ref": "#/backend/entities/UserProfile"
       },
       "description": "Stores user profile information, keyed by their Firebase Auth UID."
+    },
+    "/users/{userId}/favorites/{bookId}": {
+        "schema": { "$ref": "#/backend/entities/FavoriteBook" },
+        "description": "Stores a user's favorite books. The document ID is the book ID."
     },
     "/books/{bookId}": {
       "schema": {

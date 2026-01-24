@@ -5,19 +5,20 @@ import Link from 'next/link';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { notFound, useParams } from 'next/navigation';
 import { useFirestore, useUser, useDoc, useCollection } from '@/firebase';
-import { doc, collection, addDoc, serverTimestamp, query, orderBy, updateDoc, increment } from 'firebase/firestore';
+import { doc, collection, addDoc, serverTimestamp, query, orderBy, updateDoc, increment, writeBatch } from 'firebase/firestore';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
-import { Eye, BookOpen, Send, MessageCircle, Loader2, Edit, Layers, Download } from 'lucide-react';
-import type { Book, Comment, User } from '@/lib/types';
+import { Eye, BookOpen, Send, MessageCircle, Loader2, Edit, Layers, Heart } from 'lucide-react';
+import type { Book, Comment, User, Favorite } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 export default function BookDetailsPage() {
   const params = useParams<{ id: string }>();
@@ -41,10 +42,17 @@ export default function BookDetailsPage() {
       : null
   ), [firestore, params.id]);
   const { data: comments, isLoading: areCommentsLoading } = useCollection<Comment>(commentsQuery);
+  
+  const favoriteRef = useMemo(() => (
+    (firestore && currentUser) ? doc(firestore, 'users', currentUser.uid, 'favorites', params.id) : null
+  ), [firestore, currentUser, params.id]);
+  const { data: favoriteDoc, isLoading: isFavoriteLoading } = useDoc<Favorite>(favoriteRef);
 
   const [newComment, setNewComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
   const viewIncremented = useRef(false);
 
   useEffect(() => {
@@ -56,6 +64,10 @@ export default function BookDetailsPage() {
         viewIncremented.current = true;
     }
   }, [book, bookRef]);
+
+  useEffect(() => {
+    setIsFavorite(!!favoriteDoc);
+  }, [favoriteDoc]);
 
   const isAuthor = currentUser?.uid === book?.authorId;
 
@@ -89,13 +101,47 @@ export default function BookDetailsPage() {
       });
   };
   
-  const handleDownload = () => {
-    if (!bookRef) return;
-    updateDoc(bookRef, { downloadCount: increment(1) });
-    toast({
-        title: "Unduhan Dicatat",
-        description: "Terima kasih telah 'mengunduh' buku ini.",
-    });
+  const handleToggleFavorite = async () => {
+    if (!firestore || !currentUser || !bookRef) {
+        toast({
+            variant: "destructive",
+            title: "Harap masuk",
+            description: "Anda harus masuk untuk menambahkan ke favorit.",
+        });
+        return;
+    };
+    setIsTogglingFavorite(true);
+
+    const favoriteDocRef = doc(firestore, 'users', currentUser.uid, 'favorites', params.id);
+    const batch = writeBatch(firestore);
+
+    try {
+        if (isFavorite) {
+            // Remove from favorites
+            batch.delete(favoriteDocRef);
+            batch.update(bookRef, { favoriteCount: increment(-1) });
+        } else {
+            // Add to favorites
+            batch.set(favoriteDocRef, {
+                userId: currentUser.uid,
+                addedAt: serverTimestamp()
+            });
+            batch.update(bookRef, { favoriteCount: increment(1) });
+        }
+        await batch.commit();
+        toast({
+            title: isFavorite ? "Dihapus dari Favorit" : "Ditambahkan ke Favorit",
+        });
+    } catch (error) {
+        console.error("Error toggling favorite: ", error);
+        toast({
+            variant: "destructive",
+            title: "Gagal",
+            description: "Terjadi kesalahan. Silakan coba lagi.",
+        });
+    } finally {
+        setIsTogglingFavorite(false);
+    }
   };
 
   if (isBookLoading || isAuthorLoading) {
@@ -127,9 +173,9 @@ export default function BookDetailsPage() {
                     <span className="text-xs text-muted-foreground">Dilihat</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
-                    <Download className="h-5 w-5 text-muted-foreground" />
-                    <span className="font-semibold">{isMounted ? new Intl.NumberFormat('id-ID').format(book.downloadCount) : '...'}</span>
-                    <span className="text-xs text-muted-foreground">Diunduh</span>
+                    <Heart className="h-5 w-5 text-muted-foreground" />
+                    <span className="font-semibold">{isMounted ? new Intl.NumberFormat('id-ID').format(book.favoriteCount) : '...'}</span>
+                    <span className="text-xs text-muted-foreground">Favorit</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
                     <Layers className="h-5 w-5 text-muted-foreground" />
@@ -159,8 +205,9 @@ export default function BookDetailsPage() {
             <Link href={`/books/${book.id}/read`} className="flex-1">
                 <Button size="lg" className="w-full"><BookOpen className="mr-2 h-5 w-5"/> Baca Sekarang</Button>
             </Link>
-            <Button size="lg" variant="outline" className="flex-1" onClick={handleDownload}>
-              <Download className="mr-2 h-5 w-5"/> Unduh
+            <Button size="lg" variant="outline" className="flex-1" onClick={handleToggleFavorite} disabled={isTogglingFavorite || isFavoriteLoading}>
+              {isTogglingFavorite ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Heart className={cn("mr-2 h-5 w-5", isFavorite && "fill-current text-red-500")}/>}
+              {isFavorite ? 'Hapus dari Favorit' : 'Tambah ke Favorit'}
             </Button>
             {isAuthor && (
               <Link href={`/books/${book.id}/edit`} className="flex-1">

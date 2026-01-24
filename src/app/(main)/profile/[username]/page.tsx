@@ -5,8 +5,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { useFirestore, useUser, useCollection } from '@/firebase';
-import { collection, query, where, limit, addDoc } from 'firebase/firestore';
-import type { User, Book, Chat } from '@/lib/types';
+import { collection, query, where, limit, addDoc, documentId } from 'firebase/firestore';
+import type { User, Book, Chat, Favorite } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -53,6 +53,20 @@ export default function ProfilePage() {
         : null
     ), [firestore, currentUser]);
   const { data: userChats, isLoading: areChatsLoading } = useCollection<Chat>(chatsByUserQuery);
+
+  const favoritesQuery = useMemo(() => (
+    (firestore && user) ? query(collection(firestore, 'users', user.uid, 'favorites')) : null
+  ), [firestore, user]);
+  const { data: favorites, isLoading: areFavoritesLoading } = useCollection<Favorite>(favoritesQuery);
+
+  const favoriteBookIds = useMemo(() => favorites?.map(f => f.id) || [], [favorites]);
+
+  const favoriteBooksQuery = useMemo(() => {
+      if (!firestore || favoriteBookIds.length === 0) return null;
+      return query(collection(firestore, 'books'), where(documentId(), 'in', favoriteBookIds));
+  }, [firestore, favoriteBookIds]);
+  const { data: favoriteBooks, isLoading: areFavoriteBooksLoading } = useCollection<Book>(favoriteBooksQuery);
+
 
   const handleStartChat = async () => {
     if (!firestore || !currentUser || !user) return;
@@ -190,7 +204,21 @@ export default function ProfilePage() {
           </TabsContent>
         )}
         <TabsContent value="favorites">
-            <p className="text-muted-foreground text-center py-8">Fitur ini sedang dalam pengembangan.</p>
+            {(areFavoritesLoading || areFavoriteBooksLoading) && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                        <div key={i} className="space-y-2">
+                        <Skeleton className="aspect-[2/3] w-full" />
+                        <Skeleton className="h-5 w-3/4 mt-2" />
+                        <Skeleton className="h-4 w-1/2" />
+                        </div>
+                    ))}
+                </div>
+            )}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                {favoriteBooks?.map(book => <BookCard key={book.id} book={book} />)}
+            </div>
+            {!(areFavoritesLoading || areFavoriteBooksLoading) && favoriteBooks?.length === 0 && <p className="text-muted-foreground text-center py-8">{isOwnProfile ? "Anda" : "Pengguna ini"} belum memfavoritkan buku apa pun.</p>}
         </TabsContent>
       </Tabs>
     </div>
