@@ -14,8 +14,8 @@ service cloud.firestore {
     match /users/{userId} {
       allow get: if true;
       allow list: if isSignedIn();
-      // Users can update their own profile, or other users can update their follower count.
-      allow update: if isSignedIn() && (request.auth.uid == userId || (request.writeFields.size() == 1 && 'followers' in request.writeFields) || (request.writeFields.size() == 1 && 'following' in request.writeFields));
+      // Users can update their own profile, or other users can update their follower/following count during a follow action.
+      allow update: if isSignedIn() && (request.auth.uid == userId || (request.writeFields.size() == 1 && ('followers' in request.writeFields || 'following' in request.writeFields)));
       
       match /favorites/{bookId} {
         allow read, write: if isSignedIn() && request.auth.uid == userId;
@@ -43,7 +43,7 @@ service cloud.firestore {
     // --- Books & Chapters ---
     match /books/{bookId} {
       // Anyone can read published books. Author/Admin can read their own non-published books.
-      allow read: if resource.data.status == 'published' || (isSignedIn() && request.auth.uid == resource.data.authorId) || isAdmin();
+      allow read: if resource.data.status == 'published' || (isSignedIn() && (request.auth.uid == resource.data.authorId || isAdmin()));
       
       // Author/Admin can update their book. Any signed-in user can update favoriteCount.
       allow update: if isSignedIn() && (
@@ -60,8 +60,8 @@ service cloud.firestore {
       
       // Sub-collections
       match /chapters/{chapterId} {
-        allow read: if get(/databases/$(database)/documents/books/$(bookId)).data.status == 'published' || (isSignedIn() && request.auth.uid == get(/databases/$(database)/documents/books/$(bookId)).data.authorId) || isAdmin();
-        allow write: if (isSignedIn() && request.auth.uid == get(/databases/$(database)/documents/books/$(bookId)).data.authorId) || isAdmin();
+        allow read: if get(/databases/$(database)/documents/books/$(bookId)).data.status == 'published' || (isSignedIn() && (request.auth.uid == get(/databases/$(database)/documents/books/$(bookId)).data.authorId || isAdmin()));
+        allow write: if (isSignedIn() && (request.auth.uid == get(/databases/$(database)/documents/books/$(bookId)).data.authorId || isAdmin()));
       }
       
       match /comments/{commentId} {
@@ -72,10 +72,10 @@ service cloud.firestore {
     
     // --- Author Requests ---
     match /authorRequests/{requestId} {
+      // Any signed in user can read/list for client-side filtering.
+      allow read: if isSignedIn();
       // A user can create their own request.
       allow create: if isSignedIn() && request.auth.uid == request.resource.data.userId;
-      // Admin can read any request, user can read their own.
-      allow read: if isAdmin() || (get(/databases/$(database)/documents/authorRequests/$(requestId)).data.userId == request.auth.uid);
       // Only an admin can update or delete a request.
       allow update, delete: if isAdmin();
     }

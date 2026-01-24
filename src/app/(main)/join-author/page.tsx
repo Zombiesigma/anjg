@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useFirestore, useUser, useCollection, useDoc } from '@/firebase';
-import { collection, serverTimestamp, query, where, getDocs, doc, writeBatch, orderBy } from 'firebase/firestore';
+import { collection, serverTimestamp, doc, writeBatch, getDocs, query, where, orderBy } from 'firebase/firestore';
 import type { AuthorRequest, User as AppUser } from '@/lib/types';
 import {
   Card,
@@ -38,7 +38,6 @@ export default function JoinAuthorPage() {
     const firestore = useFirestore();
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
-
     const [applicationStatus, setApplicationStatus] = useState<'loading' | 'not_applied' | 'pending' | 'author'>('loading');
 
     const form = useForm<z.infer<typeof formSchema>>({
@@ -55,22 +54,25 @@ export default function JoinAuthorPage() {
       (firestore && user) ? doc(firestore, 'users', user.uid) : null
     );
 
-    const pendingRequestQuery = useMemo(() => (
-        (firestore && user) 
-        ? query(collection(firestore, 'authorRequests'), where('userId', '==', user.uid), where('status', '==', 'pending')) 
-        : null
+    const requestsQuery = useMemo(() => (
+      (firestore && user) ? collection(firestore, 'authorRequests') : null
     ), [firestore, user]);
-    const { data: pendingRequests, isLoading: isRequestsLoading } = useCollection<AuthorRequest>(pendingRequestQuery);
+    const { data: allRequests, isLoading: areRequestsLoading } = useCollection<AuthorRequest>(requestsQuery);
+    const pendingRequests = useMemo(() => (
+        allRequests?.filter(req => req.userId === user?.uid && req.status === 'pending')
+    ), [allRequests, user]);
     
-    // Fetch authors only when the current user is an author or admin
-    const authorsQuery = useMemo(() => {
-        if (!firestore || applicationStatus !== 'author') return null;
-        return query(collection(firestore, 'users'), where('role', '==', 'penulis'), orderBy('displayName', 'asc'));
-    }, [firestore, applicationStatus]);
-    const { data: authors, isLoading: areAuthorsLoading } = useCollection<AppUser>(authorsQuery);
+    const usersQuery = useMemo(() => (
+        firestore ? collection(firestore, 'users') : null
+    ), [firestore]);
+    const { data: allUsers, isLoading: areUsersLoading } = useCollection<AppUser>(usersQuery);
+    
+    const authors = useMemo(() => (
+      allUsers?.filter(u => u.role === 'penulis').sort((a,b) => a.displayName.localeCompare(b.displayName))
+    ), [allUsers]);
 
     useEffect(() => {
-      if (isUserLoading || isProfileLoading || isRequestsLoading) {
+      if (isUserLoading || isProfileLoading || areRequestsLoading) {
           setApplicationStatus('loading');
           return;
       }
@@ -91,7 +93,7 @@ export default function JoinAuthorPage() {
       } else if (!isUserLoading) {
           setApplicationStatus('not_applied');
       }
-    }, [user, isUserLoading, userProfile, isProfileLoading, pendingRequests, isRequestsLoading, form]);
+    }, [user, isUserLoading, userProfile, isProfileLoading, pendingRequests, areRequestsLoading, form]);
 
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
@@ -187,7 +189,7 @@ export default function JoinAuthorPage() {
                     <h1 className="text-4xl font-headline font-bold text-primary">Temui Para Penulis Kami</h1>
                     <p className="mt-2 text-lg text-muted-foreground">Jelajahi profil para penulis berbakat yang membentuk komunitas Litera.</p>
                 </div>
-                {areAuthorsLoading ? (
+                {areUsersLoading ? (
                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {Array.from({length: 6}).map((_, i) => (
                              <Card key={i}>
