@@ -199,31 +199,37 @@ export default function EditBookPage() {
                     {isSavingChapter && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
                     Simpan Draf
                 </Button>
-                {book.status === 'draft' || book.status === 'rejected' ? (
+                {book.status === 'draft' || book.status === 'rejected' || book.status === 'published' ? (
                   <AlertDialog>
                       <AlertDialogTrigger asChild>
                           <Button size="sm" disabled={isSubmittingReview}>
                               {isSubmittingReview ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BookUp className="mr-2 h-4 w-4" />}
-                              Kirim Tinjauan
+                              {book.status === 'published' ? 'Kirim Pembaruan' : 'Kirim Tinjauan'}
                           </Button>
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                           <AlertDialogHeader>
-                          <AlertDialogTitle>Kirim buku untuk ditinjau?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                              Setelah dikirim, admin akan meninjau buku Anda sebelum dipublikasikan. Anda tidak dapat mengedit buku ini selama proses peninjauan.
-                          </AlertDialogDescription>
+                            <AlertDialogTitle>
+                                {book.status === 'published' ? 'Kirim pembaruan untuk ditinjau?' : 'Kirim buku untuk ditinjau?'}
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                                {book.status === 'published' 
+                                    ? 'Pembaruan Anda akan ditinjau oleh admin sebelum dipublikasikan. Versi saat ini akan tetap tayang hingga pembaruan disetujui.' 
+                                    : 'Setelah dikirim, admin akan meninjau buku Anda sebelum dipublikasikan. Anda tidak dapat mengedit buku ini selama proses peninjauan.'
+                                }
+                            </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                          <AlertDialogCancel>Batal</AlertDialogCancel>
-                          <AlertDialogAction onClick={handleSubmitForReview}>Ya, Kirim</AlertDialogAction>
+                            <AlertDialogCancel>Batal</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleSubmitForReview}>
+                                {book.status === 'published' ? 'Ya, Kirim Pembaruan' : 'Ya, Kirim'}
+                            </AlertDialogAction>
                           </AlertDialogFooter>
                       </AlertDialogContent>
                   </AlertDialog>
                 ) : (
-                  <Badge variant={book.status === 'pending_review' ? 'secondary' : 'default'}>
-                    {book.status === 'pending_review' && 'Sedang Ditinjau'}
-                    {book.status === 'published' && 'Telah Diterbitkan'}
+                  <Badge variant='secondary'>
+                    Sedang Ditinjau
                   </Badge>
                 )}
             </div>
