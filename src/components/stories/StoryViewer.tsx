@@ -1,13 +1,12 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useUser, useCollection, useDoc } from '@/firebase';
+import { useFirestore, useUser, useDoc } from '@/firebase';
 import { doc, collection, query, orderBy, serverTimestamp, writeBatch, increment, addDoc, deleteDoc } from 'firebase/firestore';
 import type { Story, StoryComment, StoryLike, User as AppUser } from '@/lib/types';
 import { X, Heart, MessageCircle, Send, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
@@ -170,6 +169,10 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
         onInteractOutside={(e) => e.preventDefault()}
         onPointerDownOutside={(e) => e.preventDefault()}
       >
+        <DialogTitle className="sr-only">Penampil Cerita</DialogTitle>
+        <DialogDescription className="sr-only">
+          Menampilkan cerita dari {currentGroup.authorName}. Cerita saat ini: {currentStory.content}.
+        </DialogDescription>
         <div className="relative w-full h-full flex items-center justify-center">
             <button onClick={onClose} className="absolute top-4 right-4 z-50 text-white/80 hover:text-white"><X/></button>
             
