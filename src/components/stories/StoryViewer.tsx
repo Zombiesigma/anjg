@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, useDoc } from '@/firebase';
-import { doc, collection, query, orderBy, serverTimestamp, writeBatch, increment, addDoc, deleteDoc } from 'firebase/firestore';
+import { doc, collection, query, orderBy, serverTimestamp, writeBatch, increment, addDoc, deleteDoc, getDoc } from 'firebase/firestore';
 import type { Story, StoryComment, StoryLike, User as AppUser } from '@/lib/types';
 import { X, Heart, MessageCircle, Send, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -96,7 +96,7 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
   const isLiked = !!likeDoc;
   
   const handleToggleLike = async () => {
-    if (!likeRef || !firestore || !currentStory) return;
+    if (!likeRef || !firestore || !currentStory || !currentUser) return;
     const storyRef = doc(firestore, 'stories', currentStory.id);
     const batch = writeBatch(firestore);
 
@@ -119,7 +119,6 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
 
     const storyRef = doc(firestore, 'stories', currentStory.id);
     const commentsCol = collection(firestore, 'stories', currentStory.id, 'comments');
-    const notifCol = collection(firestore, 'users', currentStory.authorId, 'notifications');
     const batch = writeBatch(firestore);
 
     batch.set(doc(commentsCol), {
@@ -131,25 +130,32 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
     });
     batch.update(storyRef, { commentCount: increment(1) });
 
-    if(currentUser.uid !== currentStory.authorId){
-        batch.set(doc(notifCol), {
-            type: 'story_comment',
-            text: `${currentUser.displayName} mengomentari cerita Anda.`,
-            link: `/profile/${currentGroup.authorId}`, // Link to profile to see stories
-            actor: {
-                uid: currentUser.uid,
-                displayName: currentUser.displayName!,
-                photoURL: currentUser.photoURL!
-            },
-            read: false,
-            createdAt: serverTimestamp()
-        })
-    }
-    
     try {
         await batch.commit();
         setComment("");
         toast({title: "Komentar terkirim!"});
+        
+        if(currentUser.uid !== currentStory.authorId){
+            const authorDoc = await getDoc(doc(firestore, 'users', currentStory.authorId));
+            if (authorDoc.exists()) {
+                const authorProfile = authorDoc.data() as AppUser;
+                if (authorProfile.notificationPreferences?.onStoryComment !== false) {
+                    const notifCol = collection(firestore, 'users', currentStory.authorId, 'notifications');
+                    addDoc(notifCol, {
+                        type: 'story_comment',
+                        text: `${currentUser.displayName} mengomentari cerita Anda.`,
+                        link: `/profile/${currentGroup.authorId}`,
+                        actor: {
+                            uid: currentUser.uid,
+                            displayName: currentUser.displayName!,
+                            photoURL: currentUser.photoURL!
+                        },
+                        read: false,
+                        createdAt: serverTimestamp()
+                    });
+                }
+            }
+        }
     } catch (e) {
         toast({variant: 'destructive', title: "Gagal mengirim komentar."});
     } finally {

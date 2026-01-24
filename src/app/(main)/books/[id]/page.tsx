@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { notFound, useParams } from 'next/navigation';
 import { useFirestore, useUser, useDoc, useCollection } from '@/firebase';
-import { doc, collection, addDoc, serverTimestamp, query, orderBy, updateDoc, increment, writeBatch } from 'firebase/firestore';
+import { doc, collection, addDoc, serverTimestamp, query, orderBy, updateDoc, increment, writeBatch, getDoc } from 'firebase/firestore';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -86,23 +86,29 @@ export default function BookDetailsPage() {
     };
 
     addDoc(commentsCol, commentData)
-      .then(() => {
+      .then(async () => {
         setNewComment('');
-        // Add notification if not commenting on own book
+        // Add notification if not commenting on own book and if preferences allow
         if (currentUser.uid !== book.authorId) {
-            const notificationsCol = collection(firestore, 'users', book.authorId, 'notifications');
-            addDoc(notificationsCol, {
-                type: 'comment' as const,
-                text: `${currentUser.displayName} mengomentari buku Anda: ${book.title}`,
-                link: `/books/${params.id}`,
-                actor: {
-                    uid: currentUser.uid,
-                    displayName: currentUser.displayName!,
-                    photoURL: currentUser.photoURL!,
-                },
-                read: false,
-                createdAt: serverTimestamp(),
-            });
+            const authorDoc = await getDoc(doc(firestore, 'users', book.authorId));
+            if (authorDoc.exists()) {
+                const authorProfile = authorDoc.data() as User;
+                if (authorProfile.notificationPreferences?.onBookComment !== false) {
+                    const notificationsCol = collection(firestore, 'users', book.authorId, 'notifications');
+                    addDoc(notificationsCol, {
+                        type: 'comment' as const,
+                        text: `${currentUser.displayName} mengomentari buku Anda: ${book.title}`,
+                        link: `/books/${params.id}`,
+                        actor: {
+                            uid: currentUser.uid,
+                            displayName: currentUser.displayName!,
+                            photoURL: currentUser.photoURL!,
+                        },
+                        read: false,
+                        createdAt: serverTimestamp(),
+                    });
+                }
+            }
         }
       })
       .catch((serverError) => {
@@ -144,24 +150,32 @@ export default function BookDetailsPage() {
                 addedAt: serverTimestamp()
             });
             batch.update(bookRef, { favoriteCount: increment(1) });
-            // Add notification if not favoriting own book
-            if (currentUser.uid !== book.authorId) {
-                const notificationsCol = collection(firestore, 'users', book.authorId, 'notifications');
-                batch.set(doc(notificationsCol), {
-                    type: 'favorite' as const,
-                    text: `${currentUser.displayName} menyukai buku Anda: ${book.title}`,
-                    link: `/books/${params.id}`,
-                    actor: {
-                        uid: currentUser.uid,
-                        displayName: currentUser.displayName!,
-                        photoURL: currentUser.photoURL!,
-                    },
-                    read: false,
-                    createdAt: serverTimestamp()
-                });
-            }
         }
         await batch.commit();
+
+        // Handle notification outside of batch
+        if (!isFavorite && currentUser.uid !== book.authorId) {
+            const authorDoc = await getDoc(doc(firestore, 'users', book.authorId));
+             if (authorDoc.exists()) {
+                const authorProfile = authorDoc.data() as User;
+                if (authorProfile.notificationPreferences?.onBookFavorite !== false) {
+                    const notificationsCol = collection(firestore, 'users', book.authorId, 'notifications');
+                    addDoc(notificationsCol, {
+                        type: 'favorite' as const,
+                        text: `${currentUser.displayName} menyukai buku Anda: ${book.title}`,
+                        link: `/books/${params.id}`,
+                        actor: {
+                            uid: currentUser.uid,
+                            displayName: currentUser.displayName!,
+                            photoURL: currentUser.photoURL!,
+                        },
+                        read: false,
+                        createdAt: serverTimestamp()
+                    });
+                }
+             }
+        }
+
         toast({
             title: isFavorite ? "Dihapus dari Favorit" : "Ditambahkan ke Favorit",
         });

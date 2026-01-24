@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useMemo, useState, useEffect } from 'react';
 import { useFirestore, useUser, useCollection, useDoc } from '@/firebase';
-import { collection, query, where, limit, addDoc, documentId, doc, writeBatch, increment, serverTimestamp, orderBy } from 'firebase/firestore';
+import { collection, query, where, limit, addDoc, documentId, doc, writeBatch, increment, serverTimestamp, orderBy, getDoc } from 'firebase/firestore';
 import type { User, Book, Chat, Favorite, Follow, Story } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -156,55 +156,61 @@ export default function ProfilePage() {
     if (!firestore || !currentUser || !user || isOwnProfile || !currentUserProfile) return;
     setIsTogglingFollow(true);
 
-    const batch = writeBatch(firestore);
-
     const followingDocRef = doc(firestore, 'users', currentUser.uid, 'following', user.uid);
     const followerDocRef = doc(firestore, 'users', user.uid, 'followers', currentUser.uid);
     const currentUserProfileRef = doc(firestore, 'users', currentUser.uid);
     const targetUserProfileRef = doc(firestore, 'users', user.uid);
 
     try {
-      if (isFollowing) {
-        batch.delete(followingDocRef);
-        batch.delete(followerDocRef);
-        batch.update(currentUserProfileRef, { following: increment(-1) });
-        batch.update(targetUserProfileRef, { followers: increment(-1) });
-        toast({ title: `Anda berhenti mengikuti ${user.displayName}` });
-      } else {
-        const followData = { userId: currentUser.uid, followedAt: serverTimestamp() };
-        batch.set(followingDocRef, followData);
-        batch.set(followerDocRef, followData);
-        batch.update(currentUserProfileRef, { following: increment(1) });
-        batch.update(targetUserProfileRef, { followers: increment(1) });
-        
-        const notificationData = {
-            type: 'follow' as const,
-            text: `${currentUser.displayName} mulai mengikuti Anda.`,
-            link: `/profile/${currentUserProfile.username}`,
-            actor: {
-                uid: currentUser.uid,
-                displayName: currentUser.displayName!,
-                photoURL: currentUser.photoURL!,
-            },
-            read: false,
-            createdAt: serverTimestamp()
-        };
-        const notificationsCol = collection(firestore, 'users', user.uid, 'notifications');
-        batch.set(doc(notificationsCol), notificationData);
+        const batch = writeBatch(firestore);
+        if (isFollowing) {
+            batch.delete(followingDocRef);
+            batch.delete(followerDocRef);
+            batch.update(currentUserProfileRef, { following: increment(-1) });
+            batch.update(targetUserProfileRef, { followers: increment(-1) });
+        } else {
+            const followData = { userId: currentUser.uid, followedAt: serverTimestamp() };
+            batch.set(followingDocRef, followData);
+            batch.set(followerDocRef, followData);
+            batch.update(currentUserProfileRef, { following: increment(1) });
+            batch.update(targetUserProfileRef, { followers: increment(1) });
+        }
+        await batch.commit();
 
-        toast({ title: `Anda sekarang mengikuti ${user.displayName}` });
-      }
-
-      await batch.commit();
+        if (!isFollowing) {
+            const targetUserDoc = await getDoc(targetUserProfileRef);
+            if (targetUserDoc.exists()) {
+                const targetUserProfileData = targetUserDoc.data() as User;
+                if (targetUserProfileData.notificationPreferences?.onNewFollower !== false) {
+                    const notificationData = {
+                        type: 'follow' as const,
+                        text: `${currentUser.displayName} mulai mengikuti Anda.`,
+                        link: `/profile/${currentUserProfile.username}`,
+                        actor: {
+                            uid: currentUser.uid,
+                            displayName: currentUser.displayName!,
+                            photoURL: currentUser.photoURL!,
+                        },
+                        read: false,
+                        createdAt: serverTimestamp()
+                    };
+                    const notificationsCol = collection(firestore, 'users', user.uid, 'notifications');
+                    await addDoc(notificationsCol, notificationData);
+                }
+            }
+            toast({ title: `Anda sekarang mengikuti ${user.displayName}` });
+        } else {
+            toast({ title: `Anda berhenti mengikuti ${user.displayName}` });
+        }
     } catch (error) {
-      console.error("Error toggling follow:", error);
-      toast({
-        variant: "destructive",
-        title: "Gagal Mengikuti",
-        description: "Terjadi kesalahan. Silakan coba lagi.",
-      });
+        console.error("Error toggling follow:", error);
+        toast({
+            variant: "destructive",
+            title: "Gagal Mengikuti",
+            description: "Terjadi kesalahan. Silakan coba lagi.",
+        });
     } finally {
-      setIsTogglingFollow(false);
+        setIsTogglingFollow(false);
     }
   };
 

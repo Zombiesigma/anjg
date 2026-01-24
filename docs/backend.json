@@ -43,6 +43,28 @@
         "following": {
             "type": "number",
             "description": "Number of users being followed."
+        },
+        "notificationPreferences": {
+          "type": "object",
+          "description": "User's notification settings.",
+          "properties": {
+            "onNewFollower": {
+              "type": "boolean",
+              "description": "Receive notification on new follower."
+            },
+            "onBookComment": {
+              "type": "boolean",
+              "description": "Receive notification on book comments."
+            },
+            "onBookFavorite": {
+              "type": "boolean",
+              "description": "Receive notification on book favorites."
+            },
+            "onStoryComment": {
+              "type": "boolean",
+              "description": "Receive notification on story comments."
+            }
+          }
         }
       },
       "required": ["uid", "email", "displayName", "username"]

@@ -11,6 +11,12 @@ export type User = {
   photoURL: string;
   displayName: string;
   email: string;
+  notificationPreferences?: {
+    onNewFollower?: boolean;
+    onBookComment?: boolean;
+    onBookFavorite?: boolean;
+    onStoryComment?: boolean;
+  };
 };
 
 export type Book = {
