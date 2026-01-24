@@ -99,3 +99,9 @@ export type Favorite = {
     userId: string;
     addedAt: Timestamp;
 };
+
+export type Follow = {
+    id: string; // This will be the user id of the person being followed/the follower
+    userId: string;
+    followedAt: Timestamp;
+};

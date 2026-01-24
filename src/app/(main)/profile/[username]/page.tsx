@@ -3,17 +3,17 @@
 import { notFound, useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
-import { useFirestore, useUser, useCollection } from '@/firebase';
-import { collection, query, where, limit, addDoc, documentId } from 'firebase/firestore';
-import type { User, Book, Chat, Favorite } from '@/lib/types';
+import { useMemo, useState, useEffect } from 'react';
+import { useFirestore, useUser, useCollection, useDoc } from '@/firebase';
+import { collection, query, where, limit, addDoc, documentId, doc, writeBatch, increment, serverTimestamp } from 'firebase/firestore';
+import type { User, Book, Chat, Favorite, Follow } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { BookCard } from '@/components/BookCard';
-import { UserPlus, MessageCircle, Edit, Loader2 } from 'lucide-react';
+import { UserPlus, MessageCircle, Edit, Loader2, UserMinus } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 
@@ -24,6 +24,8 @@ export default function ProfilePage() {
   const { user: currentUser } = useUser();
   const { toast } = useToast();
   const [isCreatingChat, setIsCreatingChat] = useState(false);
+  const [isTogglingFollow, setIsTogglingFollow] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
 
   const userQuery = useMemo(() => (
     firestore 
@@ -34,6 +36,17 @@ export default function ProfilePage() {
   const user = users?.[0];
   
   const isOwnProfile = user?.uid === currentUser?.uid;
+
+  const followingRef = useMemo(() => (
+    (firestore && currentUser && user && !isOwnProfile)
+      ? doc(firestore, 'users', currentUser.uid, 'following', user.uid)
+      : null
+  ), [firestore, currentUser, user, isOwnProfile]);
+  const { data: followingDoc, isLoading: isFollowingLoading } = useDoc<Follow>(followingRef);
+  
+  useEffect(() => {
+    setIsFollowing(!!followingDoc);
+  }, [followingDoc]);
   
   // Single query for all books by author to avoid composite index
   const booksByAuthorQuery = useMemo(() => (
@@ -102,6 +115,46 @@ export default function ProfilePage() {
     }
   };
 
+  const handleToggleFollow = async () => {
+    if (!firestore || !currentUser || !user || isOwnProfile) return;
+    setIsTogglingFollow(true);
+
+    const batch = writeBatch(firestore);
+
+    const followingDocRef = doc(firestore, 'users', currentUser.uid, 'following', user.uid);
+    const followerDocRef = doc(firestore, 'users', user.uid, 'followers', currentUser.uid);
+    const currentUserProfileRef = doc(firestore, 'users', currentUser.uid);
+    const targetUserProfileRef = doc(firestore, 'users', user.uid);
+
+    try {
+      if (isFollowing) {
+        batch.delete(followingDocRef);
+        batch.delete(followerDocRef);
+        batch.update(currentUserProfileRef, { following: increment(-1) });
+        batch.update(targetUserProfileRef, { followers: increment(-1) });
+        toast({ title: `Anda berhenti mengikuti ${user.displayName}` });
+      } else {
+        const followData = { userId: currentUser.uid, followedAt: serverTimestamp() };
+        batch.set(followingDocRef, followData);
+        batch.set(followerDocRef, followData);
+        batch.update(currentUserProfileRef, { following: increment(1) });
+        batch.update(targetUserProfileRef, { followers: increment(1) });
+        toast({ title: `Anda sekarang mengikuti ${user.displayName}` });
+      }
+
+      await batch.commit();
+    } catch (error) {
+      console.error("Error toggling follow:", error);
+      toast({
+        variant: "destructive",
+        title: "Gagal Mengikuti",
+        description: "Terjadi kesalahan. Silakan coba lagi.",
+      });
+    } finally {
+      setIsTogglingFollow(false);
+    }
+  };
+
   if (isUserLoading) {
     return <ProfileSkeleton />;
   }
@@ -134,7 +187,14 @@ export default function ProfilePage() {
                         </Link>
                     ) : (
                         <>
-                            <Button><UserPlus className="mr-2 h-4 w-4"/> Ikuti</Button>
+                            <Button onClick={handleToggleFollow} disabled={isTogglingFollow || isFollowingLoading} variant={isFollowing ? "outline" : "default"}>
+                              {(isTogglingFollow || isFollowingLoading) ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
+                              ) : (
+                                isFollowing ? <UserMinus className="mr-2 h-4 w-4" /> : <UserPlus className="mr-2 h-4 w-4"/>
+                              )}
+                              {isFollowing ? 'Berhenti Mengikuti' : 'Ikuti'}
+                            </Button>
                             <Button variant="outline" onClick={handleStartChat} disabled={isCreatingChat || areChatsLoading}>
                                 {(isCreatingChat || areChatsLoading) ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <MessageCircle className="mr-2 h-4 w-4"/>}
                                 Pesan

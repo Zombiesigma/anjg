@@ -6,7 +6,6 @@ service cloud.firestore {
       return request.auth != null;
     }
     
-    // --- Admin ---
     function isAdmin() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
@@ -14,17 +13,39 @@ service cloud.firestore {
     // --- Users ---
     match /users/{userId} {
       allow read: if true;
-      allow write: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isSignedIn() && request.auth.uid == userId; // Users can update their own profile
+      
+      match /favorites/{bookId} {
+        allow read, write: if isSignedIn() && request.auth.uid == userId;
+      }
+      
+      match /followers/{followerId} {
+        allow read: if true;
+        // The follower can add/remove themselves from the list
+        allow create, delete: if isSignedIn() && request.auth.uid == followerId;
+      }
+      
+      match /following/{followedUserId} {
+        allow read: if true;
+        // The user can manage their own following list
+        allow create, delete: if isSignedIn() && request.auth.uid == userId;
+      }
     }
 
     // --- Books & Chapters ---
     match /books/{bookId} {
+      // Anyone can read published books. Author can read their own draft/published books.
       allow read: if resource.data.status == 'published' || (isSignedIn() && request.auth.uid == resource.data.authorId);
-      allow write: if isSignedIn() && request.auth.uid == resource.data.authorId;
+      // Author can update their book.
+      allow update: if isSignedIn() && request.auth.uid == resource.data.authorId;
+      // Signed in users can create books (role is checked in app).
+      allow create: if isSignedIn();
+      // No one can delete books from the client.
+      allow delete: if false;
       
       // Sub-collections
       match /chapters/{chapterId} {
-        allow read: if resource.data.status == 'published' || (isSignedIn() && request.auth.uid == get(/databases/$(database)/documents/books/$(bookId)).data.authorId);
+        allow read: if get(/databases/$(database)/documents/books/$(bookId)).data.status == 'published' || (isSignedIn() && request.auth.uid == get(/databases/$(database)/documents/books/$(bookId)).data.authorId);
         allow write: if isSignedIn() && request.auth.uid == get(/databases/$(database)/documents/books/$(bookId)).data.authorId;
       }
       
