@@ -13,7 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { Eye, Download, BookOpen, Send, MessageCircle, Loader2, Edit } from 'lucide-react';
-import type { Book, Comment } from '@/lib/types';
+import type { Book, Comment, User } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -27,6 +27,11 @@ export default function BookDetailsPage() {
     firestore ? doc(firestore, 'books', params.id) : null
   ), [firestore, params.id]);
   const { data: book, isLoading: isBookLoading } = useDoc<Book>(bookRef);
+
+  const authorRef = useMemo(() => (
+    (firestore && book?.authorId) ? doc(firestore, 'users', book.authorId) : null
+  ), [firestore, book]);
+  const { data: author, isLoading: isAuthorLoading } = useDoc<User>(authorRef);
 
   const commentsQuery = useMemo(() => (
     firestore 
@@ -75,7 +80,7 @@ export default function BookDetailsPage() {
       });
   };
 
-  if (isBookLoading) {
+  if (isBookLoading || isAuthorLoading) {
     return <BookDetailsSkeleton />;
   }
 
@@ -120,7 +125,7 @@ export default function BookDetailsPage() {
                 <AvatarImage src={book.authorAvatarUrl} alt={book.authorName} />
                 <AvatarFallback>{book.authorName?.charAt(0)}</AvatarFallback>
               </Avatar>
-              <Link href={`/profile/${book.authorName}`} className="font-medium hover:underline">{book.authorName}</Link>
+              <Link href={author ? `/profile/${author.username}` : '#'} className="font-medium hover:underline">{book.authorName}</Link>
             </div>
           </div>
           <div className="space-y-4">
