@@ -1,17 +1,18 @@
 'use client';
 
-import { useFirestore } from '@/firebase';
-import { useCollection } from '@/firebase/firestore/use-collection';
-import { collection, query, where } from 'firebase/firestore';
-import { BookCard } from '@/components/BookCard';
-import { Skeleton } from '@/components/ui/skeleton';
-import type { Book } from '@/lib/types';
+import { useFirestore, useCollection } from '@/firebase';
+import { collection, query, where, orderBy } from 'firebase/firestore';
 import { useMemo } from 'react';
+import type { Book } from '@/lib/types';
+import { BookCarousel } from '@/components/BookCarousel';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { Sparkles, ArrowRight } from 'lucide-react';
 
 export default function HomePage() {
   const firestore = useFirestore();
 
-  // The query is simplified to avoid needing a composite index.
+  // A single query to get all published books to avoid composite indexes.
   const booksQuery = useMemo(() => (
     firestore
     ? query(collection(firestore, 'books'), where('status', '==', 'published'))
@@ -20,40 +21,43 @@ export default function HomePage() {
   
   const { data: rawBooks, isLoading } = useCollection<Book>(booksQuery);
 
-  // We sort the books on the client-side after fetching and take the top 12.
-  const books = useMemo(() => {
+  // We sort the books on the client-side for different sections.
+  const popularBooks = useMemo(() => {
     if (!rawBooks) return null;
-    return [...rawBooks].sort((a, b) => b.viewCount - a.viewCount).slice(0, 12);
+    return [...rawBooks].sort((a, b) => (b.favoriteCount + b.viewCount) - (a.favoriteCount + a.viewCount)).slice(0, 12);
+  }, [rawBooks]);
+  
+  const newBooks = useMemo(() => {
+    if (!rawBooks) return null;
+    return [...rawBooks].sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis()).slice(0, 12);
   }, [rawBooks]);
 
   return (
-    <div className="space-y-8">
-      <div className="text-center md:text-left">
-        <h1 className="text-4xl font-headline font-bold text-primary">Jelajahi Dunia</h1>
-        <p className="text-lg text-muted-foreground mt-2">Temukan buku favorit Anda berikutnya dari koleksi kami yang luas.</p>
-      </div>
-      <section>
-        <h2 className="text-2xl font-headline font-bold mb-4">Populer Saat Ini</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-          {isLoading &&
-            Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="space-y-2">
-                <Skeleton className="aspect-[2/3] w-full" />
-                <Skeleton className="h-5 w-3/4 mt-2" />
-                <Skeleton className="h-4 w-1/2" />
-              </div>
-            ))}
-          {books?.map((book) => (
-            <BookCard key={book.id} book={book} />
-          ))}
+    <div className="space-y-12">
+      {/* Hero Section */}
+      <section className="rounded-lg bg-gradient-to-r from-primary/10 via-background to-accent/10 p-8 md:p-12 text-center flex flex-col items-center">
+        <Sparkles className="h-10 w-10 text-primary mb-4" />
+        <h1 className="text-4xl md:text-5xl font-headline font-bold text-primary">Jelajahi Dunia Literasi Tanpa Batas</h1>
+        <p className="text-lg text-muted-foreground mt-4 max-w-2xl">
+          Temukan buku favorit Anda berikutnya, tulis cerita Anda sendiri, dan terhubung dengan komunitas pembaca dan penulis yang bersemangat.
+        </p>
+        <div className="mt-8 flex gap-4">
+            <Button size="lg" asChild>
+                <Link href="/search?q=">
+                    Mulai Menjelajah <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
+            </Button>
+            <Button size="lg" variant="outline" asChild>
+                <Link href="/upload">
+                    Mulai Menulis
+                </Link>
+            </Button>
         </div>
-        {!isLoading && books?.length === 0 && (
-          <div className="text-center text-muted-foreground py-8 col-span-full">
-            <p>Belum ada buku yang diterbitkan.</p>
-            <p className="text-sm">Kembali lagi nanti!</p>
-          </div>
-        )}
       </section>
+
+      {/* Carousels */}
+      <BookCarousel title="Populer Saat Ini" books={popularBooks} isLoading={isLoading} />
+      <BookCarousel title="Baru Ditambahkan" books={newBooks} isLoading={isLoading} />
     </div>
   );
 }
