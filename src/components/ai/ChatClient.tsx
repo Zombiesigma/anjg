@@ -48,7 +48,7 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
 
     try {
       const chatHistory = messages.map(msg => ({
-        role: msg.role === 'assistant' ? 'assistant' : 'user',
+        role: msg.role,
         content: msg.content
       }));
 
@@ -59,7 +59,7 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
       });
       
       const assistantMessage: AiChatMessage = {
-        role: "assistant",
+        role: "model",
         content: result.response,
       };
       setMessages((prev) => [...prev, assistantMessage]);
@@ -67,7 +67,7 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
     } catch (error) {
       console.error("Error with Litera AI:", error);
       const errorMessage: AiChatMessage = {
-        role: "assistant",
+        role: "model",
         content: "Maaf, saya mengalami kesalahan. Silakan coba lagi.",
       };
       setMessages((prev) => [...prev, errorMessage]);
@@ -92,7 +92,7 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
                   m.role === "user" && "justify-end"
                 )}
               >
-                {m.role === "assistant" && (
+                {m.role === "model" && (
                    <Avatar className="w-8 h-8 border-2 border-primary">
                     <AvatarFallback><Bot size={18} /></AvatarFallback>
                   </Avatar>

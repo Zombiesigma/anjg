@@ -125,7 +125,7 @@ export type Notification = {
 };
 
 export type AiChatMessage = {
-  role: 'user' | 'assistant';
+  role: 'user' | 'model';
   content: string;
 };
 
@@ -176,4 +176,3 @@ export type StoryView = {
   viewedAt: Timestamp;
 };
 
-    

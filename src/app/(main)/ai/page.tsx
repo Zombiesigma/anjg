@@ -19,7 +19,7 @@ import type { AiChatMessage } from '@/lib/types';
 import { Separator } from '@/components/ui/separator';
 
 const initialHistory: AiChatMessage[] = [
-    { role: 'assistant', content: 'Halo! Saya Litera AI. Ada yang bisa saya bantu dengan tulisan, riset, atau rekomendasi buku Anda hari ini?' }
+    { role: 'model', content: 'Halo! Saya Litera AI. Ada yang bisa saya bantu dengan tulisan, riset, atau rekomendasi buku Anda hari ini?' }
 ];
 
 export default function AiPage() {
