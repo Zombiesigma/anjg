@@ -50,9 +50,9 @@ export default function RegisterPage() {
     } else {
       toast({
         title: 'Pendaftaran Berhasil',
-        description: 'Selamat bergabung di Litera!',
+        description: 'Kami telah mengirimkan tautan verifikasi ke email Anda.',
       });
-      router.push('/');
+      router.push('/verify-email');
     }
     setIsLoading(false);
   }

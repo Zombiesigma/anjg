@@ -1,3 +1,5 @@
+'use client';
+
 import { initializeFirebase } from '@/firebase';
 import {
   createUserWithEmailAndPassword,
@@ -6,6 +8,7 @@ import {
   GoogleAuthProvider,
   signOut as firebaseSignOut,
   updateProfile,
+  sendEmailVerification,
   type User,
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
@@ -39,6 +42,10 @@ export async function signUpWithEmail(email: string, password: string, displayNa
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
+    
+    // Send verification email
+    await sendEmailVerification(user);
+
     // Generate a default photoURL
     const photoURL = `https://api.dicebear.com/8.x/identicon/svg?seed=${user.uid}`;
     await updateProfile(user, { displayName, photoURL });
@@ -60,6 +67,7 @@ export async function signUpWithEmail(email: string, password: string, displayNa
 export async function signInWithEmail(email: string, password: string) {
   try {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    // Ensure profile exists on login as well, as a fallback.
     await createUserProfile(userCredential.user);
     return { user: userCredential.user };
   } catch (error) {
