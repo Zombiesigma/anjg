@@ -5,8 +5,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useRouter } from 'next/navigation';
-import { useFirestore, useUser } from '@/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { useFirestore, useUser, useDoc } from '@/firebase';
+import { collection, addDoc, serverTimestamp, doc } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Sparkles } from "lucide-react";
+import { Loader2, Sparkles, AlertTriangle, BookUser } from "lucide-react";
+import type { User as AppUser } from '@/lib/types';
+import Link from 'next/link';
 
 const formSchema = z.object({
   title: z.string().min(3, { message: "Judul minimal 3 karakter." }).max(100, { message: "Judul maksimal 100 karakter."}),
@@ -25,9 +27,12 @@ const formSchema = z.object({
 export default function CreateBookPage() {
   const router = useRouter();
   const firestore = useFirestore();
-  const { user: currentUser } = useUser();
+  const { user: currentUser, isLoading: isUserAuthLoading } = useUser();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const userProfileRef = (firestore && currentUser) ? doc(firestore, 'users', currentUser.uid) : null;
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc<AppUser>(userProfileRef);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -47,7 +52,7 @@ export default function CreateBookPage() {
         return;
     }
     
-    setIsLoading(true);
+    setIsSubmitting(true);
 
     try {
       const bookData = {
@@ -58,7 +63,6 @@ export default function CreateBookPage() {
         status: 'draft' as const,
         viewCount: 0,
         downloadCount: 0,
-        // Use a random image from picsum.photos for the cover
         coverUrl: `https://picsum.photos/seed/${Date.now()}/400/600`,
         createdAt: serverTimestamp(),
       };
@@ -80,8 +84,45 @@ export default function CreateBookPage() {
         title: "Gagal Membuat Buku",
         description: "Terjadi kesalahan. Silakan coba lagi.",
       });
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
+  }
+
+  if (isUserAuthLoading || isProfileLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (userProfile?.role !== 'penulis') {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <Card className="text-center">
+            <CardHeader>
+                <div className="mx-auto bg-destructive/10 p-3 rounded-full w-fit mb-4">
+                    <AlertTriangle className="h-8 w-8 text-destructive" />
+                </div>
+                <CardTitle className="font-headline text-2xl">Akses Ditolak</CardTitle>
+                <CardDescription>
+                    Hanya pengguna dengan peran 'penulis' yang dapat membuat buku baru.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <p className="text-muted-foreground">Peran Anda saat ini adalah <span className="font-semibold capitalize">{userProfile?.role || 'pembaca'}</span>. Jika Anda ingin membagikan cerita Anda, silakan ajukan permohonan untuk menjadi penulis.</p>
+            </CardContent>
+            <CardContent>
+                <Button asChild>
+                    <Link href="/join-author">
+                        <BookUser className="mr-2 h-4 w-4" />
+                        Bergabung Sebagai Penulis
+                    </Link>
+                </Button>
+            </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   return (
@@ -151,8 +192,8 @@ export default function CreateBookPage() {
               />
             </CardContent>
             <CardContent>
-              <Button type="submit" size="lg" className="w-full" disabled={isLoading}>
-                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+              <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
                 Buat Buku & Mulai Menulis
               </Button>
             </CardContent>
