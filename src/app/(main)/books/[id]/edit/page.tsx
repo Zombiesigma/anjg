@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { notFound, useParams, useRouter } from 'next/navigation';
 import { useFirestore, useUser, useDoc, useCollection } from '@/firebase';
-import { doc, updateDoc, collection, addDoc, serverTimestamp, query, orderBy, writeBatch } from 'firebase/firestore';
+import { doc, updateDoc, collection, addDoc, serverTimestamp, query, orderBy, writeBatch, increment } from 'firebase/firestore';
 import type { Book, Chapter } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -104,7 +104,7 @@ export default function EditBookPage() {
   };
   
   const handleAddChapter = async () => {
-      if (!firestore || !chapters) return;
+      if (!firestore || !chapters || !bookRef) return;
       const newOrder = chapters.length + 1;
       const chapterData = {
           title: `Bab ${newOrder}`,
@@ -112,8 +112,16 @@ export default function EditBookPage() {
           order: newOrder,
           createdAt: serverTimestamp()
       };
-      const newChapterRef = await addDoc(collection(firestore, 'books', params.id, 'chapters'), chapterData);
-      setActiveChapterId(newChapterRef.id);
+      
+      const chapterCollection = collection(firestore, 'books', params.id, 'chapters');
+      const newChapterDoc = doc(chapterCollection);
+
+      const batch = writeBatch(firestore);
+      batch.set(newChapterDoc, chapterData);
+      batch.update(bookRef, { chapterCount: increment(1) });
+      await batch.commit();
+
+      setActiveChapterId(newChapterDoc.id);
   }
   
   const onChapterSubmit = async (values: z.infer<typeof chapterSchema>) => {

@@ -58,6 +58,7 @@
         "coverUrl": { "type": "string", "format": "uri" },
         "viewCount": { "type": "number" },
         "downloadCount": { "type": "number" },
+        "chapterCount": { "type": "number", "description": "Number of chapters in the book." },
         "authorId": { "type": "string" },
         "authorName": { "type": "string" },
         "authorAvatarUrl": { "type": "string", "format": "uri" },

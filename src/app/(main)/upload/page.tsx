@@ -63,6 +63,7 @@ export default function CreateBookPage() {
         status: 'draft' as const,
         viewCount: 0,
         downloadCount: 0,
+        chapterCount: 0,
         coverUrl: `https://picsum.photos/seed/${Date.now()}/400/600`,
         createdAt: serverTimestamp(),
       };

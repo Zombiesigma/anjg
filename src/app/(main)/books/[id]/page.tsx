@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
-import { Eye, Download, BookOpen, Send, MessageCircle, Loader2, Edit } from 'lucide-react';
+import { Eye, BookOpen, Send, MessageCircle, Loader2, Edit, Layers } from 'lucide-react';
 import type { Book, Comment, User } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -102,11 +102,16 @@ export default function BookDetailsPage() {
                 sizes="(max-width: 768px) 100vw, 33vw"
               />
             </div>
-            <CardContent className="p-4 grid grid-cols-2 gap-4 text-sm text-center">
+            <CardContent className="p-4 grid grid-cols-3 gap-4 text-sm text-center">
                 <div className="flex flex-col items-center gap-1">
                     <Eye className="h-5 w-5 text-muted-foreground" />
                     <span className="font-semibold">{isMounted ? new Intl.NumberFormat('id-ID').format(book.viewCount) : '...'}</span>
                     <span className="text-xs text-muted-foreground">Dilihat</span>
+                </div>
+                <div className="flex flex-col items-center gap-1">
+                    <Layers className="h-5 w-5 text-muted-foreground" />
+                    <span className="font-semibold">{isMounted ? book.chapterCount ?? 0 : '...'}</span>
+                    <span className="text-xs text-muted-foreground">Bab</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
                     <MessageCircle className="h-5 w-5 text-muted-foreground" />
@@ -207,7 +212,8 @@ function BookDetailsSkeleton() {
                 <div className="md:col-span-1">
                     <Card className="overflow-hidden sticky top-20">
                         <Skeleton className="aspect-[2/3] w-full" />
-                        <CardContent className="p-4 grid grid-cols-2 gap-4">
+                        <CardContent className="p-4 grid grid-cols-3 gap-4">
+                            <Skeleton className="h-10 w-full" />
                             <Skeleton className="h-10 w-full" />
                             <Skeleton className="h-10 w-full" />
                         </CardContent>

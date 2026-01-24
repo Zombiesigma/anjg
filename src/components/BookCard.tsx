@@ -3,7 +3,7 @@ import Image from 'next/image';
 import type { Book } from '@/lib/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Eye, Download } from 'lucide-react';
+import { Eye, Layers } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 type BookCardProps = {
@@ -46,8 +46,8 @@ export function BookCard({ book }: BookCardProps) {
               <span>{isMounted ? new Intl.NumberFormat('id-ID').format(book.viewCount) : '...'}</span>
             </div>
             <div className="flex items-center gap-1">
-              <Download className="h-3.5 w-3.5" />
-              <span>{isMounted ? new Intl.NumberFormat('id-ID').format(book.downloadCount) : '...'}</span>
+              <Layers className="h-3.5 w-3.5" />
+              <span>{isMounted ? book.chapterCount ?? 0 : '...'}</span>
             </div>
           </div>
         </CardContent>

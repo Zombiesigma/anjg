@@ -21,6 +21,7 @@ export type Book = {
   coverUrl: string;
   viewCount: number;
   downloadCount: number;
+  chapterCount: number;
   authorId: string;
   authorName: string;
   authorAvatarUrl: string;
