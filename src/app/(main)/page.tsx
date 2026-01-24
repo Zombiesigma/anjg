@@ -1,7 +1,7 @@
 'use client';
 
 import { useFirestore, useCollection, useUser, useDoc } from '@/firebase';
-import { collection, query, where, orderBy, doc } from 'firebase/firestore';
+import { collection, query, where, orderBy, doc, type Query, type DocumentData } from 'firebase/firestore';
 import { useMemo, useState, useEffect } from 'react';
 import type { Book, Story, User as AppUser } from '@/lib/types';
 import { BookCarousel } from '@/components/BookCarousel';
@@ -17,6 +17,7 @@ export default function HomePage() {
   const firestore = useFirestore();
   const { user: currentUser } = useUser();
   const [showHero, setShowHero] = useState(false);
+  const [storiesQuery, setStoriesQuery] = useState<Query<DocumentData> | null>(null);
 
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<AppUser>(
     (firestore && currentUser) ? doc(firestore, 'users', currentUser.uid) : null
@@ -35,6 +36,20 @@ export default function HomePage() {
       return () => clearTimeout(timer);
     }
   }, []);
+  
+  useEffect(() => {
+    if (firestore) {
+      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      setStoriesQuery(
+        query(
+          collection(firestore, 'stories'),
+          where('createdAt', '>', twentyFourHoursAgo),
+          orderBy('createdAt', 'desc')
+        )
+      );
+    }
+  }, [firestore]);
+
 
   // A single query to get all published books to avoid composite indexes.
   const booksQuery = useMemo(() => (
@@ -55,17 +70,6 @@ export default function HomePage() {
     if (!rawBooks) return null;
     return [...rawBooks].sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis()).slice(0, 12);
   }, [rawBooks]);
-  
-  const twentyFourHoursAgo = useMemo(() => new Date(Date.now() - 24 * 60 * 60 * 1000), []);
-  const storiesQuery = useMemo(() => (
-    firestore
-    ? query(
-        collection(firestore, 'stories'), 
-        where('createdAt', '>', twentyFourHoursAgo),
-        orderBy('createdAt', 'desc')
-      )
-    : null
-  ), [firestore, twentyFourHoursAgo]);
 
   const { data: stories, isLoading: areStoriesLoading } = useCollection<Story>(storiesQuery);
 
