@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
-import { MoreVertical, MessageSquare, Loader2, Send, Search } from 'lucide-react';
+import { MoreVertical, MessageSquare, Loader2, Send, Search, ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Chat, ChatMessage } from '@/lib/types';
 
@@ -28,6 +28,8 @@ export default function MessagesPage() {
     const chatIdFromUrl = searchParams.get('chatId');
     if (chatIdFromUrl) {
       setSelectedChatId(chatIdFromUrl);
+    } else {
+      setSelectedChatId(null);
     }
   }, [searchParams]);
 
@@ -67,6 +69,11 @@ export default function MessagesPage() {
     router.push(`/messages?chatId=${chatId}`, { scroll: false });
     setSelectedChatId(chatId);
   }
+  
+  const handleGoBack = () => {
+    router.push('/messages', { scroll: false });
+    setSelectedChatId(null);
+  };
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !currentUser || !selectedChatId || !firestore) return;
@@ -103,7 +110,10 @@ export default function MessagesPage() {
     <div className="h-[calc(100vh-theme(spacing.14)-2px)] -mt-6 -mx-4 md:-mx-6 border rounded-lg overflow-hidden">
       <div className="grid grid-cols-12 h-full">
         {/* Chat List */}
-        <div className="col-span-12 md:col-span-4 lg:col-span-3 border-r h-full flex flex-col">
+        <div className={cn(
+          "col-span-12 md:col-span-4 lg:col-span-3 border-r h-full flex-col",
+          selectedChatId ? "hidden md:flex" : "flex"
+        )}>
           <div className="p-4 border-b">
             <h1 className="text-2xl font-headline font-bold">Pesan</h1>
             <div className="relative mt-2">
@@ -148,9 +158,12 @@ export default function MessagesPage() {
         </div>
 
         {/* Chat Box */}
-        <div className="col-span-12 md:col-span-8 lg:col-span-9 h-full flex-col bg-muted/20 hidden md:flex">
-          {!selectedChatId ? (
-            <div className="flex items-center justify-center h-full text-center">
+        <div className={cn(
+            "col-span-12 md:col-span-8 lg:col-span-9 h-full flex-col bg-muted/20",
+            selectedChatId ? 'flex' : 'hidden md:flex'
+        )}>
+          {!selectedChatId && !searchParams.get('chatId') ? (
+            <div className="items-center justify-center h-full text-center hidden md:flex">
               <div>
                 <MessageSquare className="h-16 w-16 mx-auto text-muted-foreground/50" />
                 <h2 className="mt-4 text-xl font-semibold">Pilih obrolan</h2>
@@ -161,6 +174,9 @@ export default function MessagesPage() {
             <div className="flex flex-col h-full">
               {/* Chat Header */}
               <div className="flex items-center p-4 border-b bg-background">
+                <Button variant="ghost" size="icon" className="md:hidden mr-2" onClick={handleGoBack}>
+                    <ArrowLeft />
+                </Button>
                 {otherParticipant && (
                    <>
                     <Avatar>
