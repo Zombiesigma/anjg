@@ -247,9 +247,9 @@ export default function EditBookPage() {
                             name="title"
                             render={({ field }) => (
                             <FormItem>
-                                <FormLabel className="sr-only">Judul Bab</FormLabel>
+                                <FormLabel>Judul Bab</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="Judul Bab" {...field} className="text-2xl font-bold font-headline border-0 shadow-none px-0 focus-visible:ring-0" disabled={isReviewing} />
+                                    <Input placeholder="Judul Bab Anda" {...field} disabled={isReviewing} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
