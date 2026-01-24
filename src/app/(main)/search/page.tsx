@@ -15,32 +15,37 @@ import { Separator } from '@/components/ui/separator';
 function SearchPageContent() {
   const searchParams = useSearchParams();
   const firestore = useFirestore();
-  const q = searchParams.get('q');
+  const q = searchParams.get('q') || '';
+  
+  const capitalizedQuery = useMemo(() => {
+      if (!q.trim()) return '';
+      return q.charAt(0).toUpperCase() + q.slice(1);
+  }, [q]);
 
   const booksQuery = useMemo(() => {
-    if (!firestore || !q) return null;
+    if (!firestore || !capitalizedQuery) return null;
     return query(
       collection(firestore, 'books'),
-      where('title', '>=', q),
-      where('title', '<=', q + '\uf8ff'),
+      where('status', '==', 'published'),
+      where('title', '>=', capitalizedQuery),
+      where('title', '<=', capitalizedQuery + '\uf8ff'),
       limit(20)
     );
-  }, [firestore, q]);
+  }, [firestore, capitalizedQuery]);
 
   const usersQuery = useMemo(() => {
-    if (!firestore || !q) return null;
+    if (!firestore || !capitalizedQuery) return null;
     return query(
       collection(firestore, 'users'),
-      where('username', '>=', q),
-      where('username', '<=', q + '\uf8ff'),
+      where('displayName', '>=', capitalizedQuery),
+      where('displayName', '<=', capitalizedQuery + '\uf8ff'),
       limit(20)
     );
-  }, [firestore, q]);
+  }, [firestore, capitalizedQuery]);
   
-  const { data: rawBooks, isLoading: areBooksLoading } = useCollection<Book>(booksQuery);
+  const { data: books, isLoading: areBooksLoading } = useCollection<Book>(booksQuery);
   const { data: users, isLoading: areUsersLoading } = useCollection<User>(usersQuery);
   
-  const books = useMemo(() => rawBooks?.filter(book => book.status === 'published') || [], [rawBooks]);
   const isLoading = areBooksLoading || areUsersLoading;
   
   if (!q) {
