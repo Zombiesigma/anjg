@@ -7,7 +7,7 @@ import * as z from 'zod';
 import { notFound, useParams, useRouter } from 'next/navigation';
 import { useFirestore, useUser, useDoc, useCollection } from '@/firebase';
 import { doc, updateDoc, collection, addDoc, serverTimestamp, query, orderBy, writeBatch, increment } from 'firebase/firestore';
-import type { Book, Chapter } from '@/lib/types';
+import type { Book, Chapter, User as AppUser } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,6 +49,10 @@ export default function EditBookPage() {
     firestore ? doc(firestore, 'books', params.id) : null
   ), [firestore, params.id]);
   const { data: book, isLoading: isBookLoading } = useDoc<Book>(bookRef);
+  
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc<AppUser>(
+    (firestore && currentUser) ? doc(firestore, 'users', currentUser.uid) : null
+  );
 
   const chaptersQuery = useMemo(() => (
     firestore ? query(collection(firestore, 'books', params.id, 'chapters'), orderBy('order', 'asc')) : null
@@ -60,7 +64,8 @@ export default function EditBookPage() {
     defaultValues: { title: '', content: '' },
   });
   
-  const isReviewing = book?.status === 'pending_review';
+  const isAdmin = userProfile?.role === 'admin';
+  const isReviewing = book?.status === 'pending_review' && !isAdmin;
 
   useEffect(() => {
     if (chapters && chapters.length > 0 && !activeChapterId) {
@@ -94,7 +99,6 @@ export default function EditBookPage() {
         await batch.commit();
       
         toast({ title: "Buku Dikirim untuk Ditinjau", description: "Admin akan meninjau buku Anda sebelum dipublikasikan." });
-        // router.push(`/books/${params.id}`); We stay on the page, but it becomes read-only
     } catch (error) {
       console.error("Error submitting for review:", error);
       toast({ variant: "destructive", title: "Gagal Mengirim", description: "Terjadi kesalahan saat mengirim." });
@@ -139,7 +143,7 @@ export default function EditBookPage() {
       }
   }
 
-  if (isBookLoading || areChaptersLoading) {
+  if (isBookLoading || areChaptersLoading || isProfileLoading) {
     return <p>Memuat editor...</p>;
   }
 
@@ -147,7 +151,7 @@ export default function EditBookPage() {
     notFound();
   }
   
-  if (currentUser && book.authorId !== currentUser.uid) {
+  if (currentUser && book.authorId !== currentUser.uid && !isAdmin) {
     return (
         <div className="text-center py-20">
             <h1 className="text-2xl font-bold">Akses Ditolak</h1>
@@ -228,11 +232,11 @@ export default function EditBookPage() {
             {activeChapter ? (
                  <Form {...form}>
                     <form onSubmit={form.handleSubmit(onChapterSubmit)} className="space-y-6 max-w-3xl mx-auto">
-                        {isReviewing && (
+                        {book.status === 'pending_review' && (
                           <Alert>
                             <Info className="h-4 w-4" />
                             <AlertTitle>Sedang Ditinjau</AlertTitle>
-                            <AlertDescription>Buku ini sedang dalam peninjauan oleh admin dan tidak dapat diedit saat ini.</AlertDescription>
+                            <AlertDescription>Buku ini sedang dalam peninjauan. {isAdmin ? 'Sebagai admin, Anda masih dapat mengeditnya.' : 'Anda tidak dapat mengeditnya saat ini.'}</AlertDescription>
                           </Alert>
                         )}
                         {book.status === 'rejected' && (

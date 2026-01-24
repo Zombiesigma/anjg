@@ -13,11 +13,11 @@ export function MobileNav() {
   const userProfileRef = (firestore && user) ? doc(firestore, 'users', user.uid) : null;
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<AppUser>(userProfileRef);
 
-  const isWriter = userProfile?.role === 'penulis';
+  const canUpload = userProfile?.role === 'penulis' || userProfile?.role === 'admin';
 
   return (
     <div className="fixed bottom-0 left-0 z-50 w-full h-16 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:hidden">
-      <div className={`grid h-full max-w-lg mx-auto font-medium ${isWriter ? 'grid-cols-5' : 'grid-cols-4'}`}>
+      <div className={`grid h-full max-w-lg mx-auto font-medium ${canUpload ? 'grid-cols-5' : 'grid-cols-4'}`}>
         <Link href="/" className="inline-flex flex-col items-center justify-center px-5 hover:bg-accent group">
           <Home className="w-5 h-5 mb-1 text-muted-foreground group-hover:text-primary" />
           <span className="text-xs text-muted-foreground group-hover:text-primary">Beranda</span>
@@ -26,7 +26,7 @@ export function MobileNav() {
           <BookUser className="w-5 h-5 mb-1 text-muted-foreground group-hover:text-primary" />
           <span className="text-xs text-muted-foreground group-hover:text-primary">Penulis</span>
         </Link>
-        {isWriter && (
+        {canUpload && (
           <Link href="/upload" className="inline-flex flex-col items-center justify-center px-5 hover:bg-accent group">
             <PlusSquare className="w-5 h-5 mb-1 text-muted-foreground group-hover:text-primary" />
             <span className="text-xs text-muted-foreground group-hover:text-primary">Unggah</span>

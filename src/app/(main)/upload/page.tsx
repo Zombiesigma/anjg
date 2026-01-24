@@ -89,7 +89,10 @@ export default function CreateBookPage() {
     }
   }
 
-  if (isUserAuthLoading || isProfileLoading) {
+  const isLoading = isUserAuthLoading || isProfileLoading;
+  const canUpload = userProfile?.role === 'penulis' || userProfile?.role === 'admin';
+
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -97,7 +100,7 @@ export default function CreateBookPage() {
     );
   }
 
-  if (userProfile?.role !== 'penulis') {
+  if (!canUpload) {
     return (
       <div className="max-w-2xl mx-auto">
         <Card className="text-center">
@@ -107,7 +110,7 @@ export default function CreateBookPage() {
                 </div>
                 <CardTitle className="font-headline text-2xl">Akses Ditolak</CardTitle>
                 <CardDescription>
-                    Hanya pengguna dengan peran 'penulis' yang dapat membuat buku baru.
+                    Hanya pengguna dengan peran 'penulis' atau 'admin' yang dapat membuat buku baru.
                 </CardDescription>
             </CardHeader>
             <CardContent>
