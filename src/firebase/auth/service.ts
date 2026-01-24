@@ -60,6 +60,7 @@ export async function signUpWithEmail(email: string, password: string, displayNa
 export async function signInWithEmail(email: string, password: string) {
   try {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    await createUserProfile(userCredential.user);
     return { user: userCredential.user };
   } catch (error) {
     return { error };
