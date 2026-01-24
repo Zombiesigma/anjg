@@ -273,7 +273,8 @@
         "content": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" },
         "likes": { "type": "number" },
-        "commentCount": { "type": "number" }
+        "commentCount": { "type": "number" },
+        "viewCount": { "type": "number", "description": "Number of times the story has been viewed." }
       },
       "required": ["authorId", "authorName", "authorAvatarUrl", "content", "createdAt"]
     },
@@ -299,6 +300,18 @@
         "likedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["userId", "likedAt"]
+    },
+    "StoryView": {
+      "title": "Story View",
+      "description": "Represents a user's view on a story.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userAvatarUrl": { "type": "string", "format": "uri" },
+        "viewedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "userName", "viewedAt"]
     }
   },
   "auth": {
@@ -376,6 +389,12 @@
     "/stories/{storyId}/likes/{userId}": {
       "schema": { "$ref": "#/backend/entities/StoryLike" },
       "description": "Stores likes for a specific story. Document ID is the user ID."
+    },
+    "/stories/{storyId}/views/{userId}": {
+      "schema": { "$ref": "#/backend/entities/StoryView" },
+      "description": "Stores views for a specific story. Document ID is the user ID."
     }
   }
 }
+
+    

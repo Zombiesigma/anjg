@@ -101,7 +101,7 @@ service cloud.firestore {
 
       allow read: if isSignedIn();
       allow create: if isSignedIn() && (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['penulis', 'admin']);
-      allow update: if isSignedIn() && (request.writeFields.size() == 1 && ('likes' in request.writeFields || 'commentCount' in request.writeFields));
+      allow update: if isStoryAuthor() || isAdmin() || (isSignedIn() && request.writeFields.size() == 1 && ('likes' in request.writeFields || 'commentCount' in request.writeFields || 'viewCount' in request.writeFields));
       allow delete: if isStoryAuthor() || isAdmin();
 
       match /comments/{commentId} {
@@ -112,6 +112,14 @@ service cloud.firestore {
         allow read: if isSignedIn();
         allow create, delete: if request.auth.uid == userId;
       }
+
+      match /views/{userId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn() && request.auth.uid == userId;
+        allow update, delete: if false;
+      }
     }
   }
 }
+
+    

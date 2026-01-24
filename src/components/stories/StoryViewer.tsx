@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -8,11 +8,13 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, useDoc } from '@/firebase';
 import { doc, collection, query, orderBy, serverTimestamp, writeBatch, increment, addDoc, deleteDoc, getDoc } from 'firebase/firestore';
-import type { Story, StoryComment, StoryLike, User as AppUser } from '@/lib/types';
-import { X, Heart, MessageCircle, Send, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import type { Story, StoryComment, StoryLike, User as AppUser, StoryView } from '@/lib/types';
+import { X, Heart, MessageCircle, Send, ChevronLeft, ChevronRight, Loader2, Eye } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatDistanceToNow } from 'date-fns';
 import { id } from 'date-fns/locale';
+import { StoryViewersSheet } from './StoryViewersSheet';
+
 
 interface StoryViewerProps {
   stories: Story[];
@@ -29,6 +31,8 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
   const [authorIndex, setAuthorIndex] = useState(0);
   const [storyIndex, setStoryIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [showViews, setShowViews] = useState(false);
+  const viewedStoriesInSession = useRef(new Set<string>());
 
   const storyGroups = useMemo(() => {
     const groups: { [key: string]: { authorId: string; authorName: string; authorAvatarUrl: string; stories: Story[] } } = {};
@@ -89,6 +93,35 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
     return () => clearTimeout(timer);
   }, [storyIndex, authorIndex, isOpen, isPaused, nextStory]);
   
+    useEffect(() => {
+    if (!currentStory || !currentUser || !firestore) return;
+
+    const isAuthor = currentStory.authorId === currentUser.uid;
+    const hasBeenViewed = viewedStoriesInSession.current.has(currentStory.id);
+
+    if (!isAuthor && !hasBeenViewed) {
+      const storyRef = doc(firestore, 'stories', currentStory.id);
+      const viewRef = doc(firestore, 'stories', currentStory.id, 'views', currentUser.uid);
+      
+      const batch = writeBatch(firestore);
+      
+      batch.update(storyRef, { viewCount: increment(1) });
+      batch.set(viewRef, {
+        userId: currentUser.uid,
+        userName: currentUser.displayName,
+        userAvatarUrl: currentUser.photoURL,
+        viewedAt: serverTimestamp()
+      });
+
+      batch.commit().then(() => {
+        viewedStoriesInSession.current.add(currentStory.id);
+      }).catch(err => {
+        // fail silently, not critical
+        console.warn("Failed to record story view:", err);
+      });
+    }
+  }, [currentStory, currentUser, firestore]);
+
   const likeRef = useMemo(() => (
     firestore && currentUser && currentStory ? doc(firestore, 'stories', currentStory.id, 'likes', currentUser.uid) : null
   ), [firestore, currentUser, currentStory]);
@@ -112,6 +145,7 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
   
   const [comment, setComment] = useState("");
   const [isSendingComment, setIsSendingComment] = useState(false);
+  const isAuthor = currentGroup?.authorId === currentUser?.uid;
 
   const handleComment = async () => {
     if(!comment.trim() || !currentUser || !firestore || !currentStory) return;
@@ -229,16 +263,21 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
 
                 {/* Footer */}
                 <div className="p-4 z-20 space-y-2">
-                   <div className='flex items-center gap-2 text-sm text-white/80'>
+                   <div className='flex items-center gap-4 text-sm text-white/80'>
                      <button onClick={handleToggleLike} disabled={isLikeLoading} className="flex items-center gap-2 hover:text-white">
                         <Heart className={isLiked ? "fill-red-500 text-red-500" : ""}/> 
                         <span>{currentStory.likes}</span>
                      </button>
-                      <span className='text-white/30'>|</span>
-                      <div className="flex items-center gap-2">
+                      <button className="flex items-center gap-2 hover:text-white">
                           <MessageCircle/> 
                           <span>{currentStory.commentCount}</span>
-                      </div>
+                      </button>
+                      {isAuthor && (
+                        <button onClick={() => setShowViews(true)} className="flex items-center gap-2 hover:text-white ml-auto">
+                            <Eye/>
+                            <span>{currentStory.viewCount}</span>
+                        </button>
+                      )}
                    </div>
                     <div className='flex items-center gap-2'>
                         <Input 
@@ -253,8 +292,13 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
                     </div>
                 </div>
             </div>
+            {isAuthor && (
+                <StoryViewersSheet storyId={currentStory.id} isOpen={showViews} onOpenChange={setShowViews} />
+            )}
         </div>
       </DialogContent>
     </Dialog>
   );
 }
+
+    

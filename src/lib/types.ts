@@ -150,6 +150,7 @@ export type Story = {
   createdAt: Timestamp;
   likes: number;
   commentCount: number;
+  viewCount: number;
 };
 
 export type StoryComment = {
@@ -166,3 +167,13 @@ export type StoryLike = {
   userId: string;
   likedAt: Timestamp;
 };
+
+export type StoryView = {
+  id: string; // The userId
+  userId: string;
+  userName: string;
+  userAvatarUrl: string;
+  viewedAt: Timestamp;
+};
+
+    
