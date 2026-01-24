@@ -1,12 +1,12 @@
 'use client';
 
-import { notFound, useParams } from 'next/navigation';
+import { notFound, useParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useFirestore, useUser, useCollection } from '@/firebase';
-import { collection, query, where, limit } from 'firebase/firestore';
-import type { User, Book } from '@/lib/types';
+import { collection, query, where, limit, addDoc } from 'firebase/firestore';
+import type { User, Book, Chat } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -15,11 +15,15 @@ import { Badge } from '@/components/ui/badge';
 import { BookCard } from '@/components/BookCard';
 import { UserPlus, MessageCircle, Edit, Loader2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
 
 export default function ProfilePage() {
   const params = useParams<{ username: string }>();
+  const router = useRouter();
   const firestore = useFirestore();
   const { user: currentUser } = useUser();
+  const { toast } = useToast();
+  const [isCreatingChat, setIsCreatingChat] = useState(false);
 
   const userQuery = useMemo(() => (
     firestore 
@@ -42,6 +46,47 @@ export default function ProfilePage() {
   // Filter books on the client
   const publishedBooks = useMemo(() => allBooks?.filter(book => book.status === 'published'), [allBooks]);
   const draftBooks = useMemo(() => (isOwnProfile ? allBooks?.filter(book => book.status === 'draft') : []), [allBooks, isOwnProfile]);
+
+  const chatsByUserQuery = useMemo(() => (
+      (firestore && currentUser) 
+        ? query(collection(firestore, 'chats'), where('participantUids', 'array-contains', currentUser.uid)) 
+        : null
+    ), [firestore, currentUser]);
+  const { data: userChats, isLoading: areChatsLoading } = useCollection<Chat>(chatsByUserQuery);
+
+  const handleStartChat = async () => {
+    if (!firestore || !currentUser || !user) return;
+    setIsCreatingChat(true);
+
+    const existingChat = userChats?.find(chat => chat.participantUids.includes(user.uid));
+
+    if (existingChat) {
+        router.push(`/messages?chatId=${existingChat.id}`);
+        return;
+    }
+
+    try {
+        const newChatData = {
+            participantUids: [currentUser.uid, user.uid],
+            participants: [
+                { uid: currentUser.uid, displayName: currentUser.displayName!, photoURL: currentUser.photoURL! },
+                { uid: user.uid, displayName: user.displayName, photoURL: user.photoURL }
+            ],
+        };
+        const chatsCollection = collection(firestore, 'chats');
+        const docRef = await addDoc(chatsCollection, newChatData);
+        router.push(`/messages?chatId=${docRef.id}`);
+    } catch (error) {
+        console.error("Error creating chat:", error);
+        toast({
+            variant: "destructive",
+            title: "Gagal Memulai Obrolan",
+            description: "Terjadi kesalahan. Silakan coba lagi.",
+        });
+    } finally {
+        setIsCreatingChat(false);
+    }
+  };
 
   if (isUserLoading) {
     return <ProfileSkeleton />;
@@ -76,7 +121,10 @@ export default function ProfilePage() {
                     ) : (
                         <>
                             <Button><UserPlus className="mr-2 h-4 w-4"/> Ikuti</Button>
-                            <Button variant="outline"><MessageCircle className="mr-2 h-4 w-4"/> Pesan</Button>
+                            <Button variant="outline" onClick={handleStartChat} disabled={isCreatingChat || areChatsLoading}>
+                                {(isCreatingChat || areChatsLoading) ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <MessageCircle className="mr-2 h-4 w-4"/>}
+                                Pesan
+                            </Button>
                         </>
                     )}
                 </div>

@@ -55,18 +55,28 @@ export type AuthorRequest = {
   requestedAt: Timestamp;
 };
 
-export type Message = {
-  id:string;
-  sender: User;
-  text: string;
-  timestamp: string;
+export interface ChatParticipant {
+  uid: string;
+  displayName: string;
+  photoURL: string;
+}
+
+export type Chat = {
+  id: string;
+  participants: ChatParticipant[];
+  participantUids: string[];
+  lastMessage?: {
+    text: string;
+    timestamp: Timestamp;
+    senderId: string;
+  };
 };
 
-export type ChatThread = {
+export type ChatMessage = {
   id: string;
-  participants: User[];
-  lastMessage: Message;
-  unreadCount: number;
+  text: string;
+  senderId: string;
+  createdAt: Timestamp;
 };
 
 export type Notification = {
