@@ -83,11 +83,16 @@ export type ChatMessage = {
 
 export type Notification = {
   id: string;
-  type: 'comment' | 'follow' | 'new_book' | 'message';
-  user: User;
+  type: 'comment' | 'follow' | 'favorite';
   text: string;
-  timestamp: string;
+  link: string;
+  actor: {
+    uid: string;
+    displayName: string;
+    photoURL: string;
+  };
   read: boolean;
+  createdAt: Timestamp;
 };
 
 export type AiChatMessage = {

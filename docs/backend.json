@@ -172,6 +172,31 @@
         "followedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["userId", "followedAt"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "Represents a user notification for various events.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["comment", "follow", "favorite"]
+        },
+        "text": { "type": "string" },
+        "link": { "type": "string", "description": "The URL to navigate to when the notification is clicked." },
+        "actor": {
+          "type": "object",
+          "properties": {
+            "uid": { "type": "string" },
+            "displayName": { "type": "string" },
+            "photoURL": { "type": "string", "format": "uri" }
+          },
+          "required": ["uid", "displayName"]
+        },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["type", "text", "link", "actor", "read", "createdAt"]
     }
   },
   "auth": {
@@ -195,6 +220,12 @@
     "/users/{userId}/following/{followedUserId}": {
       "schema": { "$ref": "#/backend/entities/Follow" },
       "description": "A list of users that this user follows. The document ID is the followed user's ID."
+    },
+    "/users/{userId}/notifications/{notificationId}": {
+      "schema": {
+        "$ref": "#/backend/entities/Notification"
+      },
+      "description": "Stores notifications for a user."
     },
     "/books/{bookId}": {
       "schema": {

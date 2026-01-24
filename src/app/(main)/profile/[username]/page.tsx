@@ -34,6 +34,10 @@ export default function ProfilePage() {
   ), [firestore, params.username]);
   const { data: users, isLoading: isUserLoading } = useCollection<User>(userQuery);
   const user = users?.[0];
+
+  const { data: currentUserProfile, isLoading: isCurrentUserProfileLoading } = useDoc<User>(
+    (currentUser && firestore) ? doc(firestore, 'users', currentUser.uid) : null
+  );
   
   const isOwnProfile = user?.uid === currentUser?.uid;
 
@@ -125,7 +129,7 @@ export default function ProfilePage() {
   };
 
   const handleToggleFollow = async () => {
-    if (!firestore || !currentUser || !user || isOwnProfile) return;
+    if (!firestore || !currentUser || !user || isOwnProfile || !currentUserProfile) return;
     setIsTogglingFollow(true);
 
     const batch = writeBatch(firestore);
@@ -148,6 +152,23 @@ export default function ProfilePage() {
         batch.set(followerDocRef, followData);
         batch.update(currentUserProfileRef, { following: increment(1) });
         batch.update(targetUserProfileRef, { followers: increment(1) });
+        
+        // Add notification
+        const notificationData = {
+            type: 'follow' as const,
+            text: `${currentUser.displayName} mulai mengikuti Anda.`,
+            link: `/profile/${currentUserProfile.username}`,
+            actor: {
+                uid: currentUser.uid,
+                displayName: currentUser.displayName!,
+                photoURL: currentUser.photoURL!,
+            },
+            read: false,
+            createdAt: serverTimestamp()
+        };
+        const notificationsCol = collection(firestore, 'users', user.uid, 'notifications');
+        batch.set(doc(notificationsCol), notificationData);
+
         toast({ title: `Anda sekarang mengikuti ${user.displayName}` });
       }
 
@@ -196,8 +217,8 @@ export default function ProfilePage() {
                         </Link>
                     ) : (
                         <>
-                            <Button onClick={handleToggleFollow} disabled={isTogglingFollow || isFollowingLoading} variant={isFollowing ? "outline" : "default"}>
-                              {(isTogglingFollow || isFollowingLoading) ? (
+                            <Button onClick={handleToggleFollow} disabled={isTogglingFollow || isFollowingLoading || isCurrentUserProfileLoading} variant={isFollowing ? "outline" : "default"}>
+                              {(isTogglingFollow || isFollowingLoading || isCurrentUserProfileLoading) ? (
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
                               ) : (
                                 isFollowing ? <UserMinus className="mr-2 h-4 w-4" /> : <UserPlus className="mr-2 h-4 w-4"/>

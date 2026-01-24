@@ -72,7 +72,7 @@ export default function BookDetailsPage() {
   const isAuthor = currentUser?.uid === book?.authorId;
 
   function handleCommentSubmit() {
-    if (!newComment.trim() || !currentUser || !firestore) return;
+    if (!newComment.trim() || !currentUser || !firestore || !book) return;
 
     setIsSubmitting(true);
     const commentsCol = collection(firestore, 'books', params.id, 'comments');
@@ -87,6 +87,22 @@ export default function BookDetailsPage() {
     addDoc(commentsCol, commentData)
       .then(() => {
         setNewComment('');
+        // Add notification if not commenting on own book
+        if (currentUser.uid !== book.authorId) {
+            const notificationsCol = collection(firestore, 'users', book.authorId, 'notifications');
+            addDoc(notificationsCol, {
+                type: 'comment' as const,
+                text: `${currentUser.displayName} mengomentari buku Anda: ${book.title}`,
+                link: `/books/${params.id}`,
+                actor: {
+                    uid: currentUser.uid,
+                    displayName: currentUser.displayName!,
+                    photoURL: currentUser.photoURL!,
+                },
+                read: false,
+                createdAt: serverTimestamp(),
+            });
+        }
       })
       .catch((serverError) => {
         const permissionError = new FirestorePermissionError({
@@ -102,7 +118,7 @@ export default function BookDetailsPage() {
   };
   
   const handleToggleFavorite = async () => {
-    if (!firestore || !currentUser || !bookRef) {
+    if (!firestore || !currentUser || !bookRef || !book) {
         toast({
             variant: "destructive",
             title: "Harap masuk",
@@ -127,6 +143,22 @@ export default function BookDetailsPage() {
                 addedAt: serverTimestamp()
             });
             batch.update(bookRef, { favoriteCount: increment(1) });
+            // Add notification if not favoriting own book
+            if (currentUser.uid !== book.authorId) {
+                const notificationsCol = collection(firestore, 'users', book.authorId, 'notifications');
+                batch.set(doc(notificationsCol), {
+                    type: 'favorite' as const,
+                    text: `${currentUser.displayName} menyukai buku Anda: ${book.title}`,
+                    link: `/books/${params.id}`,
+                    actor: {
+                        uid: currentUser.uid,
+                        displayName: currentUser.displayName!,
+                        photoURL: currentUser.photoURL!,
+                    },
+                    read: false,
+                    createdAt: serverTimestamp()
+                });
+            }
         }
         await batch.commit();
         toast({

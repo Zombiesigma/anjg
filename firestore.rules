@@ -30,6 +30,12 @@ service cloud.firestore {
         // The user can manage their own following list
         allow create, delete: if isSignedIn() && request.auth.uid == userId;
       }
+
+      match /notifications/{notificationId} {
+        // A user can only read and update (e.g. mark as read) their own notifications
+        allow read, update: if isSignedIn() && request.auth.uid == userId;
+        allow create, delete: if false; // Notifications are created by system/other users' actions
+      }
     }
 
     // --- Books & Chapters ---
