@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useFirestore, useUser, useCollection, useDoc } from '@/firebase';
-import { collection, serverTimestamp, query, where, getDocs, doc, writeBatch } from 'firebase/firestore';
+import { collection, serverTimestamp, query, where, getDocs, doc, writeBatch, orderBy } from 'firebase/firestore';
 import type { AuthorRequest, User as AppUser } from '@/lib/types';
 import {
   Card,
@@ -65,7 +65,7 @@ export default function JoinAuthorPage() {
     // Fetch authors only when the current user is an author or admin
     const authorsQuery = useMemo(() => {
         if (!firestore || applicationStatus !== 'author') return null;
-        return query(collection(firestore, 'users'), where('role', '==', 'penulis'), where('displayName', 'asc'));
+        return query(collection(firestore, 'users'), where('role', '==', 'penulis'), orderBy('displayName', 'asc'));
     }, [firestore, applicationStatus]);
     const { data: authors, isLoading: areAuthorsLoading } = useCollection<AppUser>(authorsQuery);
 
