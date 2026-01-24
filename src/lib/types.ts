@@ -44,6 +44,17 @@ export type Comment = {
   createdAt: Timestamp;
 };
 
+export type AuthorRequest = {
+  id: string;
+  userId: string;
+  name: string;
+  email: string;
+  portfolio?: string;
+  motivation: string;
+  status: 'pending' | 'approved' | 'rejected';
+  requestedAt: Timestamp;
+};
+
 export type Message = {
   id:string;
   sender: User;

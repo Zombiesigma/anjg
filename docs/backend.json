@@ -89,6 +89,21 @@
             "createdAt": { "type": "string", "format": "date-time" }
         },
         "required": ["text", "userId", "userName", "createdAt"]
+    },
+    "AuthorRequest": {
+      "title": "Author Request",
+      "description": "Represents a user's request to become an author.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "portfolio": { "type": "string", "format": "uri" },
+        "motivation": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "requestedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "name", "email", "motivation", "status", "requestedAt"]
     }
   },
   "auth": {
@@ -118,6 +133,12 @@
         "$ref": "#/backend/entities/Comment"
       },
       "description": "Stores comments for a specific book."
+    },
+    "/authorRequests/{requestId}": {
+      "schema": {
+        "$ref": "#/backend/entities/AuthorRequest"
+      },
+      "description": "Stores user requests to become an author."
     }
   }
 }
