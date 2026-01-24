@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useFirestore, useUser, useDoc } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
+import { updateProfile } from 'firebase/auth';
 import type { User } from '@/lib/types';
 import {
   Card,
@@ -35,6 +36,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 const profileFormSchema = z.object({
   username: z.string().min(3, { message: "Nama pengguna minimal 3 karakter." }).regex(/^[a-zA-Z0-9_]+$/, 'Hanya boleh berisi huruf, angka, dan garis bawah.'),
   displayName: z.string().min(3, { message: "Nama lengkap minimal 3 karakter." }),
+  photoURL: z.string().url({ message: "URL foto profil tidak valid." }).optional().or(z.literal('')),
   bio: z.string().max(160, { message: "Bio tidak boleh lebih dari 160 karakter." }).optional(),
 });
 
@@ -52,6 +54,7 @@ export default function SettingsPage() {
     defaultValues: {
       username: '',
       displayName: '',
+      photoURL: '',
       bio: '',
     },
   });
@@ -61,20 +64,30 @@ export default function SettingsPage() {
       form.reset({
         username: userProfile.username,
         displayName: userProfile.displayName,
+        photoURL: userProfile.photoURL || '',
         bio: userProfile.bio || '',
       });
     }
   }, [userProfile, form]);
 
   async function onSubmit(values: z.infer<typeof profileFormSchema>) {
-    if (!userProfileRef) return;
+    if (!userProfileRef || !currentUser) return;
     setIsSaving(true);
     try {
+      // Update Firebase Auth profile
+      await updateProfile(currentUser, {
+        displayName: values.displayName,
+        photoURL: values.photoURL,
+      });
+
+      // Update Firestore user document
       await updateDoc(userProfileRef, {
         username: values.username,
         displayName: values.displayName,
         bio: values.bio,
+        photoURL: values.photoURL,
       });
+      
       toast({
         title: "Profil Diperbarui",
         description: "Perubahan profil Anda telah disimpan.",
@@ -84,7 +97,7 @@ export default function SettingsPage() {
       toast({
         variant: "destructive",
         title: "Gagal Menyimpan",
-        description: "Terjadi kesalahan saat memperbarui profil Anda.",
+        description: "Nama pengguna tersebut mungkin sudah digunakan atau URL tidak valid.",
       });
     } finally {
       setIsSaving(false);
@@ -118,6 +131,10 @@ export default function SettingsPage() {
                     <Skeleton className="h-4 w-20" />
                     <Skeleton className="h-10 w-full" />
                   </div>
+                   <div className="space-y-2">
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
                   <div className="space-y-2">
                     <Skeleton className="h-4 w-20" />
                     <Skeleton className="h-20 w-full" />
@@ -146,6 +163,19 @@ export default function SettingsPage() {
                         <Label>Nama Lengkap</Label>
                         <FormControl>
                           <Input placeholder="Guntur Padilah" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="photoURL"
+                    render={({ field }) => (
+                      <FormItem>
+                        <Label>URL Foto Profil</Label>
+                        <FormControl>
+                          <Input placeholder="https://contoh.com/gambar.jpg" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
