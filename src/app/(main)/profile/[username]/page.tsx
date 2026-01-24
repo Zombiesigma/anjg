@@ -87,6 +87,7 @@ export default function ProfilePage() {
 
   const favoriteBooksQuery = useMemo(() => {
       if (!firestore || favoriteBookIds.length === 0 || !isOwnProfile) return null;
+      // Firestore 'in' queries are limited to 30 elements in a single query.
       const chunks = favoriteBookIds.slice(0, 30);
       if (chunks.length === 0) return null;
       return query(collection(firestore, 'books'), where(documentId(), 'in', chunks));
@@ -369,7 +370,7 @@ export default function ProfilePage() {
 function ProfileSkeleton() {
     return (
         <div className="space-y-8 animate-pulse">
-            <Card>
+            <Card className="overflow-hidden">
                 <Skeleton className="h-32 md:h-48 w-full" />
                 <CardContent className="p-4 md:p-6 -mt-16 md:-mt-24">
                      <div className="flex flex-col md:flex-row items-center md:items-end gap-4">
