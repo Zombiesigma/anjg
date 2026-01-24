@@ -12,13 +12,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
-import { Eye, BookOpen, Send, MessageCircle, Loader2, Edit, Layers, Heart } from 'lucide-react';
+import { Eye, BookOpen, Send, MessageCircle, Loader2, Edit, Layers, Heart, Share2 } from 'lucide-react';
 import type { Book, Comment, User, Favorite } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { ShareDialog } from '@/components/ShareDialog';
 
 export default function BookDetailsPage() {
   const params = useParams<{ id: string }>();
@@ -241,6 +242,11 @@ export default function BookDetailsPage() {
               {isTogglingFavorite ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Heart className={cn("mr-2 h-5 w-5", isFavorite && "fill-current text-red-500")}/>}
               {isFavorite ? 'Hapus dari Favorit' : 'Tambah ke Favorit'}
             </Button>
+            <ShareDialog book={book}>
+                <Button size="lg" variant="outline" className="flex-1 w-full">
+                    <Share2 className="mr-2 h-5 w-5" /> Bagikan
+                </Button>
+            </ShareDialog>
             {isAuthor && (
               <Link href={`/books/${book.id}/edit`} className="flex-1">
                 <Button size="lg" variant="outline" className="w-full"><Edit className="mr-2 h-5 w-5"/> Edit Buku</Button>
