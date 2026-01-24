@@ -52,7 +52,11 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
         content: msg.content
       }));
 
-      const result = await chatWithLiteraAI({ message: input, chatHistory });
+      const result = await chatWithLiteraAI({ 
+        message: input, 
+        chatHistory,
+        userName: currentUser?.displayName || 'Pengguna',
+      });
       
       const assistantMessage: AiChatMessage = {
         role: "assistant",
