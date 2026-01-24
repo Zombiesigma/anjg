@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, Fragment } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useFirestore, useUser, useCollection } from '@/firebase';
@@ -14,7 +14,7 @@ import { MoreVertical, MessageSquare, Loader2, Send, Search, ArrowLeft, User, Tr
 import { cn } from '@/lib/utils';
 import type { Chat, ChatMessage } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, isSameDay, format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import {
   DropdownMenu,
@@ -22,7 +22,8 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
+import { motion, AnimatePresence } from 'framer-motion';
 
 
 export default function MessagesPage() {
@@ -76,6 +77,31 @@ export default function MessagesPage() {
       : null
   ), [firestore, selectedChatId]);
   const { data: messages, isLoading: isLoadingMessages } = useCollection<ChatMessage>(messagesQuery);
+  
+  const messageGroups = useMemo(() => {
+    if (!messages) return [];
+    
+    const grouped: (ChatMessage | { type: 'date_marker', id: string, date: Date })[] = [];
+    
+    messages.forEach((msg, index) => {
+        if (!msg.createdAt) return; 
+        
+        const msgDate = msg.createdAt.toDate();
+        const prevMsgDate = index > 0 && messages[index - 1].createdAt ? messages[index - 1].createdAt.toDate() : null;
+
+        if (index === 0 || (prevMsgDate && !isSameDay(prevMsgDate, msgDate))) {
+            grouped.push({
+                type: 'date_marker',
+                id: `date-${msgDate.toISOString()}`,
+                date: msgDate
+            });
+        }
+        grouped.push(msg);
+    });
+    
+    return grouped;
+  }, [messages]);
+
 
   const selectedChat = useMemo(() => (
     chatThreads?.find(chat => chat.id === selectedChatId)
@@ -86,12 +112,14 @@ export default function MessagesPage() {
   ), [selectedChat, currentUser]);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 100);
   };
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messageGroups]);
 
     // Auto-resize textarea
   useEffect(() => {
@@ -198,7 +226,7 @@ export default function MessagesPage() {
                             <p className="font-semibold truncate">{otherP.displayName}</p>
                             {chat.lastMessage?.timestamp && (
                                 <p className="text-xs text-muted-foreground whitespace-nowrap">
-                                    {formatDistanceToNow(chat.lastMessage.timestamp.toDate(), { locale: id })}
+                                    {formatDistanceToNow(chat.lastMessage.timestamp.toDate(), { locale: id, addSuffix: true })}
                                 </p>
                             )}
                         </div>
@@ -275,25 +303,67 @@ export default function MessagesPage() {
               {/* Messages Area */}
               <ScrollArea className="flex-1">
                 {isLoadingMessages && <div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin text-primary"/></div>}
-                <div className="space-y-4 p-4 md:p-6">
-                  {messages?.map(msg => (
-                    <div key={msg.id} className={cn("flex items-end gap-2.5", msg.senderId === currentUser?.uid && "justify-end")}>
-                      {msg.senderId !== currentUser?.uid && (
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={otherParticipant?.photoURL} alt={otherParticipant?.displayName} />
-                          <AvatarFallback>{otherParticipant?.displayName.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                      )}
-                       <div className={cn(
-                        "max-w-lg p-3 rounded-2xl",
-                        msg.senderId === currentUser?.uid
-                          ? "bg-primary text-primary-foreground rounded-br-lg"
-                          : "bg-background rounded-bl-lg shadow-sm"
-                      )}>
-                          <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>
-                      </div>
-                    </div>
-                  ))}
+                <div className="p-4 md:p-6 space-y-2">
+                  <AnimatePresence>
+                    {messageGroups.map((item) => {
+                      if ('type' in item && item.type === 'date_marker') {
+                        return (
+                          <motion.div
+                            key={item.id}
+                            layout
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                            transition={{ duration: 0.2 }}
+                            className="flex items-center justify-center my-4"
+                          >
+                            <div className="h-px bg-border flex-1" />
+                            <span className="text-xs text-muted-foreground px-3">
+                              {format(item.date, 'eeee, d MMMM yyyy', { locale: id })}
+                            </span>
+                            <div className="h-px bg-border flex-1" />
+                          </motion.div>
+                        );
+                      }
+
+                      const msg = item as ChatMessage;
+                      return (
+                        <motion.div
+                          key={msg.id}
+                          layout
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 10 }}
+                          transition={{ duration: 0.3, ease: 'easeOut' }}
+                          className={cn(
+                            "flex items-end gap-2.5",
+                            msg.senderId === currentUser?.uid && "justify-end"
+                          )}
+                        >
+                          {msg.senderId !== currentUser?.uid && (
+                            <Avatar className="h-8 w-8 self-end">
+                              <AvatarImage src={otherParticipant?.photoURL} alt={otherParticipant?.displayName} />
+                              <AvatarFallback>{otherParticipant?.displayName.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                          )}
+                           <div className={cn(
+                            "max-w-lg p-3 rounded-2xl",
+                            msg.senderId === currentUser?.uid
+                              ? "bg-primary text-primary-foreground rounded-br-lg"
+                              : "bg-background rounded-bl-lg shadow-sm"
+                          )}>
+                              <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>
+                          </div>
+                          {msg.senderId === currentUser?.uid && currentUser && (
+                            <Avatar className="h-8 w-8 self-end">
+                                <AvatarImage src={currentUser.photoURL ?? ''} alt={currentUser.displayName ?? ''}/>
+                                <AvatarFallback>{currentUser.displayName?.charAt(0) ?? 'U'}</AvatarFallback>
+                            </Avatar>
+                          )}
+                        </motion.div>
+                      );
+                    })}
+                  </AnimatePresence>
                    <div ref={messagesEndRef} />
                 </div>
               </ScrollArea>
