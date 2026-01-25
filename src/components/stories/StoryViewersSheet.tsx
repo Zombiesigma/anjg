@@ -72,5 +72,4 @@ export function StoryViewersSheet({ storyId, isOpen, onOpenChange }: StoryViewer
     </Sheet>
   );
 }
-
     
