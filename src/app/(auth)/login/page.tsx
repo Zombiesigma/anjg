@@ -38,21 +38,27 @@ export default function LoginPage() {
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
-    const { error } = await signInWithEmail(values.email, values.password);
+    const { user, error } = await signInWithEmail(values.email, values.password);
     if (error) {
       toast({
         variant: 'destructive',
         title: 'Gagal Masuk',
         description: 'Email atau kata sandi salah. Silakan coba lagi.',
       });
-    } else {
-      toast({
-        title: 'Berhasil Masuk',
-        description: 'Selamat datang kembali!',
-      });
-      router.push('/');
+      setIsLoading(false);
+    } else if (user) {
+      if (!user.emailVerified && user.providerData.some(p => p.providerId === 'password')) {
+        // User needs to verify email, redirect to waiting page
+        router.push('/verify-email');
+      } else {
+        // User is verified or uses another provider (e.g., Google)
+        toast({
+          title: 'Berhasil Masuk',
+          description: 'Selamat datang kembali!',
+        });
+        router.push('/');
+      }
     }
-    setIsLoading(false);
   }
 
   async function handleGoogleSignIn() {

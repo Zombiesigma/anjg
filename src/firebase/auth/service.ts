@@ -83,6 +83,18 @@ export async function signInWithEmail(email: string, password: string) {
   }
 }
 
+export async function resendVerificationEmail() {
+    if (auth.currentUser) {
+        try {
+            await sendEmailVerification(auth.currentUser);
+            return { success: true };
+        } catch (error) {
+            return { error };
+        }
+    }
+    return { error: new Error("No user is currently signed in.") };
+}
+
 export async function signInWithGoogle() {
   try {
     const result = await signInWithPopup(auth, provider);
