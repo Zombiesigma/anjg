@@ -19,7 +19,6 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { ShareDialog } from '@/components/ShareDialog';
 import { BookCommentItem } from '@/components/comments/BookCommentItem';
 
 export default function BookDetailsPage() {
@@ -194,6 +193,38 @@ export default function BookDetailsPage() {
     }
   };
 
+  const handleShare = async () => {
+    if (!book) return;
+    const shareData = {
+      title: book.title,
+      text: `Lihat buku "${book.title}" oleh ${book.authorName} di Elitera!`,
+      url: window.location.href,
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (error) {
+        console.log('Share cancelled or failed', error);
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(shareData.url);
+        toast({
+          title: "Tautan Disalin",
+          description: "Tautan buku telah disalin ke clipboard Anda.",
+        });
+      } catch (error) {
+        console.error('Failed to copy link:', error);
+        toast({
+          variant: "destructive",
+          title: "Gagal Menyalin",
+          description: "Tidak dapat menyalin tautan ke clipboard.",
+        });
+      }
+    }
+  };
+
   if (isBookLoading || isAuthorLoading) {
     return <BookDetailsSkeleton />;
   }
@@ -259,11 +290,9 @@ export default function BookDetailsPage() {
               {isTogglingFavorite ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Heart className={cn("mr-2 h-5 w-5", isFavorite && "fill-current text-red-500")}/>}
               {isFavorite ? 'Hapus dari Favorit' : 'Tambah ke Favorit'}
             </Button>
-            <ShareDialog book={book}>
-                <Button size="lg" variant="outline" className="flex-1 w-full">
-                    <Share2 className="mr-2 h-5 w-5" /> Bagikan
-                </Button>
-            </ShareDialog>
+            <Button size="lg" variant="outline" className="flex-1 w-full" onClick={handleShare}>
+                <Share2 className="mr-2 h-5 w-5" /> Bagikan
+            </Button>
             {isAuthor && (
               <Link href={`/books/${book.id}/edit`} className="flex-1">
                 <Button size="lg" variant="outline" className="w-full"><Edit className="mr-2 h-5 w-5"/> Edit Buku</Button>
