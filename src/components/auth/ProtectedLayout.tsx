@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { Logo } from '@/components/Logo';
 
 export function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useUser();
@@ -43,10 +44,13 @@ export function ProtectedLayout({ children }: { children: React.ReactNode }) {
 
   if (isLoading || !user) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-muted-foreground">Memuat sesi Anda...</p>
+      <div className="flex items-center justify-center h-screen bg-background">
+        <div className="flex flex-col items-center gap-4 text-center">
+            <Logo className="w-16 h-16 text-primary animate-pulse" />
+            <div className='flex items-center gap-3'>
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                <p className='text-muted-foreground'>Memuat Sesi Elitera...</p>
+            </div>
         </div>
       </div>
     );
