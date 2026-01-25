@@ -10,8 +10,6 @@ function showBrowserNotification(title: string, options: NotificationOptions) {
     if (Notification.permission === 'granted') {
         const notification = new Notification(title, {
             ...options,
-            icon: '/logo.svg',
-            badge: '/logo.svg',
         });
 
         notification.onclick = () => {
