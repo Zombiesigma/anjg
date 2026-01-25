@@ -5,7 +5,7 @@ import { notFound, useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Progress } from '@/components/ui/progress';
 import { ArrowLeft, Sun, Moon, Text, Menu, Settings, ChevronsUp } from 'lucide-react';
 import Link from 'next/link';
@@ -144,8 +144,26 @@ export default function ReadPage() {
                 <SheetTrigger asChild>
                   <Button variant="ghost" size="icon"><Menu className="h-5 w-5" /></Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-[80%] max-w-sm p-0">
-                  <ChapterList/>
+                <SheetContent side="left" className="w-[80%] max-w-sm p-0 flex flex-col">
+                  <SheetHeader className="p-4 border-b text-left">
+                    <SheetTitle className="font-headline text-xl font-bold truncate">{book.title}</SheetTitle>
+                    <SheetDescription>Daftar Isi</SheetDescription>
+                  </SheetHeader>
+                  <nav className="flex-1 overflow-y-auto p-2 space-y-1">
+                    {areChaptersLoading && Array.from({length: 5}).map((_, i) => <Skeleton key={i} className="h-9 w-full rounded-md" />)}
+                    {chapters?.map(chapter => (
+                      <button
+                        key={chapter.id}
+                        onClick={() => scrollToChapter(chapter.id)}
+                        className="w-full text-left p-2 rounded-md hover:bg-accent transition-colors text-sm"
+                      >
+                        {chapter.title}
+                      </button>
+                    ))}
+                    {!areChaptersLoading && chapters?.length === 0 && (
+                      <p className='p-2 text-sm text-muted-foreground text-center'>Buku ini belum memiliki bab.</p>
+                    )}
+                  </nav>
                 </SheetContent>
               </Sheet>
             </div>
@@ -276,5 +294,3 @@ function ReadPageSkeleton() {
     </div>
   )
 }
-
-    
