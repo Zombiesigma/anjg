@@ -20,6 +20,13 @@ import { FirestorePermissionError } from '@/firebase/errors';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { BookCommentItem } from '@/components/comments/BookCommentItem';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ShareBookDialog } from '@/components/ShareBookDialog';
 
 export default function BookDetailsPage() {
   const params = useParams<{ id: string }>();
@@ -54,6 +61,7 @@ export default function BookDetailsPage() {
   const [isMounted, setIsMounted] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const viewIncremented = useRef(false);
 
   useEffect(() => {
@@ -193,7 +201,7 @@ export default function BookDetailsPage() {
     }
   };
 
-  const handleShare = async () => {
+  const handleExternalShare = async () => {
     if (!book) return;
     const shareData = {
       title: book.title,
@@ -234,110 +242,127 @@ export default function BookDetailsPage() {
   }
 
   return (
-    <div className="space-y-8">
-      <div className="grid md:grid-cols-3 gap-8">
-        <div className="md:col-span-1">
-          <Card className="overflow-hidden sticky top-20">
-            <div className="aspect-[2/3] relative">
-              <Image
-                src={book.coverUrl}
-                alt={`Sampul ${book.title}`}
-                fill
-                className="object-cover bg-muted"
-                sizes="(max-width: 768px) 100vw, 33vw"
-              />
-            </div>
-            <CardContent className="p-4 grid grid-cols-3 gap-4 text-sm text-center">
-                <div className="flex flex-col items-center gap-1">
-                    <Eye className="h-5 w-5 text-muted-foreground" />
-                    <span className="font-semibold">{isMounted ? new Intl.NumberFormat('id-ID').format(book.viewCount) : '...'}</span>
-                    <span className="text-xs text-muted-foreground">Dilihat</span>
-                </div>
-                <div className="flex flex-col items-center gap-1">
-                    <Heart className="h-5 w-5 text-muted-foreground" />
-                    <span className="font-semibold">{isMounted ? new Intl.NumberFormat('id-ID').format(book.favoriteCount) : '...'}</span>
-                    <span className="text-xs text-muted-foreground">Favorit</span>
-                </div>
-                <div className="flex flex-col items-center gap-1">
-                    <Layers className="h-5 w-5 text-muted-foreground" />
-                    <span className="font-semibold">{isMounted ? book.chapterCount ?? 0 : '...'}</span>
-                    <span className="text-xs text-muted-foreground">Bab</span>
-                </div>
-            </CardContent>
-          </Card>
-        </div>
-        <div className="md:col-span-2 space-y-6">
-          <div>
-            <Badge>{book.genre}</Badge>
-            <h1 className="text-4xl font-headline font-bold mt-2">{book.title}</h1>
-            <div className="flex items-center gap-2 mt-4">
-              <Avatar>
-                <AvatarImage src={book.authorAvatarUrl} alt={book.authorName} />
-                <AvatarFallback>{book.authorName?.charAt(0)}</AvatarFallback>
-              </Avatar>
-              <Link href={author ? `/profile/${author.username}` : '#'} className="font-medium hover:underline">{book.authorName}</Link>
-            </div>
-          </div>
-          <div className="space-y-4">
-              <h2 className="text-xl font-headline font-semibold">Sinopsis</h2>
-              <p className="text-muted-foreground leading-relaxed">{book.synopsis}</p>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-4 pt-4">
-            <Link href={`/books/${book.id}/read`} className="flex-1">
-                <Button size="lg" className="w-full"><BookOpen className="mr-2 h-5 w-5"/> Baca Sekarang</Button>
-            </Link>
-            <Button size="lg" variant="outline" className="flex-1" onClick={handleToggleFavorite} disabled={isTogglingFavorite || isFavoriteLoading}>
-              {isTogglingFavorite ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Heart className={cn("mr-2 h-5 w-5", isFavorite && "fill-current text-red-500")}/>}
-              {isFavorite ? 'Hapus dari Favorit' : 'Tambah ke Favorit'}
-            </Button>
-            <Button size="lg" variant="outline" className="flex-1 w-full" onClick={handleShare}>
-                <Share2 className="mr-2 h-5 w-5" /> Bagikan
-            </Button>
-            {isAuthor && (
-              <Link href={`/books/${book.id}/edit`} className="flex-1">
-                <Button size="lg" variant="outline" className="w-full"><Edit className="mr-2 h-5 w-5"/> Edit Buku</Button>
-              </Link>
-            )}
-          </div>
-
-          <Separator className="my-8" />
-
-          <div className="space-y-6">
-            <h2 className="text-2xl font-headline font-bold flex items-center gap-2"><MessageCircle/> Komentar</h2>
-            {currentUser && (
-              <div className="flex items-start gap-3">
-                <Avatar>
-                  <AvatarImage src={currentUser.photoURL ?? ''} alt={currentUser.displayName ?? ''} />
-                  <AvatarFallback>{currentUser.displayName?.charAt(0) ?? 'U'}</AvatarFallback>
-                </Avatar>
-                <div className="w-full relative">
-                  <Textarea 
-                    placeholder="Tambahkan komentar..." 
-                    className="w-full pr-12"
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    disabled={isSubmitting}
-                  />
-                  <Button size="icon" className="absolute top-2 right-2 h-8 w-8" onClick={handleCommentSubmit} disabled={isSubmitting || !newComment.trim()}>
-                    {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin"/> : <Send className="h-4 w-4"/>}
-                  </Button>
-                </div>
+    <>
+      {book && <ShareBookDialog book={book} open={isShareDialogOpen} onOpenChange={setIsShareDialogOpen} />}
+      <div className="space-y-8">
+        <div className="grid md:grid-cols-3 gap-8">
+          <div className="md:col-span-1">
+            <Card className="overflow-hidden sticky top-20">
+              <div className="aspect-[2/3] relative">
+                <Image
+                  src={book.coverUrl}
+                  alt={`Sampul ${book.title}`}
+                  fill
+                  className="object-cover bg-muted"
+                  sizes="(max-width: 768px) 100vw, 33vw"
+                />
               </div>
-            )}
-            
+              <CardContent className="p-4 grid grid-cols-3 gap-4 text-sm text-center">
+                  <div className="flex flex-col items-center gap-1">
+                      <Eye className="h-5 w-5 text-muted-foreground" />
+                      <span className="font-semibold">{isMounted ? new Intl.NumberFormat('id-ID').format(book.viewCount) : '...'}</span>
+                      <span className="text-xs text-muted-foreground">Dilihat</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-1">
+                      <Heart className="h-5 w-5 text-muted-foreground" />
+                      <span className="font-semibold">{isMounted ? new Intl.NumberFormat('id-ID').format(book.favoriteCount) : '...'}</span>
+                      <span className="text-xs text-muted-foreground">Favorit</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-1">
+                      <Layers className="h-5 w-5 text-muted-foreground" />
+                      <span className="font-semibold">{isMounted ? book.chapterCount ?? 0 : '...'}</span>
+                      <span className="text-xs text-muted-foreground">Bab</span>
+                  </div>
+              </CardContent>
+            </Card>
+          </div>
+          <div className="md:col-span-2 space-y-6">
+            <div>
+              <Badge>{book.genre}</Badge>
+              <h1 className="text-4xl font-headline font-bold mt-2">{book.title}</h1>
+              <div className="flex items-center gap-2 mt-4">
+                <Avatar>
+                  <AvatarImage src={book.authorAvatarUrl} alt={book.authorName} />
+                  <AvatarFallback>{book.authorName?.charAt(0)}</AvatarFallback>
+                </Avatar>
+                <Link href={author ? `/profile/${author.username}` : '#'} className="font-medium hover:underline">{book.authorName}</Link>
+              </div>
+            </div>
             <div className="space-y-4">
-                {areCommentsLoading && <div className="text-center py-4"><Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" /></div>}
-                {comments?.map(comment => (
-                  <BookCommentItem key={comment.id} bookId={params.id} comment={comment} />
-                ))}
-                {!areCommentsLoading && comments?.length === 0 && (
-                    <p className="text-sm text-muted-foreground text-center py-4">Jadilah yang pertama berkomentar.</p>
-                )}
+                <h2 className="text-xl font-headline font-semibold">Sinopsis</h2>
+                <p className="text-muted-foreground leading-relaxed">{book.synopsis}</p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-4 pt-4">
+              <Link href={`/books/${book.id}/read`} className="flex-1">
+                  <Button size="lg" className="w-full"><BookOpen className="mr-2 h-5 w-5"/> Baca Sekarang</Button>
+              </Link>
+              <Button size="lg" variant="outline" className="flex-1" onClick={handleToggleFavorite} disabled={isTogglingFavorite || isFavoriteLoading}>
+                {isTogglingFavorite ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Heart className={cn("mr-2 h-5 w-5", isFavorite && "fill-current text-red-500")}/>}
+                {isFavorite ? 'Hapus dari Favorit' : 'Tambah ke Favorit'}
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="lg" variant="outline" className="flex-1 w-full">
+                      <Share2 className="mr-2 h-5 w-5" /> Bagikan
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handleExternalShare}>
+                    <Share2 className="mr-2 h-4 w-4" />
+                    <span>Bagikan ke Luar</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setIsShareDialogOpen(true)}>
+                    <Send className="mr-2 h-4 w-4" />
+                    <span>Kirim ke Obrolan</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              {isAuthor && (
+                <Link href={`/books/${book.id}/edit`} className="flex-1">
+                  <Button size="lg" variant="outline" className="w-full"><Edit className="mr-2 h-5 w-5"/> Edit Buku</Button>
+                </Link>
+              )}
+            </div>
+
+            <Separator className="my-8" />
+
+            <div className="space-y-6">
+              <h2 className="text-2xl font-headline font-bold flex items-center gap-2"><MessageCircle/> Komentar</h2>
+              {currentUser && (
+                <div className="flex items-start gap-3">
+                  <Avatar>
+                    <AvatarImage src={currentUser.photoURL ?? ''} alt={currentUser.displayName ?? ''} />
+                    <AvatarFallback>{currentUser.displayName?.charAt(0) ?? 'U'}</AvatarFallback>
+                  </Avatar>
+                  <div className="w-full relative">
+                    <Textarea 
+                      placeholder="Tambahkan komentar..." 
+                      className="w-full pr-12"
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      disabled={isSubmitting}
+                    />
+                    <Button size="icon" className="absolute top-2 right-2 h-8 w-8" onClick={handleCommentSubmit} disabled={isSubmitting || !newComment.trim()}>
+                      {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin"/> : <Send className="h-4 w-4"/>}
+                    </Button>
+                  </div>
+                </div>
+              )}
+              
+              <div className="space-y-4">
+                  {areCommentsLoading && <div className="text-center py-4"><Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" /></div>}
+                  {comments?.map(comment => (
+                    <BookCommentItem key={comment.id} bookId={params.id} comment={comment} />
+                  ))}
+                  {!areCommentsLoading && comments?.length === 0 && (
+                      <p className="text-sm text-muted-foreground text-center py-4">Jadilah yang pertama berkomentar.</p>
+                  )}
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
