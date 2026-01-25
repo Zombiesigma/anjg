@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { chatWithLiteraAI } from "@/ai/flows/chat-with-litera-ai";
+import { chatWithEliteraAI } from "@/ai/flows/chat-with-litera-ai";
 import type { AiChatMessage } from '@/lib/types';
 import { useUser } from '@/firebase';
 import { cn } from '@/lib/utils';
@@ -52,7 +52,7 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
         content: msg.content
       }));
 
-      const result = await chatWithLiteraAI({ 
+      const result = await chatWithEliteraAI({ 
         message: input, 
         chatHistory,
         userName: currentUser?.displayName || 'Pengguna',
@@ -65,7 +65,7 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
       setMessages((prev) => [...prev, assistantMessage]);
 
     } catch (error) {
-      console.error("Error with Litera AI:", error);
+      console.error("Error with Elitera AI:", error);
       const errorMessage: AiChatMessage = {
         role: "model",
         content: "Maaf, saya mengalami kesalahan. Silakan coba lagi.",
@@ -128,7 +128,7 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
                 <div className="max-w-xl p-3 rounded-xl shadow-sm bg-card border rounded-bl-none">
                     <div className="flex items-center gap-2 text-muted-foreground">
                         <Loader2 className="w-5 h-5 animate-spin" />
-                        <span>Litera Sedang Berpikir...</span>
+                        <span>Elitera Sedang Berpikir...</span>
                     </div>
                 </div>
               </motion.div>
@@ -141,7 +141,7 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
           <Textarea
             value={input}
             onChange={handleInputChange}
-            placeholder="Tanyakan apa saja pada Litera AI..."
+            placeholder="Tanyakan apa saja pada Elitera AI..."
             className="w-full pr-20 resize-none"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {

@@ -11,7 +11,7 @@ import { Github, Globe, Mail, Phone, Send } from 'lucide-react';
 const devPortfolio = "https://github.com/Guntur-s"; // Replace with actual portfolio URL
 const devImage = "https://www.gunturpadilah.web.id/pp.jpg";
 const devName = "Guntur P.";
-const devBio = "Pengembang Aplikasi Litera. Pengembang tumpukan penuh dengan hasrat untuk menciptakan aplikasi web yang indah dan fungsional.";
+const devBio = "Pengembang Aplikasi Elitera. Pengembang tumpukan penuh dengan hasrat untuk menciptakan aplikasi web yang indah dan fungsional.";
 
 export default function AboutPage() {
   return (
@@ -21,7 +21,7 @@ export default function AboutPage() {
             <div className="mx-auto mb-4">
                 <Logo className="w-16 h-16" />
             </div>
-          <CardTitle className="text-4xl font-headline text-primary">Tentang Litera</CardTitle>
+          <CardTitle className="text-4xl font-headline text-primary">Tentang Elitera</CardTitle>
           <CardDescription className="text-lg text-foreground/80 mt-2">
             Menghubungkan pembaca dan penulis di alam semesta digital modern.
           </CardDescription>
@@ -77,8 +77,8 @@ export default function AboutPage() {
                 </a>
                 <div className="pt-4">
                     <h3 className="font-bold text-lg">Unduh Aplikasinya</h3>
-                    <p className="text-muted-foreground text-sm mt-1">Dapatkan pengalaman Litera lengkap di perangkat seluler Anda.</p>
-                     <Button className="mt-4">Unduh Litera.apk</Button>
+                    <p className="text-muted-foreground text-sm mt-1">Dapatkan pengalaman Elitera lengkap di perangkat seluler Anda.</p>
+                     <Button className="mt-4">Unduh Elitera.apk</Button>
                 </div>
             </div>
           <form className="space-y-4" action="https://wa.me/6285655548656" target="_blank">

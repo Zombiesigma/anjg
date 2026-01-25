@@ -70,7 +70,7 @@ export default function RegisterPage() {
     } else {
       toast({
         title: 'Berhasil Masuk',
-        description: 'Selamat datang di Litera!',
+        description: 'Selamat datang di Elitera!',
       });
       router.push('/');
     }

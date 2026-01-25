@@ -19,7 +19,7 @@ import type { AiChatMessage } from '@/lib/types';
 import { Separator } from '@/components/ui/separator';
 
 const initialHistory: AiChatMessage[] = [
-    { role: 'model', content: 'Halo! Saya Litera AI. Ada yang bisa saya bantu dengan tulisan, riset, atau rekomendasi buku Anda hari ini?' }
+    { role: 'model', content: 'Halo! Saya Elitera AI. Ada yang bisa saya bantu dengan tulisan, riset, atau rekomendasi buku Anda hari ini?' }
 ];
 
 export default function AiPage() {
@@ -31,7 +31,7 @@ export default function AiPage() {
                     <div className="flex items-center justify-between w-full">
                         <div className="flex items-center gap-2">
                              <Logo className="w-7 h-7" />
-                             <h2 className="text-lg font-semibold font-headline text-primary group-data-[collapsible=icon]:hidden">Litera AI</h2>
+                             <h2 className="text-lg font-semibold font-headline text-primary group-data-[collapsible=icon]:hidden">Elitera AI</h2>
                         </div>
                         <Button variant="ghost" size="icon" className="group-data-[collapsible=icon]:hidden">
                             <MessageSquarePlus className="w-5 h-5" />
@@ -45,7 +45,7 @@ export default function AiPage() {
                 </SidebarContent>
                  <SidebarFooter className="mt-auto border-t p-2">
                     <p className="text-xs text-muted-foreground group-data-[collapsible=icon]:hidden px-2">
-                        Litera AI dapat membuat kesalahan. Pertimbangkan untuk memeriksa informasi penting.
+                        Elitera AI dapat membuat kesalahan. Pertimbangkan untuk memeriksa informasi penting.
                     </p>
                 </SidebarFooter>
             </Sidebar>

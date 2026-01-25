@@ -31,7 +31,7 @@ async function createUserProfile(user: User) {
       photoURL: user.photoURL,
       role: 'pembaca', // default role
       username: user.email?.split('@')[0] || user.uid,
-      bio: 'Pengguna baru Litera',
+      bio: 'Pengguna baru Elitera',
       followers: 0,
       following: 0,
       status: 'online',

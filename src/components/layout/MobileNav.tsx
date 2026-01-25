@@ -34,7 +34,7 @@ export function MobileNav() {
         )}
         <Link href="/ai" className="inline-flex flex-col items-center justify-center px-5 hover:bg-accent group">
           <Bot className="w-5 h-5 mb-1 text-muted-foreground group-hover:text-primary" />
-          <span className="text-xs text-muted-foreground group-hover:text-primary">Litera AI</span>
+          <span className="text-xs text-muted-foreground group-hover:text-primary">Elitera AI</span>
         </Link>
         <Link href={userProfile ? `/profile/${userProfile.username}` : '#'} aria-disabled={isProfileLoading} className="inline-flex flex-col items-center justify-center px-5 hover:bg-accent group">
           {isProfileLoading ? <Loader2 className="w-5 h-5 mb-1 animate-spin" /> : <User className="w-5 h-5 mb-1 text-muted-foreground group-hover:text-primary" />}

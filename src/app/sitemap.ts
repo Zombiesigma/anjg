@@ -2,7 +2,7 @@ import type { MetadataRoute } from 'next';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   // TODO: Ganti dengan domain produksi Anda yang sebenarnya
-  const siteUrl = 'https://litera.app';
+  const siteUrl = 'https://elitera.app';
 
   // Ini adalah peta situs statis. Untuk SEO yang optimal, Anda harus membuatnya dinamis
   // dengan mengambil data semua buku dan pengguna dari database Anda.

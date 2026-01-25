@@ -185,7 +185,7 @@ export default function JoinAuthorPage() {
             <div className="space-y-8">
                 <div className="text-center">
                     <h1 className="text-4xl font-headline font-bold text-primary">Temui Para Penulis Kami</h1>
-                    <p className="mt-2 text-lg text-muted-foreground">Jelajahi profil para penulis berbakat yang membentuk komunitas Litera.</p>
+                    <p className="mt-2 text-lg text-muted-foreground">Jelajahi profil para penulis berbakat yang membentuk komunitas Elitera.</p>
                 </div>
                 {areUsersLoading ? (
                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -320,7 +320,7 @@ export default function JoinAuthorPage() {
                         name="motivation"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Mengapa Anda ingin menjadi penulis di Litera?</FormLabel>
+                                <FormLabel>Mengapa Anda ingin menjadi penulis di Elitera?</FormLabel>
                                 <FormControl>
                                 <Textarea id="motivation" placeholder="Ceritakan tentang hasrat menulis Anda dan apa yang Anda rencanakan untuk diterbitkan..." rows={5} {...field} />
                                 </FormControl>

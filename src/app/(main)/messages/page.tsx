@@ -331,7 +331,7 @@ export default function MessagesPage() {
           {!selectedChatId && !searchParams.get('chatId') ? (
             <div className="items-center justify-center h-full text-center hidden md:flex flex-col gap-2 bg-muted/30">
               <MessageSquare className="h-16 w-16 mx-auto text-muted-foreground/30" />
-              <h2 className="mt-2 text-xl font-semibold">Pesan Litera Anda</h2>
+              <h2 className="mt-2 text-xl font-semibold">Pesan Elitera Anda</h2>
               <p className="text-muted-foreground max-w-sm">Pilih dari obrolan yang ada, atau mulai percakapan baru di halaman profil pengguna.</p>
             </div>
           ) : (

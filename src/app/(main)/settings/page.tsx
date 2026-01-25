@@ -183,7 +183,7 @@ export default function SettingsPage() {
                 <>
                   <FormField control={profileForm.control} name="username" render={({ field }) => (
                       <FormItem>
-                        <Label>Nama Pengguna</Label>
+                        <FormLabel>Nama Pengguna</FormLabel>
                         <FormControl><Input placeholder="@guntur" {...field} /></FormControl>
                         <FormMessage />
                       </FormItem>
@@ -191,7 +191,7 @@ export default function SettingsPage() {
                   />
                   <FormField control={profileForm.control} name="displayName" render={({ field }) => (
                       <FormItem>
-                        <Label>Nama Lengkap</Label>
+                        <FormLabel>Nama Lengkap</FormLabel>
                         <FormControl><Input placeholder="Guntur Padilah" {...field} /></FormControl>
                         <FormMessage />
                       </FormItem>
@@ -199,7 +199,7 @@ export default function SettingsPage() {
                   />
                   <FormField control={profileForm.control} name="photoURL" render={({ field }) => (
                       <FormItem>
-                        <Label>URL Foto Profil</Label>
+                        <FormLabel>URL Foto Profil</FormLabel>
                         <FormControl><Input placeholder="https://contoh.com/gambar.jpg" {...field} /></FormControl>
                         <FormMessage />
                       </FormItem>
@@ -207,8 +207,8 @@ export default function SettingsPage() {
                   />
                   <FormField control={profileForm.control} name="bio" render={({ field }) => (
                       <FormItem>
-                        <Label>Bio</Label>
-                        <FormControl><Textarea placeholder="Pengembang Aplikasi Litera." {...field} /></FormControl>
+                        <FormLabel>Bio</FormLabel>
+                        <FormControl><Textarea placeholder="Pengembang Aplikasi Elitera." {...field} /></FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
