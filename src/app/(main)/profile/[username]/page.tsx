@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useMemo, useState, useEffect } from 'react';
 import { useFirestore, useUser, useCollection, useDoc } from '@/firebase';
-import { collection, query, where, limit, addDoc, documentId, doc, writeBatch, increment, serverTimestamp, orderBy, getDoc } from 'firebase/firestore';
+import { collection, query, where, limit, addDoc, documentId, doc, writeBatch, increment, serverTimestamp, orderBy, getDoc, type Query, type DocumentData } from 'firebase/firestore';
 import type { User, Book, Chat, Favorite, Follow, Story } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -106,16 +106,21 @@ export default function ProfilePage() {
   }, [firestore, favoriteBookIds, isOwnProfile]);
   const { data: favoriteBooks, isLoading: areFavoriteBooksLoading } = useCollection<Book>(favoriteBooksQuery);
   
-  const twentyFourHoursAgo = useMemo(() => new Date(Date.now() - 24 * 60 * 60 * 1000), []);
-  const allActiveStoriesQuery = useMemo(() => (
-    firestore
-    ? query(
-        collection(firestore, 'stories'), 
-        where('createdAt', '>', twentyFourHoursAgo),
-        orderBy('createdAt', 'desc')
-      )
-    : null
-  ), [firestore, twentyFourHoursAgo]);
+  const [allActiveStoriesQuery, setAllActiveStoriesQuery] = useState<Query<DocumentData> | null>(null);
+
+  useEffect(() => {
+    if (firestore) {
+      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      setAllActiveStoriesQuery(
+        query(
+          collection(firestore, 'stories'),
+          where('createdAt', '>', twentyFourHoursAgo),
+          orderBy('createdAt', 'desc')
+        )
+      );
+    }
+  }, [firestore]);
+  
   const { data: allActiveStories, isLoading: areStoriesLoading } = useCollection<Story>(allActiveStoriesQuery);
   const userHasActiveStory = useMemo(() => (
       allActiveStories?.some(story => story.authorId === user?.uid)
