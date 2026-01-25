@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useMemo } from 'react';
 import type { Chat, Notification } from '@/lib/types';
 import { collection, query, where } from 'firebase/firestore';
+import { useBrowserNotifier } from '@/hooks/use-browser-notifications';
 
 
 export function HeaderActions() {
@@ -36,6 +37,8 @@ export function HeaderActions() {
   const { data: unreadNotifications } = useCollection<Notification>(notificationsQuery);
 
   const totalUnreadNotifCount = unreadNotifications?.length ?? 0;
+
+  useBrowserNotifier(totalUnreadCount, totalUnreadNotifCount);
 
 
   if (isLoading) {
