@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
+import Link from 'next/link';
 import { useFirestore, useUser, useDoc, useCollection } from '@/firebase';
 import { doc, collection, addDoc, serverTimestamp, query, orderBy, updateDoc, increment, writeBatch, deleteDoc } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Heart, MessageSquare, Send, Loader2 } from 'lucide-react';
-import type { Comment, BookCommentLike } from '@/lib/types';
+import type { Comment, BookCommentLike, User as AppUser } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
@@ -16,9 +17,10 @@ import { id } from 'date-fns/locale';
 interface BookCommentItemProps {
     bookId: string;
     comment: Comment;
+    currentUserProfile: AppUser | null;
 }
 
-export function BookCommentItem({ bookId, comment }: BookCommentItemProps) {
+export function BookCommentItem({ bookId, comment, currentUserProfile }: BookCommentItemProps) {
     const { user: currentUser } = useUser();
     const firestore = useFirestore();
     const { toast } = useToast();
@@ -73,7 +75,7 @@ export function BookCommentItem({ bookId, comment }: BookCommentItemProps) {
     const { data: replies, isLoading: areRepliesLoading } = useCollection<Comment>(repliesQuery);
 
     const handleReplySubmit = async () => {
-        if (!replyText.trim() || !currentUser || !firestore) return;
+        if (!replyText.trim() || !currentUser || !firestore || !currentUserProfile) return;
 
         setIsSubmittingReply(true);
         const commentRef = doc(firestore, 'books', bookId, 'comments', comment.id);
@@ -83,6 +85,7 @@ export function BookCommentItem({ bookId, comment }: BookCommentItemProps) {
             text: replyText,
             userId: currentUser.uid,
             userName: currentUser.displayName,
+            username: currentUserProfile.username,
             userAvatarUrl: currentUser.photoURL,
             createdAt: serverTimestamp(),
             likeCount: 0,
@@ -110,14 +113,18 @@ export function BookCommentItem({ bookId, comment }: BookCommentItemProps) {
         <div className="flex flex-col">
             {/* Main Comment */}
             <div className="flex items-start gap-3">
-                <Avatar className="h-9 w-9">
-                    <AvatarImage src={comment.userAvatarUrl} alt={comment.userName} />
-                    <AvatarFallback>{comment.userName?.charAt(0)}</AvatarFallback>
-                </Avatar>
+                <Link href={comment.username ? `/profile/${comment.username}` : '#'} aria-disabled={!comment.username} className="cursor-pointer">
+                    <Avatar className="h-9 w-9">
+                        <AvatarImage src={comment.userAvatarUrl} alt={comment.userName} />
+                        <AvatarFallback>{comment.userName?.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                </Link>
                 <div className="flex-1">
                     <div className="bg-muted p-3 rounded-lg rounded-tl-none">
                         <div className="flex items-baseline gap-2">
-                            <span className="font-semibold text-sm">{comment.userName}</span>
+                            <Link href={comment.username ? `/profile/${comment.username}` : '#'} aria-disabled={!comment.username} className="font-semibold text-sm hover:underline cursor-pointer">
+                                {comment.userName}
+                            </Link>
                             <span className="text-xs text-muted-foreground">
                                 {isMounted && comment.createdAt ? formatDistanceToNow(comment.createdAt.toDate(), { locale: id, addSuffix: true }) : '...'}
                             </span>
@@ -166,14 +173,18 @@ export function BookCommentItem({ bookId, comment }: BookCommentItemProps) {
                 <div className="pl-12 pt-4 space-y-4">
                     {replies.map(reply => (
                         <div key={reply.id} className="flex items-start gap-3">
-                            <Avatar className="h-8 w-8">
-                                <AvatarImage src={reply.userAvatarUrl} alt={reply.userName} />
-                                <AvatarFallback>{reply.userName?.charAt(0)}</AvatarFallback>
-                            </Avatar>
+                             <Link href={reply.username ? `/profile/${reply.username}` : '#'} aria-disabled={!reply.username} className="cursor-pointer">
+                                <Avatar className="h-8 w-8">
+                                    <AvatarImage src={reply.userAvatarUrl} alt={reply.userName} />
+                                    <AvatarFallback>{reply.userName?.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                            </Link>
                             <div className="flex-1">
                                 <div className="bg-muted/50 p-2.5 rounded-lg rounded-tl-none">
                                     <div className="flex items-baseline gap-2">
-                                        <span className="font-semibold text-sm">{reply.userName}</span>
+                                        <Link href={reply.username ? `/profile/${reply.username}` : '#'} aria-disabled={!reply.username} className="font-semibold text-sm hover:underline cursor-pointer">
+                                            {reply.userName}
+                                        </Link>
                                         <span className="text-xs text-muted-foreground">
                                             {isMounted && reply.createdAt ? formatDistanceToNow(reply.createdAt.toDate(), { locale: id, addSuffix: true }) : '...'}
                                         </span>

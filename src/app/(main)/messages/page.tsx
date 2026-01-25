@@ -342,7 +342,7 @@ export default function MessagesPage() {
                     <ArrowLeft />
                 </Button>
                 {otherParticipant && (
-                   <div className="flex items-center gap-3">
+                   <Link href={`/profile/${otherParticipant.username}`} className="flex items-center gap-3 group min-w-0">
                     <div className="relative">
                       <Avatar>
                         <AvatarImage src={otherParticipant.photoURL} alt={otherParticipant.displayName} />
@@ -353,14 +353,14 @@ export default function MessagesPage() {
                        )}
                     </div>
                     <div className="min-w-0">
-                      <h2 className="font-semibold">{otherParticipant.displayName}</h2>
+                      <h2 className="font-semibold group-hover:underline">{otherParticipant.displayName}</h2>
                        {isOtherParticipantOnline ? (
                           <p className="text-xs text-green-600">Online</p>
                        ) : (
                           otherParticipantProfile?.lastSeen && <p className="text-xs text-muted-foreground">Aktif {formatDistanceToNow(otherParticipantProfile.lastSeen.toDate(), { locale: id, addSuffix: true })}</p>
                        )}
                     </div>
-                   </div>
+                   </Link>
                 )}
                 <div className="ml-auto">
                     <DropdownMenu>

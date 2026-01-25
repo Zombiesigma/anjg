@@ -50,6 +50,7 @@ export type Comment = {
   text: string;
   userId: string;
   userName: string;
+  username: string;
   userAvatarUrl: string;
   likeCount: number;
   replyCount: number;

@@ -120,11 +120,12 @@
             "userId": { "type": "string" },
             "userName": { "type": "string" },
             "userAvatarUrl": { "type": "string", "format": "uri" },
+            "username": { "type": "string", "description": "The user's unique username for profile linking." },
             "likeCount": { "type": "number" },
             "replyCount": { "type": "number" },
             "createdAt": { "type": "string", "format": "date-time" }
         },
-        "required": ["text", "userId", "userName", "createdAt", "likeCount", "replyCount"]
+        "required": ["text", "userId", "userName", "username", "createdAt", "likeCount", "replyCount"]
     },
     "BookCommentLike": {
       "title": "Book Comment Like",

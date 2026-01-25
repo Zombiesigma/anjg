@@ -44,6 +44,10 @@ export default function BookDetailsPage() {
   ), [firestore, book]);
   const { data: author, isLoading: isAuthorLoading } = useDoc<User>(authorRef);
 
+  const { data: currentUserProfile } = useDoc<User>(
+    (firestore && currentUser) ? doc(firestore, 'users', currentUser.uid) : null
+  );
+
   const commentsQuery = useMemo(() => (
     firestore 
       ? query(collection(firestore, 'books', params.id, 'comments'), orderBy('createdAt', 'desc')) 
@@ -81,7 +85,7 @@ export default function BookDetailsPage() {
   const isAuthor = currentUser?.uid === book?.authorId;
 
   function handleCommentSubmit() {
-    if (!newComment.trim() || !currentUser || !firestore || !book) return;
+    if (!newComment.trim() || !currentUser || !firestore || !book || !currentUserProfile) return;
 
     setIsSubmitting(true);
     const commentsCol = collection(firestore, 'books', params.id, 'comments');
@@ -90,6 +94,7 @@ export default function BookDetailsPage() {
       userId: currentUser.uid,
       userName: currentUser.displayName,
       userAvatarUrl: currentUser.photoURL,
+      username: currentUserProfile.username,
       createdAt: serverTimestamp(),
       likeCount: 0,
       replyCount: 0,
@@ -280,13 +285,13 @@ export default function BookDetailsPage() {
             <div>
               <Badge>{book.genre}</Badge>
               <h1 className="text-4xl font-headline font-bold mt-2">{book.title}</h1>
-              <div className="flex items-center gap-2 mt-4">
+              <Link href={author ? `/profile/${author.username}` : '#'} className="flex items-center gap-2 mt-4 group w-fit">
                 <Avatar>
                   <AvatarImage src={book.authorAvatarUrl} alt={book.authorName} />
                   <AvatarFallback>{book.authorName?.charAt(0)}</AvatarFallback>
                 </Avatar>
-                <Link href={author ? `/profile/${author.username}` : '#'} className="font-medium hover:underline">{book.authorName}</Link>
-              </div>
+                <span className="font-medium group-hover:underline">{book.authorName}</span>
+              </Link>
             </div>
             <div className="space-y-4">
                 <h2 className="text-xl font-headline font-semibold">Sinopsis</h2>
@@ -352,7 +357,7 @@ export default function BookDetailsPage() {
               <div className="space-y-4">
                   {areCommentsLoading && <div className="text-center py-4"><Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" /></div>}
                   {comments?.map(comment => (
-                    <BookCommentItem key={comment.id} bookId={params.id} comment={comment} />
+                    <BookCommentItem key={comment.id} bookId={params.id} comment={comment} currentUserProfile={currentUserProfile} />
                   ))}
                   {!areCommentsLoading && comments?.length === 0 && (
                       <p className="text-sm text-muted-foreground text-center py-4">Jadilah yang pertama berkomentar.</p>
