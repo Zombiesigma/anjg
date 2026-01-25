@@ -113,16 +113,28 @@
     },
     "Comment": {
         "title": "Comment",
-        "description": "A comment on a book.",
+        "description": "A comment on a book or a reply to another comment.",
         "type": "object",
         "properties": {
             "text": { "type": "string" },
             "userId": { "type": "string" },
             "userName": { "type": "string" },
             "userAvatarUrl": { "type": "string", "format": "uri" },
+            "likeCount": { "type": "number" },
+            "replyCount": { "type": "number" },
             "createdAt": { "type": "string", "format": "date-time" }
         },
-        "required": ["text", "userId", "userName", "createdAt"]
+        "required": ["text", "userId", "userName", "createdAt", "likeCount", "replyCount"]
+    },
+    "BookCommentLike": {
+      "title": "Book Comment Like",
+      "description": "Represents a user's like on a book comment.",
+      "type": "object",
+      "properties": {
+          "userId": { "type": "string" },
+          "likedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "likedAt"]
     },
     "AuthorRequest": {
       "title": "Author Request",
@@ -369,6 +381,18 @@
         "$ref": "#/backend/entities/Comment"
       },
       "description": "Stores comments for a specific book."
+    },
+    "/books/{bookId}/comments/{commentId}/replies/{replyId}": {
+      "schema": {
+        "$ref": "#/backend/entities/Comment"
+      },
+      "description": "Stores replies for a specific comment."
+    },
+    "/books/{bookId}/comments/{commentId}/likes/{userId}": {
+      "schema": {
+        "$ref": "#/backend/entities/BookCommentLike"
+      },
+      "description": "Stores likes for a specific comment. Document ID is the user ID."
     },
     "/authorRequests/{requestId}": {
       "schema": {

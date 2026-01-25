@@ -20,6 +20,7 @@ import { FirestorePermissionError } from '@/firebase/errors';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { ShareDialog } from '@/components/ShareDialog';
+import { BookCommentItem } from '@/components/comments/BookCommentItem';
 
 export default function BookDetailsPage() {
   const params = useParams<{ id: string }>();
@@ -83,6 +84,8 @@ export default function BookDetailsPage() {
       userName: currentUser.displayName,
       userAvatarUrl: currentUser.photoURL,
       createdAt: serverTimestamp(),
+      likeCount: 0,
+      replyCount: 0,
     };
 
     addDoc(commentsCol, commentData)
@@ -293,26 +296,10 @@ export default function BookDetailsPage() {
               </div>
             )}
             
-            <div className="space-y-6">
+            <div className="space-y-4">
                 {areCommentsLoading && <div className="text-center py-4"><Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" /></div>}
                 {comments?.map(comment => (
-                    <div key={comment.id} className="flex items-start gap-3">
-                        <Avatar className="h-9 w-9">
-                            <AvatarImage src={comment.userAvatarUrl} alt={comment.userName} />
-                            <AvatarFallback>{comment.userName?.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                            <div className="bg-muted p-3 rounded-lg rounded-tl-none">
-                                <div className="flex items-baseline gap-2">
-                                    <span className="font-semibold text-sm">{comment.userName}</span>
-                                    <span className="text-xs text-muted-foreground">
-                                        {isMounted && comment.createdAt ? comment.createdAt.toDate().toLocaleDateString('id-ID', { day: 'numeric', month: 'long' }) : '...'}
-                                    </span>
-                                </div>
-                                <p className="text-sm mt-1">{comment.text}</p>
-                            </div>
-                        </div>
-                    </div>
+                  <BookCommentItem key={comment.id} bookId={params.id} comment={comment} />
                 ))}
                 {!areCommentsLoading && comments?.length === 0 && (
                     <p className="text-sm text-muted-foreground text-center py-4">Jadilah yang pertama berkomentar.</p>

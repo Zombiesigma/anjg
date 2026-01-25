@@ -72,6 +72,17 @@ service cloud.firestore {
       match /comments/{commentId} {
         allow read: if true;
         allow create: if isSignedIn();
+        allow update: if isSignedIn() && (request.writeFields.size() == 1 && ('likeCount' in request.writeFields || 'replyCount' in request.writeFields));
+
+        match /replies/{replyId} {
+          allow read: if true;
+          allow create: if isSignedIn();
+        }
+
+        match /likes/{userId} {
+          allow read: if true;
+          allow create, delete: if request.auth.uid == userId;
+        }
       }
     }
     

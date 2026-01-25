@@ -51,7 +51,15 @@ export type Comment = {
   userId: string;
   userName: string;
   userAvatarUrl: string;
+  likeCount: number;
+  replyCount: number;
   createdAt: Timestamp;
+};
+
+export type BookCommentLike = {
+  id: string; // The userId
+  userId: string;
+  likedAt: Timestamp;
 };
 
 export type AuthorRequest = {
