@@ -11,6 +11,8 @@ export type User = {
   photoURL: string;
   displayName: string;
   email: string;
+  status?: 'online' | 'offline';
+  lastSeen?: Timestamp;
   notificationPreferences?: {
     onNewFollower?: boolean;
     onBookComment?: boolean;
@@ -175,4 +177,3 @@ export type StoryView = {
   userAvatarUrl: string;
   viewedAt: Timestamp;
 };
-

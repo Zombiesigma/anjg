@@ -30,6 +30,7 @@ export default function ProfilePage() {
   const [isFollowing, setIsFollowing] = useState(false);
   const [followsBack, setFollowsBack] = useState(false);
   const [isStoryViewerOpen, setIsStoryViewerOpen] = useState(false);
+  const [isOnline, setIsOnline] = useState(false);
 
   const userQuery = useMemo(() => (
     firestore 
@@ -44,6 +45,23 @@ export default function ProfilePage() {
   );
   
   const isOwnProfile = user?.uid === currentUser?.uid;
+
+  useEffect(() => {
+    if (!user) return;
+    const checkStatus = () => {
+        if (!user.status || user.status === 'offline' || !user.lastSeen) {
+            setIsOnline(false);
+            return;
+        }
+        // User is online if lastSeen is less than 5 minutes ago
+        const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+        setIsOnline(user.lastSeen.toMillis() > fiveMinutesAgo);
+    }
+    checkStatus();
+    const interval = setInterval(checkStatus, 60000); // check every minute
+    return () => clearInterval(interval);
+  }, [user]);
+
 
   const followingRef = useMemo(() => (
     (firestore && currentUser && user && !isOwnProfile)
@@ -267,6 +285,9 @@ export default function ProfilePage() {
                         <AvatarImage src={user.photoURL} alt={user.displayName} />
                         <AvatarFallback className="text-4xl">{user.displayName?.charAt(0)}</AvatarFallback>
                     </Avatar>
+                     {isOnline && (
+                        <span className="absolute bottom-1 right-1 block h-6 w-6 rounded-full bg-green-500 border-4 border-card" title="Online" />
+                    )}
                   </button>
                   <div className="flex-1 text-center md:text-left">
                       <div className="flex items-center justify-center md:justify-start gap-2">

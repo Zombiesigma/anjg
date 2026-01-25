@@ -11,7 +11,7 @@ import {
   sendEmailVerification,
   type User,
 } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 
 const { auth, firestore } = initializeFirebase();
 const provider = new GoogleAuthProvider();
@@ -34,6 +34,14 @@ async function createUserProfile(user: User) {
       bio: 'Pengguna baru Litera',
       followers: 0,
       following: 0,
+      status: 'online',
+      lastSeen: serverTimestamp(),
+    });
+  } else {
+    // If user exists, just update their status on login
+     await updateDoc(userDocRef, {
+        status: 'online',
+        lastSeen: serverTimestamp(),
     });
   }
 }
@@ -88,6 +96,13 @@ export async function signInWithGoogle() {
 
 export async function signOut() {
   try {
+    if (auth.currentUser) {
+        const userStatusRef = doc(firestore, 'users', auth.currentUser.uid);
+        await updateDoc(userStatusRef, {
+            status: 'offline',
+            lastSeen: serverTimestamp(),
+        });
+    }
     await firebaseSignOut(auth);
   } catch (error) {
     console.error("Error signing out: ", error);

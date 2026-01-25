@@ -1,12 +1,14 @@
 'use client';
 
-import { useUser } from '@/firebase';
+import { useUser, useFirestore } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
+import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 
 export function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useUser();
+  const firestore = useFirestore();
   const router = useRouter();
 
   useEffect(() => {
@@ -14,6 +16,30 @@ export function ProtectedLayout({ children }: { children: React.ReactNode }) {
       router.replace('/login');
     }
   }, [user, isLoading, router]);
+  
+  useEffect(() => {
+    if (!firestore || !user) return;
+
+    const userStatusRef = doc(firestore, 'users', user.uid);
+
+    // Set online on mount and update lastSeen
+    updateDoc(userStatusRef, {
+      status: 'online',
+      lastSeen: serverTimestamp(),
+    });
+
+    // Set up an interval to update lastSeen periodically to maintain 'online' status
+    const intervalId = setInterval(() => {
+      updateDoc(userStatusRef, {
+        lastSeen: serverTimestamp(),
+      });
+    }, 2 * 60 * 1000); // every 2 minutes
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, [firestore, user]);
+
 
   if (isLoading || !user) {
     return (

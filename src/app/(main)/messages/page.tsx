@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useFirestore, useUser, useCollection } from '@/firebase';
-import { collection, query, where, orderBy, addDoc, serverTimestamp, doc, updateDoc, type Timestamp, writeBatch, increment } from 'firebase/firestore';
+import { collection, query, where, orderBy, addDoc, serverTimestamp, doc, updateDoc, type Timestamp, writeBatch, increment, documentId } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
 import { MoreVertical, MessageSquare, Loader2, Send, Search, ArrowLeft, User, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { Chat, ChatMessage, TextMessage } from '@/lib/types';
+import type { Chat, ChatMessage, TextMessage, User as AppUser } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow, isSameDay, format, isToday, isYesterday } from 'date-fns';
 import { id } from 'date-fns/locale';
@@ -38,6 +38,8 @@ export default function MessagesPage() {
   const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [onlineStatus, setOnlineStatus] = useState<{ [key: string]: boolean }>({});
+
 
   // 1. Fetch user's chat threads
   const chatThreadsQuery = useMemo(() => (
@@ -46,6 +48,55 @@ export default function MessagesPage() {
       : null
   ), [firestore, currentUser]);
   const { data: chatThreads, isLoading: isLoadingThreads } = useCollection<Chat>(chatThreadsQuery);
+
+  // 2. Get all other participant uids
+  const otherParticipantUids = useMemo(() => {
+      if (!chatThreads || !currentUser) return [];
+      const uids = new Set<string>();
+      chatThreads.forEach(chat => {
+          chat.participantUids.forEach(uid => {
+              if (uid !== currentUser.uid) {
+                  uids.add(uid);
+              }
+          });
+      });
+      return Array.from(uids);
+  }, [chatThreads, currentUser]);
+
+  // 3. Fetch all user profiles in one go
+  const usersQuery = useMemo(() => {
+      if (!firestore || otherParticipantUids.length === 0) return null;
+      return query(collection(firestore, 'users'), where(documentId(), 'in', otherParticipantUids.slice(0, 30)));
+  }, [firestore, otherParticipantUids]);
+  const { data: participantProfiles } = useCollection<AppUser>(usersQuery);
+
+  // 4. Create a map for easy lookup
+  const profilesMap = useMemo(() => {
+      if (!participantProfiles) return new Map<string, AppUser>();
+      return new Map(participantProfiles.map(p => [p.id, p]));
+  }, [participantProfiles]);
+
+  // 5. Periodically check online status
+  useEffect(() => {
+    if (profilesMap.size === 0) return;
+
+    const checkStatuses = () => {
+        const newStatus: { [key: string]: boolean } = {};
+        const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+
+        profilesMap.forEach((profile, uid) => {
+            const isOnline = profile.status === 'online' && 
+                             profile.lastSeen && 
+                             profile.lastSeen.toMillis() > fiveMinutesAgo;
+            newStatus[uid] = isOnline;
+        });
+        setOnlineStatus(newStatus);
+    };
+
+    checkStatuses();
+    const interval = setInterval(checkStatuses, 60 * 1000); // Check every minute
+    return () => clearInterval(interval);
+  }, [profilesMap]);
 
   // Effect to reset unread count when a chat is opened
   useEffect(() => {
@@ -71,7 +122,7 @@ export default function MessagesPage() {
     }
   }, [searchParams]);
 
-  // 2. Fetch messages for the selected chat
+  // Fetch messages for the selected chat
   const messagesQuery = useMemo(() => (
     (firestore && selectedChatId)
       ? query(collection(firestore, 'chats', selectedChatId, 'messages'), orderBy('createdAt', 'asc'))
@@ -112,6 +163,14 @@ export default function MessagesPage() {
   const otherParticipant = useMemo(() => (
     selectedChat?.participants.find(p => p.uid !== currentUser?.uid)
   ), [selectedChat, currentUser]);
+
+  const otherParticipantProfile = useMemo(() => {
+    if (!otherParticipant) return null;
+    return profilesMap.get(otherParticipant.uid);
+  }, [otherParticipant, profilesMap]);
+
+  const isOtherParticipantOnline = otherParticipant ? onlineStatus[otherParticipant.uid] : false;
+
 
   const scrollToBottom = () => {
     setTimeout(() => {
@@ -216,6 +275,7 @@ export default function MessagesPage() {
                 const otherP = chat.participants.find(p => p.uid !== currentUser?.uid);
                 if (!otherP) return null;
                 const unreadCount = chat.unreadCounts?.[currentUser?.uid ?? ''] ?? 0;
+                const isOnline = onlineStatus[otherP.uid];
                 
                 return (
                   <button
@@ -226,10 +286,15 @@ export default function MessagesPage() {
                       selectedChatId === chat.id && "bg-accent/50"
                     )}
                   >
-                    <Avatar className="border">
-                      <AvatarImage src={otherP.photoURL} alt={otherP.displayName} />
-                      <AvatarFallback>{otherP.displayName.charAt(0)}</AvatarFallback>
-                    </Avatar>
+                    <div className="relative shrink-0">
+                      <Avatar className="border">
+                        <AvatarImage src={otherP.photoURL} alt={otherP.displayName} />
+                        <AvatarFallback>{otherP.displayName.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      {isOnline && (
+                        <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full bg-green-500 ring-2 ring-background" />
+                      )}
+                    </div>
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
                             <p className="font-semibold truncate">{otherP.displayName}</p>
@@ -278,11 +343,23 @@ export default function MessagesPage() {
                 </Button>
                 {otherParticipant && (
                    <div className="flex items-center gap-3">
-                    <Avatar>
-                      <AvatarImage src={otherParticipant.photoURL} alt={otherParticipant.displayName} />
-                      <AvatarFallback>{otherParticipant.displayName.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <h2 className="font-semibold">{otherParticipant.displayName}</h2>
+                    <div className="relative">
+                      <Avatar>
+                        <AvatarImage src={otherParticipant.photoURL} alt={otherParticipant.displayName} />
+                        <AvatarFallback>{otherParticipant.displayName.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                       {isOtherParticipantOnline && (
+                          <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full bg-green-500 ring-2 ring-background" />
+                       )}
+                    </div>
+                    <div className="min-w-0">
+                      <h2 className="font-semibold">{otherParticipant.displayName}</h2>
+                       {isOtherParticipantOnline ? (
+                          <p className="text-xs text-green-600">Online</p>
+                       ) : (
+                          otherParticipantProfile?.lastSeen && <p className="text-xs text-muted-foreground">Aktif {formatDistanceToNow(otherParticipantProfile.lastSeen.toDate(), { locale: id, addSuffix: true })}</p>
+                       )}
+                    </div>
                    </div>
                 )}
                 <div className="ml-auto">
@@ -434,5 +511,3 @@ export default function MessagesPage() {
     </div>
   )
 }
-
-    

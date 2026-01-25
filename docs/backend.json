@@ -44,6 +44,16 @@
             "type": "number",
             "description": "Number of users being followed."
         },
+        "status": {
+            "type": "string",
+            "enum": ["online", "offline"],
+            "description": "The user's online status."
+        },
+        "lastSeen": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The last time the user was seen online."
+        },
         "notificationPreferences": {
           "type": "object",
           "description": "User's notification settings.",
@@ -396,5 +406,3 @@
     }
   }
 }
-
-    
