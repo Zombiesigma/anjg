@@ -18,6 +18,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { StoryViewer } from '@/components/stories/StoryViewer';
 import { cn } from '@/lib/utils';
+import { FollowsSheet } from '@/components/profile/FollowsSheet';
 
 export default function ProfilePage() {
   const params = useParams<{ username: string }>();
@@ -31,6 +32,9 @@ export default function ProfilePage() {
   const [followsBack, setFollowsBack] = useState(false);
   const [isStoryViewerOpen, setIsStoryViewerOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(false);
+  
+  const [sheetState, setSheetState] = useState<{open: boolean; type: 'followers' | 'following'}>({ open: false, type: 'followers' });
+
 
   const userQuery = useMemo(() => (
     firestore 
@@ -143,6 +147,12 @@ export default function ProfilePage() {
   const userHasActiveStory = useMemo(() => (
       allActiveStories?.some(story => story.authorId === user?.uid)
   ), [allActiveStories, user]);
+
+  const openFollowsSheet = (type: 'followers' | 'following') => {
+    if ((type === 'followers' && user?.followers > 0) || (type === 'following' && user?.following > 0)) {
+        setSheetState({ open: true, type });
+    }
+  };
 
 
   const handleStartChat = async () => {
@@ -268,6 +278,12 @@ export default function ProfilePage() {
           onClose={() => setIsStoryViewerOpen(false)}
         />
       )}
+      {user && <FollowsSheet 
+        userId={user.id} 
+        type={sheetState.type} 
+        open={sheetState.open} 
+        onOpenChange={(open) => setSheetState(s => ({...s, open}))} 
+      />}
       <div className="space-y-8">
         <Card className="overflow-hidden">
           <div className="h-32 md:h-48 bg-gradient-to-r from-primary/20 to-accent/20" />
@@ -325,14 +341,14 @@ export default function ProfilePage() {
                       <p className="font-bold text-lg">{areBooksLoading ? '...' : publishedBooks?.length ?? 0}</p>
                       <p className="text-sm text-muted-foreground">Buku Terbit</p>
                   </div>
-                   <div className="text-center">
+                   <button className="text-center disabled:cursor-default" onClick={() => openFollowsSheet('followers')} disabled={user.followers === 0}>
                       <p className="font-bold text-lg">{new Intl.NumberFormat('id-ID').format(user.followers)}</p>
                       <p className="text-sm text-muted-foreground">Pengikut</p>
-                  </div>
-                   <div className="text-center">
+                  </button>
+                   <button className="text-center disabled:cursor-default" onClick={() => openFollowsSheet('following')} disabled={user.following === 0}>
                       <p className="font-bold text-lg">{new Intl.NumberFormat('id-ID').format(user.following)}</p>
                       <p className="text-sm text-muted-foreground">Mengikuti</p>
-                  </div>
+                  </button>
               </div>
           </CardContent>
         </Card>
