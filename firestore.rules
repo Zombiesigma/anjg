@@ -36,7 +36,9 @@ service cloud.firestore {
       match /notifications/{notificationId} {
         // A user can only read and update (e.g. mark as read) their own notifications
         allow read, update: if isSignedIn() && request.auth.uid == userId;
-        allow create, delete: if false; // Notifications are created by system/other users' actions
+        // Notifications can be created by any signed-in user (e.g. for follows, comments, etc.) or by an admin for broadcasts.
+        allow create: if isSignedIn() && request.resource.data.type in ['comment', 'follow', 'favorite', 'author_request', 'story_comment', 'broadcast'];
+        allow delete: if false; 
       }
     }
 

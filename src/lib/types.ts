@@ -114,7 +114,7 @@ export type ChatMessage = (TextMessage | BookShareMessage) & {
 
 export type Notification = {
   id: string;
-  type: 'comment' | 'follow' | 'favorite' | 'author_request' | 'story_comment';
+  type: 'comment' | 'follow' | 'favorite' | 'author_request' | 'story_comment' | 'broadcast';
   text: string;
   link: string;
   actor: {

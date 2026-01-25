@@ -21,7 +21,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Users, ShieldCheck, BookUser, BookCopy } from "lucide-react";
+import { Loader2, Users, ShieldCheck, BookUser, BookCopy, Megaphone } from "lucide-react";
 import type { AuthorRequest, Book, User } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
@@ -178,6 +178,17 @@ export default function AdminPage() {
             </CardHeader>
             <CardContent>
               {areUsersLoading ? <Skeleton className="h-8 w-1/2"/> : <div className="text-2xl font-bold">{userStats.pembaca}</div>}
+            </CardContent>
+          </Card>
+        </Link>
+         <Link href="/admin/broadcast">
+          <Card className="hover:bg-accent transition-colors">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Buat Pengumuman</CardTitle>
+              <Megaphone className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-xs text-muted-foreground pt-1">Kirim notifikasi ke grup pengguna tertentu.</p>
             </CardContent>
           </Card>
         </Link>
