@@ -283,7 +283,7 @@ export default function MessagesPage() {
                     onClick={() => handleSelectChat(chat.id)}
                     className={cn(
                       "flex items-start gap-3 p-4 text-left hover:bg-accent w-full transition-colors",
-                      selectedChatId === chat.id && "bg-accent/50"
+                      selectedChatId === chat.id ? "bg-accent" : (unreadCount > 0 ? "bg-primary/5" : "")
                     )}
                   >
                     <div className="relative shrink-0">
