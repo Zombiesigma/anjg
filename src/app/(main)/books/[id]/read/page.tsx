@@ -102,7 +102,20 @@ export default function ReadPage() {
     notFound();
   }
 
-  const ChapterList = () => (
+  const ChapterItem = ({ chapter, ...props }: { chapter: Chapter } & React.ButtonHTMLAttributes<HTMLButtonElement>) => (
+      <button
+        {...props}
+        onClick={() => scrollToChapter(chapter.id)}
+        className="w-full text-left p-4 border-b border-border/50 hover:bg-accent transition-colors flex items-start gap-4 text-sm"
+      >
+        <span className="font-mono text-muted-foreground pt-0.5">{String(chapter.order).padStart(2, '0')}</span>
+        <div className="flex-1">
+          <span>{chapter.title}</span>
+        </div>
+      </button>
+  );
+
+  const ChapterList = ({ inSheet = false }: { inSheet?: boolean }) => (
     <div className='flex flex-col h-full'>
       <div className="p-4 border-b shrink-0">
         <h2 className="font-headline text-xl font-bold truncate">{book.title}</h2>
@@ -114,19 +127,15 @@ export default function ReadPage() {
             {Array.from({length: 8}).map((_, i) => <Skeleton key={i} className="h-12 w-full rounded-md" />)}
           </div>
         )}
-        {!areChaptersLoading && chapters?.map((chapter) => (
-          <SheetClose asChild key={chapter.id}>
-            <button
-              onClick={() => scrollToChapter(chapter.id)}
-              className="w-full text-left p-4 border-b border-border/50 hover:bg-accent transition-colors flex items-start gap-4 text-sm"
-            >
-              <span className="font-mono text-muted-foreground pt-0.5">{String(chapter.order).padStart(2, '0')}</span>
-              <div className="flex-1">
-                <span>{chapter.title}</span>
-              </div>
-            </button>
-          </SheetClose>
-        ))}
+        {!areChaptersLoading && chapters?.map((chapter) =>
+          inSheet ? (
+            <SheetClose asChild key={chapter.id}>
+              <ChapterItem chapter={chapter} />
+            </SheetClose>
+          ) : (
+            <ChapterItem key={chapter.id} chapter={chapter} />
+          )
+        )}
         {!areChaptersLoading && chapters?.length === 0 && (
           <p className='p-4 text-sm text-muted-foreground text-center'>Buku ini belum memiliki bab.</p>
         )}
@@ -153,7 +162,7 @@ export default function ReadPage() {
                   <Button variant="ghost" size="icon"><Menu className="h-5 w-5" /></Button>
                 </SheetTrigger>
                 <SheetContent side="left" className="w-[80%] max-w-sm p-0 flex flex-col">
-                  <ChapterList />
+                  <ChapterList inSheet />
                 </SheetContent>
               </Sheet>
             </div>
