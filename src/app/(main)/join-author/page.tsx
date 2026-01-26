@@ -103,6 +103,7 @@ export default function JoinAuthorPage() {
             const requestRef = doc(collection(firestore, 'authorRequests'));
             const requestData = {
                 ...values,
+                portfolio: values.portfolio || '',
                 userId: user.uid,
                 status: 'pending' as const,
                 requestedAt: serverTimestamp(),
