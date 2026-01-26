@@ -42,7 +42,6 @@ export default function EditBookPage() {
   const { toast } = useToast();
 
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
-  const [isSavingChapter, setIsSavingChapter] = useState(false);
   const [activeChapterId, setActiveChapterId] = useState<string | null>(null);
 
   const bookRef = useMemo(() => (
@@ -80,25 +79,36 @@ export default function EditBookPage() {
             });
         }
     }
-  }, [chapters, activeChapterId, form]);
+  }, [chapters, activeChapterId]);
+
+  const saveCurrentChapter = async () => {
+    if (!firestore || !activeChapterId || !form.formState.isDirty) {
+      return;
+    }
+    const chapterRef = doc(firestore, 'books', params.id, 'chapters', activeChapterId);
+    await updateDoc(chapterRef, form.getValues());
+    form.reset(form.getValues()); 
+    toast({ title: "Penyimpanan Otomatis", description: "Perubahan Anda telah disimpan." });
+  };
+
+  const handleChapterSelection = async (chapterId: string) => {
+    if (chapterId === activeChapterId) return;
+    try {
+      await saveCurrentChapter();
+      setActiveChapterId(chapterId);
+    } catch (e) {
+      console.error("Error switching chapters:", e);
+      toast({ variant: 'destructive', title: 'Gagal Pindah Bab', description: 'Gagal menyimpan perubahan pada bab saat ini.' });
+    }
+  };
 
   const handleSubmitForReview = async () => {
     if (!firestore || !bookRef) return;
     setIsSubmittingReview(true);
     try {
-        const batch = writeBatch(firestore);
-
-        if (activeChapterId) {
-            const chapterRef = doc(firestore, 'books', params.id, 'chapters', activeChapterId);
-            const currentChapterValues = form.getValues();
-            batch.update(chapterRef, currentChapterValues);
-        }
-
-        batch.update(bookRef, { status: 'pending_review' });
-
-        await batch.commit();
-      
-        toast({ title: "Buku Dikirim untuk Ditinjau", description: "Admin akan meninjau buku Anda sebelum dipublikasikan." });
+      await saveCurrentChapter();
+      await updateDoc(bookRef, { status: 'pending_review' });
+      toast({ title: "Buku Dikirim untuk Ditinjau", description: "Admin akan meninjau buku Anda sebelum dipublikasikan." });
     } catch (error) {
       console.error("Error submitting for review:", error);
       toast({ variant: "destructive", title: "Gagal Mengirim", description: "Terjadi kesalahan saat mengirim." });
@@ -108,8 +118,11 @@ export default function EditBookPage() {
   };
   
   const handleAddChapter = async () => {
-      if (!firestore || !chapters || !bookRef) return;
-      const newOrder = chapters.length + 1;
+    if (!firestore || !bookRef) return;
+    try {
+      await saveCurrentChapter();
+
+      const newOrder = chapters ? chapters.length + 1 : 1;
       const chapterData = {
           title: `Bab ${newOrder}`,
           content: "Mulai tulis bab baru Anda di sini...",
@@ -117,30 +130,19 @@ export default function EditBookPage() {
           createdAt: serverTimestamp()
       };
       
+      const batch = writeBatch(firestore);
       const chapterCollection = collection(firestore, 'books', params.id, 'chapters');
       const newChapterDoc = doc(chapterCollection);
 
-      const batch = writeBatch(firestore);
       batch.set(newChapterDoc, chapterData);
       batch.update(bookRef, { chapterCount: increment(1) });
       await batch.commit();
 
       setActiveChapterId(newChapterDoc.id);
-  }
-  
-  const onChapterSubmit = async (values: z.infer<typeof chapterSchema>) => {
-      if (!firestore || !activeChapterId) return;
-      setIsSavingChapter(true);
-      const chapterRef = doc(firestore, 'books', params.id, 'chapters', activeChapterId);
-      try {
-          await updateDoc(chapterRef, values);
-          toast({ title: "Bab Disimpan", description: "Perubahan Anda telah disimpan."});
-      } catch (error) {
-          console.error(error);
-          toast({ variant: "destructive", title: "Gagal Menyimpan", description: "Tidak dapat menyimpan perubahan bab."});
-      } finally {
-          setIsSavingChapter(false);
-      }
+    } catch (e) {
+        console.error("Error adding chapter:", e);
+        toast({ variant: 'destructive', title: 'Gagal Menambah Bab', description: 'Gagal menyimpan perubahan pada bab saat ini.' });
+    }
   }
 
   if (isBookLoading || areChaptersLoading || isProfileLoading) {
@@ -179,7 +181,7 @@ export default function EditBookPage() {
                         key={chapter.id} 
                         variant={activeChapterId === chapter.id ? "secondary" : "ghost"}
                         className="w-full justify-start gap-2"
-                        onClick={() => setActiveChapterId(chapter.id)}
+                        onClick={() => handleChapterSelection(chapter.id)}
                     >
                        <GripVertical className="h-4 w-4 text-muted-foreground" /> 
                        <span className="truncate flex-1 text-left">{chapter.title}</span>
@@ -195,10 +197,6 @@ export default function EditBookPage() {
          <div className="p-4 border-b flex justify-between items-center">
             <h3 className="text-lg font-semibold flex items-center gap-2"><FileEdit/> {activeChapter?.title || "Pilih Bab"}</h3>
             <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" onClick={() => form.handleSubmit(onChapterSubmit)()} disabled={isSavingChapter || isReviewing}>
-                    {isSavingChapter && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-                    Simpan Draf
-                </Button>
                 {book.status === 'draft' || book.status === 'rejected' || book.status === 'published' ? (
                   <AlertDialog>
                       <AlertDialogTrigger asChild>
@@ -237,7 +235,7 @@ export default function EditBookPage() {
         <div className="flex-1 overflow-y-auto p-6">
             {activeChapter ? (
                  <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onChapterSubmit)} className="space-y-6 max-w-3xl mx-auto">
+                    <form className="space-y-6 max-w-3xl mx-auto">
                         {book.status === 'pending_review' && (
                           <Alert>
                             <Info className="h-4 w-4" />
