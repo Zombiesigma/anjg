@@ -152,7 +152,7 @@ export default function ReadPage() {
       </aside>
 
       <div className="flex-1 flex flex-col relative">
-        <header className="flex items-center justify-between p-2 border-b sticky top-0 bg-background/80 backdrop-blur-sm z-10">
+        <header className="flex items-center justify-between p-2 border-b sticky top-14 bg-background/80 backdrop-blur-sm z-10">
           <div className="flex items-center gap-2 min-w-0">
             <Link href={`/books/${book.id}`}>
               <Button variant="ghost" size="icon"><ArrowLeft className="h-5 w-5" /></Button>
