@@ -335,9 +335,9 @@ export default function MessagesPage() {
               <p className="text-muted-foreground max-w-sm">Pilih dari obrolan yang ada, atau mulai percakapan baru di halaman profil pengguna.</p>
             </div>
           ) : (
-            <div className="flex flex-col h-full bg-muted/20">
+            <div className="flex flex-col h-full bg-muted/20 overflow-hidden">
               {/* Chat Header */}
-              <div className="flex items-center p-2.5 border-b bg-background shadow-sm">
+              <div className="flex items-center p-2.5 border-b bg-background shadow-sm shrink-0">
                 <Button variant="ghost" size="icon" className="md:hidden mr-2" onClick={handleGoBack}>
                     <ArrowLeft />
                 </Button>
@@ -482,7 +482,7 @@ export default function MessagesPage() {
               </ScrollArea>
 
               {/* Message Input */}
-              <div className="p-2 border-t bg-background/80 backdrop-blur-sm">
+              <div className="p-2 border-t bg-background/80 backdrop-blur-sm shrink-0">
                   <form onSubmit={handleSendMessage} className="relative">
                       <Textarea 
                         ref={textareaRef}
@@ -511,3 +511,5 @@ export default function MessagesPage() {
     </div>
   )
 }
+
+    
