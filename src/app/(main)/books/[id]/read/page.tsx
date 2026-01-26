@@ -118,10 +118,17 @@ export default function ReadPage() {
 
   const ChapterList = ({ inSheet = false }: { inSheet?: boolean }) => (
     <div className='flex flex-col h-full'>
-      <SheetHeader className="p-4 border-b shrink-0 text-left space-y-1">
-        <SheetTitle className="font-headline text-xl font-bold truncate">{book.title}</SheetTitle>
-        <SheetDescription>Daftar Isi</SheetDescription>
-      </SheetHeader>
+      {inSheet ? (
+        <SheetHeader className="p-4 border-b shrink-0 text-left space-y-1">
+          <SheetTitle className="font-headline text-xl font-bold truncate">{book.title}</SheetTitle>
+          <SheetDescription>Daftar Isi</SheetDescription>
+        </SheetHeader>
+      ) : (
+        <div className="p-4 border-b shrink-0 text-left space-y-1">
+          <h2 className="font-headline text-xl font-bold truncate">{book.title}</h2>
+          <p className="text-sm text-muted-foreground">Daftar Isi</p>
+        </div>
+      )}
       <nav className="flex-1 overflow-y-auto divide-y divide-border/50">
         {areChaptersLoading && (
           <div className="p-4 space-y-2">
