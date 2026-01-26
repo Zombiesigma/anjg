@@ -5,7 +5,7 @@ import { notFound, useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import { Progress } from '@/components/ui/progress';
 import { ArrowLeft, Sun, Moon, Text, Menu, Settings, ChevronsUp } from 'lucide-react';
 import Link from 'next/link';
@@ -104,23 +104,31 @@ export default function ReadPage() {
 
   const ChapterList = () => (
     <div className='flex flex-col h-full'>
-      <div className="p-4 border-b">
+      <div className="p-4 border-b shrink-0">
         <h2 className="font-headline text-xl font-bold truncate">{book.title}</h2>
         <p className="text-sm text-muted-foreground mt-1">Daftar Isi</p>
       </div>
-      <nav className="flex-1 overflow-y-auto p-2 space-y-1">
-        {areChaptersLoading && Array.from({length: 5}).map((_, i) => <Skeleton key={i} className="h-9 w-full rounded-md" />)}
-        {chapters?.map(chapter => (
-          <button
-            key={chapter.id}
-            onClick={() => scrollToChapter(chapter.id)}
-            className="w-full text-left p-2 rounded-md hover:bg-accent transition-colors text-sm"
-          >
-            {chapter.title}
-          </button>
+      <nav className="flex-1 overflow-y-auto">
+        {areChaptersLoading && (
+          <div className="p-4 space-y-2">
+            {Array.from({length: 8}).map((_, i) => <Skeleton key={i} className="h-12 w-full rounded-md" />)}
+          </div>
+        )}
+        {!areChaptersLoading && chapters?.map((chapter) => (
+          <SheetClose asChild key={chapter.id}>
+            <button
+              onClick={() => scrollToChapter(chapter.id)}
+              className="w-full text-left p-4 border-b border-border/50 hover:bg-accent transition-colors flex items-start gap-4 text-sm"
+            >
+              <span className="font-mono text-muted-foreground pt-0.5">{String(chapter.order).padStart(2, '0')}</span>
+              <div className="flex-1">
+                <span>{chapter.title}</span>
+              </div>
+            </button>
+          </SheetClose>
         ))}
         {!areChaptersLoading && chapters?.length === 0 && (
-          <p className='p-2 text-sm text-muted-foreground text-center'>Buku ini belum memiliki bab.</p>
+          <p className='p-4 text-sm text-muted-foreground text-center'>Buku ini belum memiliki bab.</p>
         )}
       </nav>
     </div>
@@ -145,25 +153,7 @@ export default function ReadPage() {
                   <Button variant="ghost" size="icon"><Menu className="h-5 w-5" /></Button>
                 </SheetTrigger>
                 <SheetContent side="left" className="w-[80%] max-w-sm p-0 flex flex-col">
-                  <SheetHeader className="p-4 border-b text-left">
-                    <SheetTitle className="font-headline text-xl font-bold truncate">{book.title}</SheetTitle>
-                    <SheetDescription>Daftar Isi</SheetDescription>
-                  </SheetHeader>
-                  <nav className="flex-1 overflow-y-auto p-2 space-y-1">
-                    {areChaptersLoading && Array.from({length: 5}).map((_, i) => <Skeleton key={i} className="h-9 w-full rounded-md" />)}
-                    {chapters?.map(chapter => (
-                      <button
-                        key={chapter.id}
-                        onClick={() => scrollToChapter(chapter.id)}
-                        className="w-full text-left p-2 rounded-md hover:bg-accent transition-colors text-sm"
-                      >
-                        {chapter.title}
-                      </button>
-                    ))}
-                    {!areChaptersLoading && chapters?.length === 0 && (
-                      <p className='p-2 text-sm text-muted-foreground text-center'>Buku ini belum memiliki bab.</p>
-                    )}
-                  </nav>
+                  <ChapterList />
                 </SheetContent>
               </Sheet>
             </div>
@@ -224,7 +214,7 @@ export default function ReadPage() {
             {chapters?.map(chapter => (
                 <section key={chapter.id} id={`chapter-${chapter.id}`} className="mb-12 scroll-m-20">
                     <h2 className="font-headline">{chapter.title}</h2>
-                    <div dangerouslySetInnerHTML={{ __html: chapter.content.replace(/\n/g, '<br />') }} />
+                    <div dangerouslySetInnerHTML={{ __html: chapter.content.replace(/\\n/g, '<br />') }} />
                 </section>
             ))}
             {!areChaptersLoading && chapters?.length === 0 && (
