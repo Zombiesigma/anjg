@@ -5,7 +5,7 @@ import { notFound, useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger, SheetClose, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Progress } from '@/components/ui/progress';
 import { ArrowLeft, Sun, Moon, Text, Menu, Settings, ChevronsUp } from 'lucide-react';
 import Link from 'next/link';
@@ -107,21 +107,21 @@ export default function ReadPage() {
       <button
         {...props}
         onClick={() => scrollToChapter(chapter.id)}
-        className="w-full text-left px-4 py-3 hover:bg-accent transition-colors flex items-start gap-4"
+        className="w-full text-left px-4 py-3 hover:bg-accent transition-colors flex items-start gap-4 text-sm"
       >
-        <span className="font-mono text-muted-foreground pt-0.5 text-sm">{String(chapter.order).padStart(2, '0')}</span>
+        <span className="font-mono text-muted-foreground pt-0.5">{String(chapter.order).padStart(2, '0')}</span>
         <div className="flex-1">
-          <span className="text-sm text-foreground">{chapter.title}</span>
+          <span className="text-foreground">{chapter.title}</span>
         </div>
       </button>
   );
 
   const ChapterList = ({ inSheet = false }: { inSheet?: boolean }) => (
     <div className='flex flex-col h-full'>
-      <div className="p-4 border-b shrink-0">
-        <h2 className="font-headline text-xl font-bold truncate">{book.title}</h2>
-        <p className="text-sm text-muted-foreground mt-1">Daftar Isi</p>
-      </div>
+      <SheetHeader className="p-4 border-b shrink-0 text-left space-y-1">
+        <SheetTitle className="font-headline text-xl font-bold truncate">{book.title}</SheetTitle>
+        <SheetDescription>Daftar Isi</SheetDescription>
+      </SheetHeader>
       <nav className="flex-1 overflow-y-auto divide-y divide-border/50">
         {areChaptersLoading && (
           <div className="p-4 space-y-2">
