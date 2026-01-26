@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { notFound, useParams, useRouter } from 'next/navigation';
 import { useFirestore, useUser, useDoc, useCollection } from '@/firebase';
-import { doc, updateDoc, collection, addDoc, serverTimestamp, query, orderBy, writeBatch, increment } from 'firebase/firestore';
+import { doc, updateDoc, collection, addDoc, serverTimestamp, query, orderBy, writeBatch, increment, deleteDoc } from 'firebase/firestore';
 import type { Book, Chapter, User as AppUser } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PlusCircle, BookUp, GripVertical, FileEdit, Info } from "lucide-react";
+import { Loader2, PlusCircle, BookUp, GripVertical, FileEdit, Info, Trash2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -42,6 +42,7 @@ export default function EditBookPage() {
   const { toast } = useToast();
 
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [activeChapterId, setActiveChapterId] = useState<string | null>(null);
 
   const bookRef = useMemo(() => (
@@ -64,6 +65,7 @@ export default function EditBookPage() {
   });
   
   const isAdmin = userProfile?.role === 'admin';
+  const isAuthor = book?.authorId === currentUser?.uid;
   const isReviewing = book?.status === 'pending_review' && !isAdmin;
 
   useEffect(() => {
@@ -144,6 +146,34 @@ export default function EditBookPage() {
         toast({ variant: 'destructive', title: 'Gagal Menambah Bab', description: 'Gagal menyimpan perubahan pada bab saat ini.' });
     }
   }
+
+  const handleDeleteBook = async () => {
+    if (!firestore || !bookRef || !userProfile || !book) return;
+    setIsDeleting(true);
+    
+    try {
+      // For production apps, deleting sub-collections should be handled by a Cloud Function 
+      // to ensure atomicity. Here, we'll delete the main book document.
+      await deleteDoc(bookRef);
+      
+      toast({
+        title: "Buku Dihapus",
+        description: `"${book.title}" telah dihapus secara permanen.`,
+      });
+
+      router.push(`/profile/${userProfile.username}`);
+      
+    } catch (error) {
+      console.error("Error deleting book:", error);
+      toast({
+        variant: "destructive",
+        title: "Gagal Menghapus",
+        description: "Terjadi kesalahan saat menghapus buku.",
+      });
+       setIsDeleting(false);
+    }
+  };
+
 
   if (isBookLoading || areChaptersLoading || isProfileLoading) {
     return <p>Memuat editor...</p>;
@@ -230,6 +260,28 @@ export default function EditBookPage() {
                     Sedang Ditinjau
                   </Badge>
                 )}
+                 <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button size="sm" variant="destructive" disabled={isDeleting}>
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Hapus
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Apakah Anda yakin ingin menghapus buku ini?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Tindakan ini tidak dapat dibatalkan. Ini akan menghapus buku dan semua data terkait secara permanen.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Batal</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeleteBook} className="bg-destructive hover:bg-destructive/90">
+                          {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Ya, Hapus'}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
             </div>
         </div>
         <div className="flex-1 overflow-y-auto p-6">

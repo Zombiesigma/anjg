@@ -59,8 +59,8 @@ service cloud.firestore {
       // Signed in users with 'penulis' or 'admin' role can create books.
       allow create: if isSignedIn() && (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['penulis', 'admin']);
       
-      // No one can delete books from the client.
-      allow delete: if false;
+      // Author or admin can delete the book.
+      allow delete: if isSignedIn() && (get(/databases/$(database)/documents/books/$(bookId)).data.authorId == request.auth.uid || isAdmin());
       
       // Sub-collections
       match /chapters/{chapterId} {
@@ -73,10 +73,12 @@ service cloud.firestore {
         allow read: if true;
         allow create: if isSignedIn();
         allow update: if isSignedIn() && (request.writeFields.size() == 1 && ('likeCount' in request.writeFields || 'replyCount' in request.writeFields));
+        allow delete: if isSignedIn() && (request.auth.uid == resource.data.userId || get(/databases/$(database)/documents/books/$(bookId)).data.authorId == request.auth.uid || isAdmin());
 
         match /replies/{replyId} {
           allow read: if true;
           allow create: if isSignedIn();
+          allow delete: if isSignedIn() && (request.auth.uid == resource.data.userId || get(/databases/$(database)/documents/books/$(bookId)).data.authorId == request.auth.uid || isAdmin());
         }
 
         match /likes/{userId} {
