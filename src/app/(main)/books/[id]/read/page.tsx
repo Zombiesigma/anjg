@@ -14,6 +14,7 @@ import { doc, collection, query, orderBy } from 'firebase/firestore';
 import type { Book, Chapter } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
+import React from 'react';
 
 export default function ReadPage() {
   const params = useParams<{ id: string }>();
@@ -106,11 +107,11 @@ export default function ReadPage() {
       <button
         {...props}
         onClick={() => scrollToChapter(chapter.id)}
-        className="w-full text-left p-4 border-b border-border/50 hover:bg-accent transition-colors flex items-start gap-4 text-sm"
+        className="w-full text-left px-4 py-3 hover:bg-accent transition-colors flex items-start gap-4"
       >
-        <span className="font-mono text-muted-foreground pt-0.5">{String(chapter.order).padStart(2, '0')}</span>
+        <span className="font-mono text-muted-foreground pt-0.5 text-sm">{String(chapter.order).padStart(2, '0')}</span>
         <div className="flex-1">
-          <span>{chapter.title}</span>
+          <span className="text-sm text-foreground">{chapter.title}</span>
         </div>
       </button>
   );
@@ -121,7 +122,7 @@ export default function ReadPage() {
         <h2 className="font-headline text-xl font-bold truncate">{book.title}</h2>
         <p className="text-sm text-muted-foreground mt-1">Daftar Isi</p>
       </div>
-      <nav className="flex-1 overflow-y-auto">
+      <nav className="flex-1 overflow-y-auto divide-y divide-border/50">
         {areChaptersLoading && (
           <div className="p-4 space-y-2">
             {Array.from({length: 8}).map((_, i) => <Skeleton key={i} className="h-12 w-full rounded-md" />)}
@@ -210,7 +211,7 @@ export default function ReadPage() {
             className="prose prose-lg dark:prose-invert max-w-3xl mx-auto p-4 md:p-8" 
             style={{ fontSize: `${fontSize}px`}}
           >
-            {areChaptersLoading && (
+            {areChaptersLoading ? (
                 <div className="space-y-6">
                     <Skeleton className="h-10 w-3/4" />
                     <div className="space-y-3">
@@ -219,14 +220,21 @@ export default function ReadPage() {
                         <Skeleton className="h-4 w-5/6" />
                     </div>
                 </div>
-            )}
-            {chapters?.map(chapter => (
-                <section key={chapter.id} id={`chapter-${chapter.id}`} className="mb-12 scroll-m-20">
-                    <h2 className="font-headline">{chapter.title}</h2>
-                    <div dangerouslySetInnerHTML={{ __html: chapter.content.replace(/\\n/g, '<br />') }} />
-                </section>
-            ))}
-            {!areChaptersLoading && chapters?.length === 0 && (
+            ) : chapters && chapters.length > 0 ? (
+                 chapters.map((chapter, chapterIndex) => (
+                    <React.Fragment key={chapter.id}>
+                        <section id={`chapter-${chapter.id}`} className="scroll-m-20">
+                            <h2 className="font-headline">{chapter.title}</h2>
+                            {chapter.content.split('\n').filter(p => p.trim() !== '').map((paragraph, pIndex) => (
+                                <p key={pIndex}>{paragraph}</p>
+                            ))}
+                        </section>
+                        {chapterIndex < chapters.length - 1 && (
+                            <hr className="my-12 md:my-16 border-border/50" />
+                        )}
+                    </React.Fragment>
+                ))
+            ) : (
                 <>
                   <h1 className="font-headline">{book.title}</h1>
                   <p className="lead">Buku ini belum memiliki bab apa pun.</p>
