@@ -4,8 +4,7 @@ import './globals.css';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 
-// TODO: Ganti dengan domain produksi Anda yang sebenarnya
-const productionUrl = 'https://elitera.app';
+const productionUrl = 'https://www.litera.my.id/';
 
 export const metadata: Metadata = {
   metadataBase: new URL(productionUrl),
@@ -15,7 +14,7 @@ export const metadata: Metadata = {
   },
   description: 'Temukan, baca, dan tulis cerita. Terhubung dengan komunitas pembaca dan penulis yang bersemangat di Elitera, platform sosial literasi digital modern.',
   keywords: ['buku', 'novel', 'cerita', 'membaca', 'menulis', 'literasi', 'komunitas', 'platform sosial'],
-  authors: [{ name: 'Guntur P.', url: 'https://github.com/Guntur-s' }],
+  authors: [{ name: 'Guntur P.', url: 'https://www.gunturpadilah.web.id/' }],
   creator: 'Guntur P.',
   openGraph: {
     title: {

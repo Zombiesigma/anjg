@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Logo } from '@/components/Logo';
 import { Github, Globe, Mail, Phone, Send } from 'lucide-react';
 
-const devPortfolio = "https://github.com/Guntur-s"; // Replace with actual portfolio URL
+const devPortfolio = "https://www.gunturpadilah.web.id/";
 const devImage = "https://www.gunturpadilah.web.id/pp.jpg";
 const devName = "Guntur P.";
 const devBio = "Pengembang Aplikasi Elitera. Pengembang tumpukan penuh dengan hasrat untuk menciptakan aplikasi web yang indah dan fungsional.";

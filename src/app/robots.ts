@@ -1,8 +1,7 @@
 import type { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
-  // TODO: Ganti dengan domain produksi Anda yang sebenarnya
-  const siteUrl = 'https://elitera.app';
+  const siteUrl = 'https://www.litera.my.id/';
 
   return {
     rules: {
