@@ -34,6 +34,16 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
   const [showViews, setShowViews] = useState(false);
   const viewedStoriesInSession = useRef(new Set<string>());
 
+  // Safety net: Pastikan pointer-events kembali normal saat viewer ditutup
+  useEffect(() => {
+    if (!isOpen) {
+        const timer = setTimeout(() => {
+            document.body.style.pointerEvents = '';
+        }, 300);
+        return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
+
   const storyGroups = useMemo(() => {
     const groups: { [key: string]: { authorId: string; authorName: string; authorAvatarUrl: string; stories: Story[] } } = {};
     stories.forEach(story => {
@@ -208,6 +218,10 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
         className="bg-black/90 text-white border-0 p-0 m-0 w-screen h-screen max-w-none rounded-none data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0"
         onInteractOutside={(e) => e.preventDefault()}
         onPointerDownOutside={(e) => e.preventDefault()}
+        onCloseAutoFocus={(e) => {
+            e.preventDefault();
+            document.body.style.pointerEvents = '';
+        }}
       >
         <DialogTitle className="sr-only">Penampil Cerita</DialogTitle>
         <DialogDescription className="sr-only">
@@ -300,5 +314,3 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
     </Dialog>
   );
 }
-
-    

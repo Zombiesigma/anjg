@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { useFirestore, useCollection } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 import type { StoryView } from '@/lib/types';
@@ -25,6 +25,16 @@ interface StoryViewersSheetProps {
 export function StoryViewersSheet({ storyId, isOpen, onOpenChange }: StoryViewersSheetProps) {
   const firestore = useFirestore();
 
+  // Safety net: Pastikan pointer-events kembali normal saat sheet ditutup
+  useEffect(() => {
+    if (!isOpen) {
+        const timer = setTimeout(() => {
+            document.body.style.pointerEvents = '';
+        }, 300);
+        return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
+
   const viewersQuery = useMemo(() => (
     firestore ? query(collection(firestore, 'stories', storyId, 'views'), orderBy('viewedAt', 'desc')) : null
   ), [firestore, storyId]);
@@ -33,7 +43,14 @@ export function StoryViewersSheet({ storyId, isOpen, onOpenChange }: StoryViewer
 
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-2/3 flex flex-col">
+      <SheetContent 
+        side="bottom" 
+        className="h-2/3 flex flex-col"
+        onCloseAutoFocus={(e) => {
+            e.preventDefault();
+            document.body.style.pointerEvents = '';
+        }}
+      >
         <SheetHeader className="text-left">
           <SheetTitle>Dilihat oleh</SheetTitle>
           <SheetDescription>
@@ -72,4 +89,3 @@ export function StoryViewersSheet({ storyId, isOpen, onOpenChange }: StoryViewer
     </Sheet>
   );
 }
-    

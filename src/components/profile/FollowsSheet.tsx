@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, documentId, orderBy } from 'firebase/firestore';
@@ -25,6 +25,16 @@ interface FollowsSheetProps {
 
 export function FollowsSheet({ userId, type, open, onOpenChange }: FollowsSheetProps) {
   const firestore = useFirestore();
+
+  // Safety net: Pastikan pointer-events kembali normal saat sheet ditutup
+  useEffect(() => {
+    if (!open) {
+        const timer = setTimeout(() => {
+            document.body.style.pointerEvents = '';
+        }, 300);
+        return () => clearTimeout(timer);
+    }
+  }, [open]);
 
   const title = type === 'followers' ? 'Pengikut' : 'Mengikuti';
 
@@ -51,7 +61,13 @@ export function FollowsSheet({ userId, type, open, onOpenChange }: FollowsSheetP
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="flex flex-col">
+      <SheetContent 
+        className="flex flex-col"
+        onCloseAutoFocus={(e) => {
+            e.preventDefault();
+            document.body.style.pointerEvents = '';
+        }}
+      >
         <SheetHeader className="text-left">
           <SheetTitle>{title}</SheetTitle>
           <SheetDescription>
@@ -82,7 +98,10 @@ export function FollowsSheet({ userId, type, open, onOpenChange }: FollowsSheetP
               <Link
                 href={`/profile/${user.username}`}
                 key={user.id}
-                onClick={() => onOpenChange(false)}
+                onClick={() => {
+                    onOpenChange(false);
+                    document.body.style.pointerEvents = '';
+                }}
                 className="flex items-center gap-4 px-4 py-2 rounded-md hover:bg-accent"
               >
                 <Avatar>

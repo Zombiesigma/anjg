@@ -57,6 +57,19 @@ export default function EditBookPage() {
   const [activeChapterId, setActiveChapterId] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  
+  const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeletingDialogOpen] = useState(false);
+
+  // Safety net: Pastikan pointer-events kembali normal saat modal ditutup
+  useEffect(() => {
+    if (!isReviewDialogOpen && !isDeleteDialogOpen) {
+        const timer = setTimeout(() => {
+            document.body.style.pointerEvents = '';
+        }, 300);
+        return () => clearTimeout(timer);
+    }
+  }, [isReviewDialogOpen, isDeleteDialogOpen]);
 
   const bookRef = useMemo(() => (
     firestore ? doc(firestore, 'books', params.id) : null
@@ -209,6 +222,7 @@ export default function EditBookPage() {
   const handleSubmitForReview = async () => {
     if (!firestore || !bookRef) return;
     setIsSubmittingReview(true);
+    setIsReviewDialogOpen(false);
     try {
       if (activeTab === 'editor') await saveCurrentChapter();
       await updateDoc(bookRef, { status: 'pending_review' });
@@ -253,6 +267,7 @@ export default function EditBookPage() {
   const handleDeleteBook = async () => {
     if (!firestore || !bookRef || !userProfile || !book) return;
     setIsDeleting(true);
+    setIsDeletingDialogOpen(false);
     
     try {
       await deleteDoc(bookRef);
@@ -336,14 +351,14 @@ export default function EditBookPage() {
             </h3>
             <div className="flex items-center gap-2">
                 {book.status === 'draft' || book.status === 'rejected' || book.status === 'published' ? (
-                  <AlertDialog>
+                  <AlertDialog open={isReviewDialogOpen} onOpenChange={setIsReviewDialogOpen}>
                       <AlertDialogTrigger asChild>
                           <Button size="sm" disabled={isSubmittingReview}>
                               {isSubmittingReview ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BookUp className="mr-2 h-4 w-4" />}
                               {book.status === 'published' ? 'Kirim Pembaruan' : 'Kirim Tinjauan'}
                           </Button>
                       </AlertDialogTrigger>
-                      <AlertDialogContent>
+                      <AlertDialogContent onCloseAutoFocus={(e) => { e.preventDefault(); document.body.style.pointerEvents = ''; }}>
                           <AlertDialogHeader>
                             <AlertDialogTitle>
                                 {book.status === 'published' ? 'Kirim pembaruan untuk ditinjau?' : 'Kirim buku untuk ditinjau?'}
@@ -356,7 +371,7 @@ export default function EditBookPage() {
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
-                            <AlertDialogCancel>Batal</AlertDialogCancel>
+                            <AlertDialogCancel onClick={() => setIsReviewDialogOpen(false)}>Batal</AlertDialogCancel>
                             <AlertDialogAction onClick={handleSubmitForReview}>
                                 {book.status === 'published' ? 'Ya, Kirim Pembaruan' : 'Ya, Kirim'}
                             </AlertDialogAction>
@@ -366,20 +381,20 @@ export default function EditBookPage() {
                 ) : (
                   <Badge variant='secondary'>Sedang Ditinjau</Badge>
                 )}
-                 <AlertDialog>
+                 <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeletingDialogOpen}>
                     <AlertDialogTrigger asChild>
                       <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive hover:bg-destructive/10" disabled={isDeleting}>
                         <Trash2 className="mr-2 h-4 w-4" />
                         Hapus
                       </Button>
                     </AlertDialogTrigger>
-                    <AlertDialogContent>
+                    <AlertDialogContent onCloseAutoFocus={(e) => { e.preventDefault(); document.body.style.pointerEvents = ''; }}>
                       <AlertDialogHeader>
                         <AlertDialogTitle>Hapus Buku?</AlertDialogTitle>
                         <AlertDialogDescription>Tindakan ini tidak dapat dibatalkan. Buku dan semua bab akan dihapus secara permanen.</AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel>Batal</AlertDialogCancel>
+                        <AlertDialogCancel onClick={() => setIsDeletingDialogOpen(false)}>Batal</AlertDialogCancel>
                         <AlertDialogAction onClick={handleDeleteBook} className="bg-destructive hover:bg-destructive/90">
                           {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Ya, Hapus'}
                         </AlertDialogAction>

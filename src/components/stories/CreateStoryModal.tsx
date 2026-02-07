@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -37,6 +37,16 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Safety net: Pastikan pointer-events kembali normal saat modal ditutup
+  useEffect(() => {
+    if (!isOpen) {
+        const timer = setTimeout(() => {
+            document.body.style.pointerEvents = '';
+        }, 300);
+        return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
+
   const form = useForm<z.infer<typeof storySchema>>({
     resolver: zodResolver(storySchema),
     defaultValues: {
@@ -59,12 +69,19 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
         content: values.content,
         likes: 0,
         commentCount: 0,
+        viewCount: 0,
         createdAt: serverTimestamp(),
       };
       await addDoc(collection(firestore, 'stories'), storyData);
-      toast({ title: "Cerita Diterbitkan!", description: "Cerita Anda akan terlihat selama 24 jam." });
-      form.reset();
+      
       onClose();
+      
+      // Beri jeda sedikit agar modal benar-benar tertutup sebelum toast
+      setTimeout(() => {
+          toast({ title: "Cerita Diterbitkan!", description: "Cerita Anda akan terlihat selama 24 jam." });
+          form.reset();
+      }, 100);
+      
     } catch (error) {
       console.error("Error creating story:", error);
       toast({ variant: 'destructive', title: 'Gagal', description: 'Tidak dapat menerbitkan cerita.' });
@@ -75,7 +92,7 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent>
+      <DialogContent onCloseAutoFocus={(e) => { e.preventDefault(); document.body.style.pointerEvents = ''; }}>
         <DialogHeader>
           <DialogTitle>Buat Cerita Baru</DialogTitle>
           <DialogDescription>

@@ -26,8 +26,19 @@ export default function ReadPage() {
   const [isDark, setIsDark] = useState(false);
   const [readingProgress, setReadingProgress] = useState(0);
   const [showScrollToTop, setShowScrollToTop] = useState(false);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Safety net: Pastikan pointer-events kembali normal saat sheet ditutup
+  useEffect(() => {
+    if (!isSheetOpen) {
+        const timer = setTimeout(() => {
+            document.body.style.pointerEvents = '';
+        }, 300);
+        return () => clearTimeout(timer);
+    }
+  }, [isSheetOpen]);
 
   const bookRef = useMemo(() => (
     firestore ? doc(firestore, 'books', params.id) : null
@@ -120,7 +131,10 @@ export default function ReadPage() {
   const ChapterItem = ({ chapter, ...props }: { chapter: Chapter } & React.ButtonHTMLAttributes<HTMLButtonElement>) => (
       <button
         {...props}
-        onClick={() => scrollToChapter(chapter.id)}
+        onClick={() => {
+            scrollToChapter(chapter.id);
+            if(props.onClick) props.onClick(null as any);
+        }}
         className="w-full text-left px-6 py-4 hover:bg-accent/50 transition-all flex items-center gap-4 text-sm group"
       >
         <span className="font-mono text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
@@ -186,13 +200,20 @@ export default function ReadPage() {
               </Button>
             </Link>
              <div className="md:hidden">
-              <Sheet>
+              <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
                 <SheetTrigger asChild>
                   <Button variant="ghost" size="icon" className="rounded-full hover:bg-accent">
                     <Menu className="h-5 w-5" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-[85%] max-w-sm p-0 flex flex-col">
+                <SheetContent 
+                    side="left" 
+                    className="w-[85%] max-w-sm p-0 flex flex-col"
+                    onCloseAutoFocus={(e) => {
+                        e.preventDefault();
+                        document.body.style.pointerEvents = '';
+                    }}
+                >
                   <ChapterList inSheet />
                 </SheetContent>
               </Sheet>
