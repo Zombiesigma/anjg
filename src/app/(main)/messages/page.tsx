@@ -82,19 +82,24 @@ export default function MessagesPage() {
 
     const checkStatuses = () => {
         const newStatus: { [key: string]: boolean } = {};
-        const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+        const now = Date.now();
+        const fiveMinutesAgo = now - 5 * 60 * 1000;
 
         profilesMap.forEach((profile, uid) => {
-            const isOnline = profile.status === 'online' && 
-                             profile.lastSeen && 
-                             profile.lastSeen.toMillis() > fiveMinutesAgo;
+            // Safety check: ensure lastSeen is a Timestamp before calling toMillis()
+            let lastSeenMillis = 0;
+            if (profile.lastSeen && typeof profile.lastSeen.toMillis === 'function') {
+                lastSeenMillis = profile.lastSeen.toMillis();
+            }
+
+            const isOnline = profile.status === 'online' && lastSeenMillis > fiveMinutesAgo;
             newStatus[uid] = isOnline;
         });
         setOnlineStatus(newStatus);
     };
 
     checkStatuses();
-    const interval = setInterval(checkStatuses, 60 * 1000); // Check every minute
+    const interval = setInterval(checkStatuses, 60000); // Check every minute
     return () => clearInterval(interval);
   }, [profilesMap]);
 
@@ -108,7 +113,7 @@ export default function MessagesPage() {
     if (selectedChatData?.unreadCounts?.[currentUser.uid] > 0) {
       updateDoc(chatDocRef, {
         [`unreadCounts.${currentUser.uid}`]: 0
-      }).catch(error => console.error("Failed to reset unread count:", error));
+      }).catch(error => console.warn("Failed to reset unread count (expected if connection is closing):", error));
     }
   }, [selectedChatId, currentUser?.uid, firestore, chatThreads]);
 
@@ -137,10 +142,12 @@ export default function MessagesPage() {
     const grouped: MessageGroupItem[] = [];
     
     messages.forEach((msg, index) => {
-        if (!msg.createdAt) return; 
+        if (!msg.createdAt || typeof msg.createdAt.toDate !== 'function') return; 
         
         const msgDate = msg.createdAt.toDate();
-        const prevMsgDate = index > 0 && messages[index - 1].createdAt ? messages[index - 1].createdAt.toDate() : null;
+        const prevMsgDate = index > 0 && messages[index - 1].createdAt && typeof messages[index - 1].createdAt.toDate === 'function' 
+            ? messages[index - 1].createdAt.toDate() 
+            : null;
 
         if (index === 0 || (prevMsgDate && !isSameDay(prevMsgDate, msgDate))) {
             grouped.push({
@@ -245,6 +252,20 @@ export default function MessagesPage() {
     if (isYesterday(date)) return 'Kemarin';
     return format(date, 'eeee, d MMMM yyyy', { locale: id });
   }
+
+  // Safety sort for chat threads
+  const sortedChatThreads = useMemo(() => {
+    if (!chatThreads) return [];
+    return [...chatThreads].sort((a, b) => {
+        const timeA = (a.lastMessage?.timestamp && typeof a.lastMessage.timestamp.toMillis === 'function') 
+            ? a.lastMessage.timestamp.toMillis() 
+            : 0;
+        const timeB = (b.lastMessage?.timestamp && typeof b.lastMessage.timestamp.toMillis === 'function') 
+            ? b.lastMessage.timestamp.toMillis() 
+            : 0;
+        return timeB - timeA;
+    });
+  }, [chatThreads]);
   
   return (
     <div className="h-[calc(100vh-theme(spacing.14)-2px)] -mt-6 -mx-4 md:-mx-6 border rounded-lg overflow-hidden">
@@ -271,7 +292,7 @@ export default function MessagesPage() {
               </div>
             )}
             <div className="flex flex-col">
-              {chatThreads?.sort((a, b) => (b.lastMessage?.timestamp?.toMillis() || 0) - (a.lastMessage?.timestamp?.toMillis() || 0)).map(chat => {
+              {sortedChatThreads.map(chat => {
                 const otherP = chat.participants.find(p => p.uid !== currentUser?.uid);
                 if (!otherP) return null;
                 const unreadCount = chat.unreadCounts?.[currentUser?.uid ?? ''] ?? 0;
@@ -298,7 +319,7 @@ export default function MessagesPage() {
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
                             <p className="font-semibold truncate">{otherP.displayName}</p>
-                            {chat.lastMessage?.timestamp && (
+                            {chat.lastMessage?.timestamp && typeof chat.lastMessage.timestamp.toDate === 'function' && (
                                 <p className="text-xs text-muted-foreground whitespace-nowrap">
                                     {formatDistanceToNow(chat.lastMessage.timestamp.toDate(), { locale: id, addSuffix: true })}
                                 </p>
@@ -357,7 +378,8 @@ export default function MessagesPage() {
                        {isOtherParticipantOnline ? (
                           <p className="text-xs text-green-600">Online</p>
                        ) : (
-                          otherParticipantProfile?.lastSeen && <p className="text-xs text-muted-foreground">Aktif {formatDistanceToNow(otherParticipantProfile.lastSeen.toDate(), { locale: id, addSuffix: true })}</p>
+                          otherParticipantProfile?.lastSeen && typeof otherParticipantProfile.lastSeen.toDate === 'function' && 
+                          <p className="text-xs text-muted-foreground">Aktif {formatDistanceToNow(otherParticipantProfile.lastSeen.toDate(), { locale: id, addSuffix: true })}</p>
                        )}
                     </div>
                    </Link>
@@ -511,5 +533,3 @@ export default function MessagesPage() {
     </div>
   )
 }
-
-    

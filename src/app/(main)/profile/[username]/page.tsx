@@ -1,4 +1,3 @@
-
 'use client';
 
 import { notFound, useParams, useRouter } from 'next/navigation';
@@ -58,9 +57,17 @@ export default function ProfilePage() {
             setIsOnline(false);
             return;
         }
-        // User is online if lastSeen is less than 5 minutes ago
+        
+        // Safety check for toMillis()
+        let lastSeenMillis = 0;
+        if (typeof user.lastSeen.toMillis === 'function') {
+            lastSeenMillis = user.lastSeen.toMillis();
+        } else if (user.lastSeen instanceof Date) {
+            lastSeenMillis = user.lastSeen.getTime();
+        }
+
         const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
-        setIsOnline(user.lastSeen.toMillis() > fiveMinutesAgo);
+        setIsOnline(lastSeenMillis > fiveMinutesAgo);
     }
     checkStatus();
     const interval = setInterval(checkStatus, 60000); // check every minute

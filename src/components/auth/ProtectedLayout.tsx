@@ -27,13 +27,15 @@ export function ProtectedLayout({ children }: { children: React.ReactNode }) {
     updateDoc(userStatusRef, {
       status: 'online',
       lastSeen: serverTimestamp(),
-    });
+    }).catch(err => console.warn("Failed to set online status (normal during shutdown):", err));
 
     // Set up an interval to update lastSeen periodically to maintain 'online' status
     const intervalId = setInterval(() => {
-      updateDoc(userStatusRef, {
-        lastSeen: serverTimestamp(),
-      });
+      if (document.visibilityState === 'visible') {
+          updateDoc(userStatusRef, {
+            lastSeen: serverTimestamp(),
+          }).catch(err => console.warn("Periodic status update failed:", err));
+      }
     }, 2 * 60 * 1000); // every 2 minutes
 
     return () => {
