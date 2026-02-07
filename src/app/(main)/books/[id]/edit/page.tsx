@@ -244,6 +244,7 @@ export default function EditBookPage() {
 
       settingsForm.reset(values); // Mark as clean
       toast({
+        variant: "success",
         title: "Detail Buku Diperbarui",
         description: "Informasi buku Anda telah berhasil diperbarui.",
       });
@@ -278,7 +279,11 @@ export default function EditBookPage() {
       // 3. Update status
       await updateDoc(bookRef, { status: 'pending_review' });
       setIsReviewDialogOpen(false);
-      toast({ title: "Buku Dikirim untuk Ditinjau", description: "Admin akan meninjau buku Anda sebelum dipublikasikan." });
+      toast({ 
+        variant: "success",
+        title: "Buku Dikirim untuk Ditinjau", 
+        description: "Admin akan meninjau buku Anda sebelum dipublikasikan." 
+      });
     } catch (error) {
       console.error("Error submitting for review:", error);
       toast({ variant: "destructive", title: "Gagal Mengirim", description: "Terjadi kesalahan saat mengirim." });
@@ -312,7 +317,11 @@ export default function EditBookPage() {
       setActiveChapterId(newChapterDoc.id);
       setIsMobileSidebarOpen(false);
       
-      toast({ title: "Bab Baru Dibuat", description: "Silakan mulai menulis konten untuk bab ini." });
+      toast({ 
+        variant: "success",
+        title: "Bab Baru Dibuat", 
+        description: "Silakan mulai menulis konten untuk bab ini." 
+      });
     } catch (e) {
         console.error("Error adding chapter:", e);
         toast({ variant: 'destructive', title: 'Gagal Menambah Bab', description: 'Terjadi kesalahan teknis.' });
@@ -326,7 +335,11 @@ export default function EditBookPage() {
     
     try {
       await deleteDoc(bookRef);
-      toast({ title: "Buku Dihapus", description: `"${book.title}" telah dihapus secara permanen.` });
+      toast({ 
+        variant: "success",
+        title: "Buku Dihapus", 
+        description: `"${book.title}" telah dihapus secara permanen.` 
+      });
       router.push(`/profile/${userProfile.username}`);
     } catch (error) {
       console.error("Error deleting book:", error);
