@@ -21,10 +21,10 @@ const initialHistory: AiChatMessage[] = [
 ];
 
 export default function AiPage() {
-  // Kalkulasi tinggi yang sangat ketat untuk mencegah scroll pada body
-  // 100vh - Header (56px) - Mobile Nav (64px) - Layout Padding (48px)
+  // Menggunakan dvh (Dynamic Viewport Height) untuk akurasi di mobile
+  // Pengurangan: Header (56px) + Mobile Nav (64px) + margin pengaman (4px)
   return (
-    <div className="h-[calc(100vh-168px-2px)] md:h-[calc(100vh-theme(spacing.28)-theme(spacing.12)-2px)] -mt-6 -mx-4 md:-mx-6 border rounded-lg overflow-hidden bg-background flex flex-col">
+    <div className="h-[calc(100dvh-124px)] md:h-[calc(100dvh-144px)] -mt-6 -mx-4 md:-mx-6 border rounded-lg overflow-hidden bg-background flex flex-col shadow-inner">
         <SidebarProvider className="h-full overflow-hidden">
             <Sidebar collapsible="icon" className="border-r border-border/50">
                 <SidebarHeader className="p-4 border-b">
@@ -92,7 +92,7 @@ export default function AiPage() {
                     <h3 className="font-bold text-sm md:text-base">Percakapan Inspirasi</h3>
                 </div>
                 {/* Chat Container yang mengambil sisa ruang */}
-                <div className="flex-1 overflow-hidden relative min-h-0">
+                <div className="flex-1 overflow-hidden relative min-h-0 flex flex-col">
                     <ChatClient history={initialHistory} />
                 </div>
             </SidebarInset>

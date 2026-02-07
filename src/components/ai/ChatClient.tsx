@@ -30,7 +30,6 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Fungsi scroll otomatis ke bawah yang lebih handal
   const scrollToBottom = () => {
     if (scrollAreaRef.current) {
         const viewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
@@ -96,11 +95,9 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
 
   return (
     <div className="flex flex-col h-full bg-background/50 overflow-hidden relative">
-      {/* Area Pesan yang dapat digulir */}
+      {/* Area Pesan */}
       <ScrollArea className="flex-1 min-h-0" ref={scrollAreaRef}>
         <div className="max-w-3xl mx-auto p-4 md:p-8 space-y-8 pb-10">
-          
-          {/* Welcome Message for Empty State */}
           {messages.length <= 1 && !isLoading && (
             <motion.div 
                 initial={{ opacity: 0, y: 20 }}
@@ -165,7 +162,6 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
                       : "bg-card border border-border/50 rounded-tl-none font-medium text-foreground/90"
                   )}
                 >
-                  {/* Markdown Rendering */}
                   <div className={cn(
                     "prose prose-sm max-w-none break-words dark:prose-invert prose-p:leading-relaxed prose-headings:font-headline prose-headings:mb-2 prose-headings:mt-4 first:prose-headings:mt-0 prose-pre:bg-muted prose-pre:text-muted-foreground",
                     m.role === "user" ? "prose-invert text-primary-foreground" : "text-foreground/90"
@@ -200,8 +196,8 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
         </div>
       </ScrollArea>
 
-      {/* Area Input yang Tetap (Fixed) di Bawah */}
-      <div className="p-4 md:p-6 border-t bg-background/95 backdrop-blur-md shrink-0 z-20 shadow-up">
+      {/* Area Input - Menggunakan z-40 dan bg solid untuk mencegah navbar tumpang tindih */}
+      <div className="p-4 md:p-6 border-t bg-background shrink-0 z-40 shadow-up relative">
         <div className="max-w-3xl mx-auto">
             <form onSubmit={handleSubmit} className="relative flex items-end gap-3">
                 <div className="relative flex-1 group">
@@ -235,7 +231,7 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
             <div className="flex items-center justify-center gap-4 mt-3 opacity-40 select-none">
                 <div className="h-px bg-border flex-1" />
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground whitespace-nowrap">
-                    Didukung oleh Elitera Intelligence
+                    Elitera Intelligence
                 </p>
                 <div className="h-px bg-border flex-1" />
             </div>
@@ -243,7 +239,7 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
       </div>
       <style jsx global>{`
         .shadow-up {
-            box-shadow: 0 -4px 12px -2px rgba(0, 0, 0, 0.03);
+            box-shadow: 0 -8px 20px -4px rgba(0, 0, 0, 0.05);
         }
       `}</style>
     </div>
