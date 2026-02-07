@@ -13,12 +13,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { BookCard } from '@/components/BookCard';
-import { UserPlus, MessageCircle, Edit, Loader2, UserMinus } from 'lucide-react';
+import { UserPlus, MessageCircle, Edit, Loader2, UserMinus, Sparkles, Users, BookOpen, Heart as HeartIcon, CheckCircle2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { StoryViewer } from '@/components/stories/StoryViewer';
 import { cn } from '@/lib/utils';
 import { FollowsSheet } from '@/components/profile/FollowsSheet';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function ProfilePage() {
   const params = useParams<{ username: string }>();
@@ -58,7 +59,6 @@ export default function ProfilePage() {
             return;
         }
         
-        // Safety check for toMillis()
         let lastSeenMillis = 0;
         if (typeof user.lastSeen.toMillis === 'function') {
             lastSeenMillis = user.lastSeen.toMillis();
@@ -70,7 +70,7 @@ export default function ProfilePage() {
         setIsOnline(lastSeenMillis > fiveMinutesAgo);
     }
     checkStatus();
-    const interval = setInterval(checkStatus, 60000); // check every minute
+    const interval = setInterval(checkStatus, 60000); 
     return () => clearInterval(interval);
   }, [user]);
 
@@ -101,16 +101,10 @@ export default function ProfilePage() {
     if (!firestore || !user) return null;
     
     const baseQuery = query(collection(firestore, 'books'), where('authorId', '==', user.uid), where('status', '==', 'published'));
-    
-    // If it's my own profile, I see all my published books
     if (isOwnProfile) return baseQuery;
-    
-    // If I'm following this author, I can see public and followers_only books
     if (isFollowing) {
         return query(baseQuery, where('visibility', 'in', ['public', 'followers_only']));
     }
-    
-    // Default: only show public books
     return query(baseQuery, where('visibility', '==', 'public'));
   }, [firestore, user, isOwnProfile, isFollowing]);
   const { data: publishedBooks, isLoading: arePublishedBooksLoading } = useCollection<Book>(publishedBooksQuery);
@@ -140,7 +134,6 @@ export default function ProfilePage() {
 
   const favoriteBooksQuery = useMemo(() => {
       if (!firestore || favoriteBookIds.length === 0 || !isOwnProfile) return null;
-      // Firestore 'in' queries are limited to 30 elements in a single query.
       const chunks = favoriteBookIds.slice(0, 30);
       if (chunks.length === 0) return null;
       return query(collection(firestore, 'books'), where(documentId(), 'in', chunks));
@@ -168,7 +161,7 @@ export default function ProfilePage() {
   ), [allActiveStories, user]);
 
   const openFollowsSheet = (type: 'followers' | 'following') => {
-    if ((type === 'followers' && user?.followers > 0) || (type === 'following' && user?.following > 0)) {
+    if ((type === 'followers' && (user?.followers || 0) > 0) || (type === 'following' && (user?.following || 0) > 0)) {
         setSheetState({ open: true, type });
     }
   };
@@ -289,152 +282,239 @@ export default function ProfilePage() {
 
   return (
     <>
-      {userHasActiveStory && allActiveStories && (
-        <StoryViewer
-          stories={allActiveStories}
-          initialAuthorId={user.uid}
-          isOpen={isStoryViewerOpen}
-          onClose={() => setIsStoryViewerOpen(false)}
-        />
-      )}
+      <AnimatePresence>
+        {userHasActiveStory && allActiveStories && isStoryViewerOpen && (
+            <StoryViewer
+            stories={allActiveStories}
+            initialAuthorId={user.uid}
+            isOpen={isStoryViewerOpen}
+            onClose={() => setIsStoryViewerOpen(false)}
+            />
+        )}
+      </AnimatePresence>
+
       {user && <FollowsSheet 
         userId={user.id} 
         type={sheetState.type} 
         open={sheetState.open} 
         onOpenChange={(open) => setSheetState(s => ({...s, open}))} 
       />}
-      <div className="space-y-8">
-        <Card className="overflow-hidden">
-          <div className="h-32 md:h-48 bg-gradient-to-r from-primary/20 to-accent/20" />
-          <CardContent className="p-4 md:p-6 -mt-16 md:-mt-24">
-              <div className="flex flex-col md:flex-row items-center md:items-end gap-4">
-                  <button
-                    disabled={!userHasActiveStory}
-                    onClick={() => userHasActiveStory && setIsStoryViewerOpen(true)}
-                    className="relative rounded-full disabled:cursor-default"
-                  >
-                    <Avatar className={cn(
-                      "w-24 h-24 md:w-32 md:h-32 border-4 shadow-lg",
-                      userHasActiveStory ? "border-primary" : "border-background"
-                    )}>
-                        <AvatarImage src={user.photoURL} alt={user.displayName} />
-                        <AvatarFallback className="text-4xl">{user.displayName?.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                     {isOnline && (
-                        <span className="absolute bottom-1 right-1 block h-6 w-6 rounded-full bg-green-500 border-4 border-card" title="Online" />
+
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="space-y-10 pb-20"
+      >
+        {/* Profile Card Premium */}
+        <Card className="overflow-hidden border-none shadow-2xl bg-card/50 backdrop-blur-md rounded-[2.5rem] relative">
+          {/* Cover Background with Pattern */}
+          <div className="h-40 md:h-64 bg-gradient-to-br from-primary via-accent to-indigo-600 relative overflow-hidden">
+              <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+          </div>
+
+          <CardContent className="p-6 md:p-10 relative">
+              <div className="flex flex-col md:flex-row items-center md:items-end gap-6 -mt-20 md:-mt-32">
+                  {/* Avatar with Story Ring */}
+                  <div className="relative group">
+                    <button
+                        disabled={!userHasActiveStory}
+                        onClick={() => userHasActiveStory && setIsStoryViewerOpen(true)}
+                        className={cn(
+                            "relative rounded-full p-1 transition-transform active:scale-95",
+                            userHasActiveStory && "bg-gradient-to-tr from-yellow-400 via-rose-500 to-primary animate-pulse"
+                        )}
+                    >
+                        <div className="rounded-full bg-background p-1">
+                            <Avatar className="w-28 h-28 md:w-40 md:h-40 border-4 border-background shadow-2xl">
+                                <AvatarImage src={user.photoURL} alt={user.displayName} className="object-cover" />
+                                <AvatarFallback className="text-5xl font-black bg-primary/5 text-primary">
+                                    {user.displayName?.charAt(0)}
+                                </AvatarFallback>
+                            </Avatar>
+                        </div>
+                    </button>
+                    {isOnline && (
+                        <span className="absolute bottom-4 right-4 block h-6 w-6 rounded-full bg-green-500 border-4 border-card shadow-lg" title="Online" />
                     )}
-                  </button>
-                  <div className="flex-1 text-center md:text-left">
-                      <div className="flex items-center justify-center md:justify-start gap-2">
-                          <h1 className="text-3xl font-bold font-headline">{user.displayName}</h1>
-                          <Badge variant={user.role === 'penulis' ? 'default' : 'secondary'} className="capitalize">{user.role}</Badge>
-                      </div>
-                      <p className="text-muted-foreground">@{user.username}</p>
                   </div>
-                  <div className="flex gap-2">
+
+                  <div className="flex-1 text-center md:text-left space-y-2">
+                      <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
+                          <h1 className="text-3xl md:text-4xl font-black font-headline text-foreground tracking-tight">{user.displayName}</h1>
+                          <Badge variant={user.role === 'penulis' ? 'default' : 'secondary'} className="rounded-full px-4 py-1 font-bold shadow-sm capitalize">
+                            {user.role}
+                          </Badge>
+                          {user.role === 'admin' && (
+                              <CheckCircle2 className="h-6 w-6 text-primary fill-primary/10" />
+                          )}
+                      </div>
+                      <p className="text-muted-foreground font-bold tracking-widest uppercase text-xs">@{user.username}</p>
+                  </div>
+
+                  <div className="flex gap-2 w-full md:w-auto shrink-0 pt-4 md:pt-0">
                       {isOwnProfile ? (
-                          <Link href="/settings">
-                            <Button><Edit className="mr-2 h-4 w-4"/> Edit Profil</Button>
-                          </Link>
+                          <Button asChild className="rounded-full px-8 h-12 font-bold shadow-xl shadow-primary/20 w-full md:w-auto">
+                            <Link href="/settings">
+                                <Edit className="mr-2 h-4 w-4"/> Edit Profil
+                            </Link>
+                          </Button>
                       ) : (
-                          <>
-                              <Button onClick={handleToggleFollow} disabled={isTogglingFollow || isFollowingLoading || isCurrentUserProfileLoading || isFollowerLoading} variant={isFollowing ? "outline" : "default"}>
+                          <div className="flex gap-2 w-full">
+                              <Button 
+                                onClick={handleToggleFollow} 
+                                disabled={isTogglingFollow || isFollowingLoading || isCurrentUserProfileLoading || isFollowerLoading} 
+                                variant={isFollowing ? "outline" : "default"}
+                                className={cn(
+                                    "rounded-full px-8 h-12 font-bold flex-1 md:flex-none",
+                                    !isFollowing && "shadow-xl shadow-primary/20"
+                                )}
+                              >
                                 {(isTogglingFollow || isFollowingLoading || isCurrentUserProfileLoading || isFollowerLoading) ? (
                                   <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
                                 ) : (
                                   isFollowing ? <UserMinus className="mr-2 h-4 w-4" /> : <UserPlus className="mr-2 h-4 w-4"/>
                                 )}
-                                {isFollowing ? 'Berhenti Mengikuti' : (followsBack ? 'Follback' : 'Ikuti')}
+                                {isFollowing ? 'Berhenti' : (followsBack ? 'Follback' : 'Ikuti')}
                               </Button>
-                              <Button variant="outline" onClick={handleStartChat} disabled={isCreatingChat || areChatsLoading || isCurrentUserProfileLoading}>
-                                  {(isCreatingChat || areChatsLoading || isCurrentUserProfileLoading) ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <MessageCircle className="mr-2 h-4 w-4"/>}
-                                  Pesan
+                              <Button 
+                                variant="outline" 
+                                onClick={handleStartChat} 
+                                disabled={isCreatingChat || areChatsLoading || isCurrentUserProfileLoading}
+                                className="rounded-full h-12 w-12 md:w-auto md:px-6 border-2 font-bold"
+                              >
+                                  {(isCreatingChat || areChatsLoading || isCurrentUserProfileLoading) ? (
+                                      <Loader2 className="h-4 w-4 animate-spin"/>
+                                  ) : (
+                                      <>
+                                        <MessageSquare className="md:mr-2 h-4 w-4"/>
+                                        <span className="hidden md:inline">Pesan</span>
+                                      </>
+                                  )}
                               </Button>
-                          </>
+                          </div>
                       )}
                   </div>
               </div>
-              <p className="mt-4 text-center md:text-left max-w-2xl">{user.bio}</p>
-              <div className="flex justify-center md:justify-start gap-6 mt-4 pt-4 border-t">
-                  <div className="text-center">
-                      <p className="font-bold text-lg">{areBooksLoading ? '...' : publishedBooks?.length ?? 0}</p>
-                      <p className="text-sm text-muted-foreground">Buku Terbit</p>
+
+              <div className="mt-8 flex flex-col md:flex-row gap-8 items-start md:items-center">
+                  <div className="flex-1">
+                    <p className="text-foreground/80 leading-relaxed max-w-2xl text-lg italic font-serif">
+                        {user.bio || "Pujangga inspiratif di komunitas Elitera yang berbagi cerita lewat kata."}
+                    </p>
                   </div>
-                   <button className="text-center disabled:cursor-default" onClick={() => openFollowsSheet('followers')} disabled={user.followers === 0}>
-                      <p className="font-bold text-lg">{new Intl.NumberFormat('id-ID').format(user.followers)}</p>
-                      <p className="text-sm text-muted-foreground">Pengikut</p>
-                  </button>
-                   <button className="text-center disabled:cursor-default" onClick={() => openFollowsSheet('following')} disabled={user.following === 0}>
-                      <p className="font-bold text-lg">{new Intl.NumberFormat('id-ID').format(user.following)}</p>
-                      <p className="text-sm text-muted-foreground">Mengikuti</p>
-                  </button>
+                  
+                  {/* Stats Grid */}
+                  <div className="grid grid-cols-3 gap-10 md:gap-12 w-full md:w-auto pt-6 md:pt-0 border-t md:border-t-0 md:border-l border-border/50 md:pl-12">
+                      <div className="text-center space-y-1">
+                          <p className="font-black text-2xl text-primary">{areBooksLoading ? '...' : (publishedBooks?.length ?? 0)}</p>
+                          <div className="flex items-center justify-center gap-1.5 text-[10px] uppercase font-black tracking-widest text-muted-foreground">
+                              <BookOpen className="h-3 w-3" /> Karya
+                          </div>
+                      </div>
+                      <button className="text-center space-y-1 group disabled:cursor-default" onClick={() => openFollowsSheet('followers')} disabled={!user.followers}>
+                          <p className="font-black text-2xl text-foreground group-hover:text-primary transition-colors">{new Intl.NumberFormat('id-ID', { notation: 'compact' }).format(user.followers || 0)}</p>
+                          <div className="flex items-center justify-center gap-1.5 text-[10px] uppercase font-black tracking-widest text-muted-foreground group-hover:text-primary transition-colors">
+                              <Users className="h-3 w-3" /> Pengikut
+                          </div>
+                      </button>
+                      <button className="text-center space-y-1 group disabled:cursor-default" onClick={() => openFollowsSheet('following')} disabled={!user.following}>
+                          <p className="font-black text-2xl text-foreground group-hover:text-primary transition-colors">{user.following || 0}</p>
+                          <div className="flex items-center justify-center gap-1.5 text-[10px] uppercase font-black tracking-widest text-muted-foreground group-hover:text-primary transition-colors">
+                              <Sparkles className="h-3 w-3" /> Mengikuti
+                          </div>
+                      </button>
+                  </div>
               </div>
           </CardContent>
         </Card>
 
-        <Tabs defaultValue="published-books">
-          <TabsList>
-              <TabsTrigger value="published-books">Buku Terbitan</TabsTrigger>
-              {isOwnProfile && <TabsTrigger value="drafts">Draf</TabsTrigger>}
-              {isOwnProfile && <TabsTrigger value="favorites">Favorit</TabsTrigger>}
-          </TabsList>
-          <TabsContent value="published-books">
+        {/* Content Section */}
+        <Tabs defaultValue="published-books" className="space-y-8">
+          <div className="flex items-center justify-center">
+            <TabsList className="bg-muted/50 p-1.5 rounded-full h-auto">
+                <TabsTrigger value="published-books" className="rounded-full px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-white font-bold transition-all">Buku Terbitan</TabsTrigger>
+                {isOwnProfile && <TabsTrigger value="drafts" className="rounded-full px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-white font-bold transition-all">Draf</TabsTrigger>}
+                {isOwnProfile && <TabsTrigger value="favorites" className="rounded-full px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-white font-bold transition-all">Favorit</TabsTrigger>}
+            </TabsList>
+          </div>
+
+          <TabsContent value="published-books" className="mt-0">
                {arePublishedBooksLoading && (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
                       {Array.from({ length: 4 }).map((_, i) => (
-                        <div key={i} className="space-y-2">
-                          <Skeleton className="aspect-[2/3] w-full" />
-                          <Skeleton className="h-5 w-3/4 mt-2" />
+                        <div key={i} className="space-y-3">
+                          <Skeleton className="aspect-[2/3] w-full rounded-2xl" />
+                          <Skeleton className="h-5 w-3/4" />
                           <Skeleton className="h-4 w-1/2" />
                         </div>
                       ))}
                   </div>
               )}
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                  {publishedBooks?.map(book => <BookCard key={book.id} book={book} />)}
-              </div>
-              {!arePublishedBooksLoading && publishedBooks?.length === 0 && <p className="text-muted-foreground text-center py-8">{isOwnProfile ? "Anda" : "Pengguna ini"} belum menerbitkan buku apa pun.</p>}
+              <motion.div layout className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+                  {publishedBooks?.map(book => (
+                      <motion.div key={book.id} layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
+                        <BookCard book={book} />
+                      </motion.div>
+                  ))}
+              </motion.div>
+              {!arePublishedBooksLoading && publishedBooks?.length === 0 && (
+                  <div className="text-center py-20 bg-muted/20 rounded-[2rem] border-2 border-dashed">
+                      <BookOpen className="h-12 w-12 text-muted-foreground/20 mx-auto mb-4" />
+                      <p className="text-muted-foreground font-headline font-bold text-lg">{isOwnProfile ? "Anda" : "Pengguna ini"} belum menerbitkan karya.</p>
+                  </div>
+              )}
           </TabsContent>
+
           {isOwnProfile && (
-            <TabsContent value="drafts">
+            <TabsContent value="drafts" className="mt-0">
                  {areOtherBooksLoading && (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
                         {Array.from({ length: 2 }).map((_, i) => (
-                          <div key={i} className="space-y-2">
-                            <Skeleton className="aspect-[2/3] w-full" />
-                            <Skeleton className="h-5 w-3/4 mt-2" />
-                            <Skeleton className="h-4 w-1/2" />
+                          <div key={i} className="space-y-3">
+                            <Skeleton className="aspect-[2/3] w-full rounded-2xl" />
+                            <Skeleton className="h-5 w-3/4" />
                           </div>
                         ))}
                     </div>
                 )}
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
                     {otherBooks?.map(book => <BookCard key={book.id} book={book} />)}
                 </div>
-                {!areOtherBooksLoading && otherBooks?.length === 0 && <p className="text-muted-foreground text-center py-8">Anda tidak memiliki draf buku.</p>}
+                {!areOtherBooksLoading && otherBooks?.length === 0 && (
+                    <div className="text-center py-20 bg-muted/20 rounded-[2rem] border-2 border-dashed">
+                        <Edit className="h-12 w-12 text-muted-foreground/20 mx-auto mb-4" />
+                        <p className="text-muted-foreground font-headline font-bold text-lg">Anda tidak memiliki draf buku.</p>
+                    </div>
+                )}
             </TabsContent>
           )}
+
           {isOwnProfile && (
-              <TabsContent value="favorites">
+              <TabsContent value="favorites" className="mt-0">
                   {(areFavoritesLoading || areFavoriteBooksLoading) && (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
                           {Array.from({ length: 4 }).map((_, i) => (
-                              <div key={i} className="space-y-2">
-                              <Skeleton className="aspect-[2/3] w-full" />
-                              <Skeleton className="h-5 w-3/4 mt-2" />
-                              <Skeleton className="h-4 w-1/2" />
+                              <div key={i} className="space-y-3">
+                                <Skeleton className="aspect-[2/3] w-full rounded-2xl" />
+                                <Skeleton className="h-5 w-3/4" />
                               </div>
                           ))}
                       </div>
                   )}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
                       {favoriteBooks?.map(book => <BookCard key={book.id} book={book} />)}
                   </div>
-                  {!(areFavoritesLoading || areFavoriteBooksLoading) && favoriteBooks?.length === 0 && <p className="text-muted-foreground text-center py-8">Anda belum memfavoritkan buku apa pun.</p>}
+                  {!(areFavoritesLoading || areFavoriteBooksLoading) && favoriteBooks?.length === 0 && (
+                      <div className="text-center py-20 bg-muted/20 rounded-[2rem] border-2 border-dashed">
+                        <HeartIcon className="h-12 w-12 text-muted-foreground/20 mx-auto mb-4" />
+                        <p className="text-muted-foreground font-headline font-bold text-lg">Belum ada buku favorit.</p>
+                    </div>
+                  )}
               </TabsContent>
           )}
         </Tabs>
-      </div>
+      </motion.div>
     </>
   )
 }
@@ -442,35 +522,34 @@ export default function ProfilePage() {
 
 function ProfileSkeleton() {
     return (
-        <div className="space-y-8 animate-pulse">
-            <Card className="overflow-hidden">
-                <Skeleton className="h-32 md:h-48 w-full" />
-                <CardContent className="p-4 md:p-6 -mt-16 md:-mt-24">
-                     <div className="flex flex-col md:flex-row items-center md:items-end gap-4">
-                        <Skeleton className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-background" />
-                        <div className="flex-1 text-center md:text-left space-y-2">
-                             <Skeleton className="h-9 w-48 mx-auto md:mx-0" />
-                             <Skeleton className="h-5 w-24 mx-auto md:mx-0" />
+        <div className="space-y-10 animate-pulse pb-20">
+            <Card className="overflow-hidden border-none rounded-[2.5rem]">
+                <Skeleton className="h-40 md:h-64 w-full" />
+                <CardContent className="p-6 md:p-10 -mt-20 md:-mt-32">
+                     <div className="flex flex-col md:flex-row items-center md:items-end gap-6">
+                        <Skeleton className="w-28 h-28 md:w-40 md:h-40 rounded-full border-4 border-background" />
+                        <div className="flex-1 text-center md:text-left space-y-3">
+                             <Skeleton className="h-10 w-64 mx-auto md:mx-0" />
+                             <Skeleton className="h-4 w-32 mx-auto md:mx-0" />
                         </div>
-                         <div className="flex gap-2">
-                             <Skeleton className="h-10 w-24" />
+                         <div className="flex gap-2 w-full md:w-auto">
+                             <Skeleton className="h-12 w-full md:w-32 rounded-full" />
                         </div>
                     </div>
-                     <Skeleton className="h-4 w-full max-w-lg mt-4" />
-                     <div className="flex justify-center md:justify-start gap-6 mt-4 pt-4 border-t">
-                        <Skeleton className="h-10 w-16" />
-                        <Skeleton className="h-10 w-16" />
-                        <Skeleton className="h-10 w-16" />
+                     <Skeleton className="h-6 w-full max-w-lg mt-8 rounded-full" />
+                     <div className="flex justify-center md:justify-start gap-10 mt-8 pt-8 border-t">
+                        <Skeleton className="h-12 w-20" />
+                        <Skeleton className="h-12 w-20" />
+                        <Skeleton className="h-12 w-20" />
                     </div>
                 </CardContent>
             </Card>
-            <Skeleton className="h-10 w-48" />
-             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                {Array.from({ length: 4 }).map((_, i) => (
-                    <div key={i} className="space-y-2">
-                    <Skeleton className="aspect-[2/3] w-full" />
-                    <Skeleton className="h-5 w-3/4 mt-2" />
-                    <Skeleton className="h-4 w-1/2" />
+            <div className="flex justify-center"><Skeleton className="h-12 w-96 rounded-full" /></div>
+             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+                {Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className="space-y-3">
+                        <Skeleton className="aspect-[2/3] w-full rounded-2xl" />
+                        <Skeleton className="h-5 w-3/4" />
                     </div>
                 ))}
             </div>
