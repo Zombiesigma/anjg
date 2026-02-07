@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -18,7 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PlusCircle, BookUp, GripVertical, FileEdit, Info, Trash2, Settings, FileImage, Upload, Sparkles, Globe, Users } from "lucide-react";
+import { Loader2, PlusCircle, BookUp, GripVertical, FileEdit, Info, Trash2, Settings, FileImage, Upload, Sparkles, Globe, Users, CheckCircle2, ChevronLeft } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,6 +33,9 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { uploadFile } from '@/lib/uploader';
 import Image from 'next/image';
+import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 const chapterSchema = z.object({
   title: z.string().min(3, "Judul bab minimal 3 karakter."),
@@ -61,11 +63,11 @@ export default function EditBookPage() {
   const [activeChapterId, setActiveChapterId] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
   
   const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeletingDialogOpen] = useState(false);
 
-  // Safety net: Pastikan pointer-events kembali normal saat modal ditutup
   useEffect(() => {
     if (!isReviewDialogOpen && !isDeleteDialogOpen) {
         const timer = setTimeout(() => {
@@ -108,7 +110,6 @@ export default function EditBookPage() {
   const isAuthor = book?.authorId === currentUser?.uid;
   const isReviewing = book?.status === 'pending_review' && !isAdmin;
 
-  // Initialize settings form when book data is available
   useEffect(() => {
     if (book) {
       settingsForm.reset({
@@ -137,13 +138,13 @@ export default function EditBookPage() {
   }, [chapters, activeChapterId, activeTab]);
 
   const saveCurrentChapter = async () => {
-    if (!firestore || !activeChapterId || !chapterForm.formState.isDirty || activeTab !== 'editor') {
+    if (!firestore || !activeChapterId || !chapterForm.formState.isDirty || activeTab !== 'editor' || isReviewing) {
       return;
     }
     const chapterRef = doc(firestore, 'books', params.id, 'chapters', activeChapterId);
     await updateDoc(chapterRef, chapterForm.getValues());
     chapterForm.reset(chapterForm.getValues()); 
-    toast({ title: "Penyimpanan Otomatis", description: "Perubahan bab telah disimpan." });
+    setLastSaved(new Date());
   };
 
   const handleTabSwitch = async (tab: 'editor' | 'settings') => {
@@ -242,7 +243,7 @@ export default function EditBookPage() {
   };
   
   const handleAddChapter = async () => {
-    if (!firestore || !bookRef) return;
+    if (!firestore || !bookRef || isReviewing) return;
     try {
       if (activeTab === 'editor') await saveCurrentChapter();
 
@@ -288,7 +289,12 @@ export default function EditBookPage() {
 
 
   if (isBookLoading || areChaptersLoading || isProfileLoading) {
-    return <div className="flex items-center justify-center h-screen"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className="ml-2">Memuat editor...</p></div>;
+    return (
+        <div className="flex flex-col items-center justify-center h-screen bg-background">
+            <Loader2 className="h-12 w-12 animate-spin text-primary/40 mb-4" />
+            <p className="text-muted-foreground font-medium animate-pulse">Mempersiapkan Ruang Menulis...</p>
+        </div>
+    );
   }
 
   if (!book) {
@@ -297,11 +303,14 @@ export default function EditBookPage() {
   
   if (currentUser && book.authorId !== currentUser.uid && !isAdmin) {
     return (
-        <div className="text-center py-20">
-            <h1 className="text-2xl font-bold">Akses Ditolak</h1>
-            <p className="text-muted-foreground">Anda bukan penulis buku ini.</p>
-             <Button asChild className="mt-4">
-                <a href="/">Kembali ke Beranda</a>
+        <div className="flex flex-col items-center justify-center h-screen text-center p-6">
+            <div className="bg-destructive/10 p-4 rounded-full mb-6">
+                <Trash2 className="h-12 w-12 text-destructive" />
+            </div>
+            <h1 className="text-3xl font-headline font-bold mb-2">Akses Ditolak</h1>
+            <p className="text-muted-foreground max-w-sm mb-8">Anda tidak memiliki izin untuk mengedit buku ini. Ini adalah area khusus bagi penulis.</p>
+             <Button asChild size="lg" className="rounded-full px-8">
+                <Link href="/">Kembali ke Beranda</Link>
             </Button>
         </div>
     )
@@ -310,288 +319,429 @@ export default function EditBookPage() {
   const activeChapter = chapters?.find(c => c.id === activeChapterId);
 
   return (
-    <div className="grid md:grid-cols-12 gap-6 -m-6 h-screen">
-      <div className="md:col-span-3 lg:col-span-2 bg-muted/50 border-r flex flex-col h-screen overflow-hidden">
-        <div className="p-4 border-b">
-            <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Editor Buku</p>
-            <h2 className="font-headline text-lg font-bold truncate mt-1">{book.title}</h2>
+    <div className="flex h-[calc(100vh-theme(spacing.14))] -m-6 overflow-hidden bg-background">
+      {/* Sidebar Editor */}
+      <aside className="hidden md:flex flex-col w-72 lg:w-80 border-r bg-muted/20 shrink-0">
+        <div className="p-6 border-b bg-background/50 backdrop-blur">
+            <Link href={`/books/${book.id}`} className="flex items-center gap-2 text-xs text-muted-foreground hover:text-primary transition-colors mb-4 group">
+                <ChevronLeft className="h-3 w-3 transition-transform group-hover:-translate-x-1" /> Kembali ke Detail
+            </Link>
+            <p className="text-[10px] uppercase tracking-[0.2em] font-black text-primary/60 mb-1">Editor Buku</p>
+            <h2 className="font-headline text-xl font-bold truncate leading-tight">{book.title}</h2>
         </div>
-        <div className="flex-1 overflow-y-auto">
-            <div className="p-2 space-y-1">
+        
+        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-6">
+            <div className="space-y-1">
                 <Button 
                     variant={activeTab === 'settings' ? "secondary" : "ghost"}
-                    className="w-full justify-start gap-2"
+                    className={cn(
+                        "w-full justify-start gap-3 h-11 px-4 rounded-xl transition-all",
+                        activeTab === 'settings' ? "shadow-sm border-primary/10" : "hover:bg-primary/5 hover:text-primary"
+                    )}
                     onClick={() => handleTabSwitch('settings')}
                 >
-                    <Settings className="h-4 w-4 text-primary" />
-                    <span>Detail Buku</span>
+                    <Settings className="h-4 w-4" />
+                    <span className="font-bold text-sm">Pengaturan Buku</span>
                 </Button>
-                
-                <div className="pt-4 pb-2 px-2">
-                    <p className="text-[10px] text-muted-foreground uppercase font-bold">Daftar Bab</p>
+            </div>
+            
+            <div className="space-y-3">
+                <div className="flex items-center justify-between px-2">
+                    <p className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">Daftar Bab</p>
+                    <span className="text-[10px] font-mono bg-muted px-1.5 py-0.5 rounded text-muted-foreground">{chapters?.length || 0}</span>
                 </div>
 
-                {chapters?.map(chapter => (
-                     <Button 
-                        key={chapter.id} 
-                        variant={activeTab === 'editor' && activeChapterId === chapter.id ? "secondary" : "ghost"}
-                        className="w-full justify-start gap-2"
-                        onClick={() => handleChapterSelection(chapter.id)}
-                    >
-                       <GripVertical className="h-4 w-4 text-muted-foreground" /> 
-                       <span className="truncate flex-1 text-left">{chapter.title}</span>
-                    </Button>
-                ))}
+                <div className="space-y-1">
+                    {chapters?.map(chapter => (
+                        <Button 
+                            key={chapter.id} 
+                            variant={activeTab === 'editor' && activeChapterId === chapter.id ? "secondary" : "ghost"}
+                            className={cn(
+                                "w-full justify-start gap-3 h-11 px-4 rounded-xl group transition-all truncate",
+                                activeTab === 'editor' && activeChapterId === chapter.id 
+                                    ? "shadow-sm border-primary/10 bg-primary/10 text-primary" 
+                                    : "hover:bg-primary/5 hover:text-primary"
+                            )}
+                            onClick={() => handleChapterSelection(chapter.id)}
+                        >
+                            <GripVertical className="h-4 w-4 text-muted-foreground/40 group-hover:text-primary/40 shrink-0" /> 
+                            <span className="truncate flex-1 text-left text-sm font-medium">{chapter.title}</span>
+                        </Button>
+                    ))}
+                </div>
             </div>
         </div>
-        <div className="p-2 border-t">
-            <Button variant="outline" className="w-full" onClick={handleAddChapter} disabled={isReviewing}><PlusCircle className="mr-2 h-4 w-4" /> Bab Baru</Button>
-        </div>
-      </div>
 
-      <div className="md:col-span-9 lg:col-span-10 flex flex-col h-screen overflow-hidden">
-         <div className="p-4 border-b flex justify-between items-center bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10">
-            <h3 className="text-lg font-semibold flex items-center gap-2">
-                {activeTab === 'settings' ? <Settings className="h-5 w-5"/> : <FileEdit className="h-5 w-5"/>}
-                {activeTab === 'settings' ? 'Pengaturan Detail Buku' : (activeChapter?.title || "Pilih Bab")}
-            </h3>
-            <div className="flex items-center gap-2">
-                {book.status === 'draft' || book.status === 'rejected' || book.status === 'published' ? (
-                  <AlertDialog open={isReviewDialogOpen} onOpenChange={setIsReviewDialogOpen}>
-                      <AlertDialogTrigger asChild>
-                          <Button size="sm" disabled={isSubmittingReview}>
-                              {isSubmittingReview ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BookUp className="mr-2 h-4 w-4" />}
-                              {book.status === 'published' ? 'Kirim Pembaruan' : 'Kirim Tinjauan'}
-                          </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent onCloseAutoFocus={(e) => { e.preventDefault(); document.body.style.pointerEvents = ''; }}>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>
-                                {book.status === 'published' ? 'Kirim pembaruan untuk ditinjau?' : 'Kirim buku untuk ditinjau?'}
-                            </AlertDialogTitle>
-                            <AlertDialogDescription>
-                                {book.status === 'published' 
-                                    ? 'Pembaruan Anda akan ditinjau oleh admin sebelum dipublikasikan. Versi saat ini akan tetap tayang hingga pembaruan disetujui.' 
-                                    : 'Setelah dikirim, admin akan meninjau buku Anda sebelum dipublikasikan. Anda tidak dapat mengedit buku ini selama proses peninjauan.'
-                                }
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel onClick={() => setIsReviewDialogOpen(false)}>Batal</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleSubmitForReview}>
-                                {book.status === 'published' ? 'Ya, Kirim Pembaruan' : 'Ya, Kirim'}
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                      </AlertDialogContent>
-                  </AlertDialog>
-                ) : (
-                  <Badge variant='secondary'>Sedang Ditinjau</Badge>
+        <div className="p-4 border-t bg-background/50">
+            <Button 
+                variant="outline" 
+                className="w-full h-11 rounded-xl border-dashed border-2 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all" 
+                onClick={handleAddChapter} 
+                disabled={isReviewing}
+            >
+                <PlusCircle className="mr-2 h-4 w-4" /> Bab Baru
+            </Button>
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <main className="flex-1 flex flex-col min-w-0 bg-background relative overflow-hidden">
+         {/* Top Toolbar */}
+         <header className="h-16 border-b flex items-center justify-between px-6 bg-background/95 backdrop-blur-md z-30 sticky top-0 shadow-sm">
+            <div className="flex items-center gap-4 min-w-0">
+                <div className={cn(
+                    "flex items-center gap-2",
+                    activeTab === 'settings' ? "text-primary" : "text-foreground"
+                )}>
+                    {activeTab === 'settings' ? <Settings className="h-5 w-5"/> : <FileEdit className="h-5 w-5"/>}
+                    <h3 className="font-bold text-base truncate">
+                        {activeTab === 'settings' ? 'Pengaturan Detail Buku' : (activeChapter?.title || "Pilih Bab")}
+                    </h3>
+                </div>
+                
+                {lastSaved && activeTab === 'editor' && (
+                    <div className="hidden sm:flex items-center gap-1.5 text-[10px] font-bold text-green-600 bg-green-50 px-2.5 py-1 rounded-full border border-green-100">
+                        <CheckCircle2 className="h-3 w-3" />
+                        Tersimpan {lastSaved.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                    </div>
                 )}
-                 <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeletingDialogOpen}>
-                    <AlertDialogTrigger asChild>
-                      <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive hover:bg-destructive/10" disabled={isDeleting}>
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Hapus
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent onCloseAutoFocus={(e) => { e.preventDefault(); document.body.style.pointerEvents = ''; }}>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Hapus Buku?</AlertDialogTitle>
-                        <AlertDialogDescription>Tindakan ini tidak dapat dibatalkan. Buku dan semua bab akan dihapus secara permanen.</AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel onClick={() => setIsDeletingDialogOpen(false)}>Batal</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDeleteBook} className="bg-destructive hover:bg-destructive/90">
-                          {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Ya, Hapus'}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
             </div>
-        </div>
 
-        <div className="flex-1 overflow-y-auto p-6 bg-background">
-            {activeTab === 'settings' ? (
-                <div className="max-w-2xl mx-auto space-y-8">
-                    <Form {...settingsForm}>
-                        <form onSubmit={settingsForm.handleSubmit(onSettingsSubmit)} className="space-y-6">
-                            <div className="flex flex-col md:flex-row gap-6">
-                                <div className="flex-1 space-y-6">
-                                    <FormField
-                                        control={settingsForm.control}
-                                        name="title"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Judul Buku</FormLabel>
-                                                <FormControl><Input {...field} /></FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                    <FormField
-                                        control={settingsForm.control}
-                                        name="genre"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Genre</FormLabel>
-                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                    <FormControl><SelectTrigger><SelectValue placeholder="Pilih genre" /></SelectTrigger></FormControl>
-                                                    <SelectContent>
-                                                        <SelectItem value="self-improvement">Pengembangan Diri</SelectItem>
-                                                        <SelectItem value="novel">Novel</SelectItem>
-                                                        <SelectItem value="mental-health">Kesehatan Mental</SelectItem>
-                                                        <SelectItem value="sci-fi">Fiksi Ilmiah</SelectItem>
-                                                        <SelectItem value="fantasy">Fantasi</SelectItem>
-                                                        <SelectItem value="mystery">Misteri</SelectItem>
-                                                        <SelectItem value="romance">Romansa</SelectItem>
-                                                        <SelectItem value="horror">Horor</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                </div>
-                                <div className="w-full md:w-48 shrink-0">
-                                    <FormLabel>Sampul Buku</FormLabel>
-                                    <div 
-                                        className="mt-2 aspect-[2/3] bg-muted rounded-md border-2 border-dashed flex flex-col items-center justify-center relative overflow-hidden group cursor-pointer"
-                                        onClick={() => document.getElementById('edit-cover-upload')?.click()}
-                                    >
-                                        {previewUrl ? (
-                                            <Image src={previewUrl} alt="Preview Sampul" fill className="object-cover" />
-                                        ) : (
-                                            <>
-                                                <FileImage className="h-10 w-10 text-muted-foreground mb-2" />
-                                                <span className="text-xs text-muted-foreground text-center px-2">Klik untuk ganti</span>
-                                            </>
-                                        )}
-                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                                            <Upload className="h-6 w-6 text-white" />
+            <div className="flex items-center gap-2 shrink-0">
+                <div className="hidden sm:block">
+                    {book.status === 'published' ? (
+                        <Badge className="bg-green-500 hover:bg-green-600 text-[10px] uppercase font-black tracking-widest px-3 py-1">Terbit</Badge>
+                    ) : book.status === 'pending_review' ? (
+                        <Badge variant="secondary" className="text-[10px] uppercase font-black tracking-widest px-3 py-1">Ditinjau</Badge>
+                    ) : book.status === 'rejected' ? (
+                        <Badge variant="destructive" className="text-[10px] uppercase font-black tracking-widest px-3 py-1">Ditolak</Badge>
+                    ) : (
+                        <Badge variant="outline" className="text-[10px] uppercase font-black tracking-widest px-3 py-1">Draf</Badge>
+                    )}
+                </div>
+
+                <div className="h-6 w-px bg-border mx-2 hidden sm:block" />
+
+                <div className="flex items-center gap-1">
+                    {book.status !== 'pending_review' || isAdmin ? (
+                        <AlertDialog open={isReviewDialogOpen} onOpenChange={setIsReviewDialogOpen}>
+                            <AlertDialogTrigger asChild>
+                                <Button size="sm" className="rounded-full px-5 font-bold shadow-lg shadow-primary/20" disabled={isSubmittingReview}>
+                                    {isSubmittingReview ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BookUp className="mr-2 h-4 w-4" />}
+                                    {book.status === 'published' ? 'Kirim Pembaruan' : 'Terbitkan'}
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent onCloseAutoFocus={(e) => { e.preventDefault(); document.body.style.pointerEvents = ''; }}>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle className="font-headline text-2xl">
+                                        {book.status === 'published' ? 'Kirim Pembaruan Karya?' : 'Siap Untuk Terbit?'}
+                                    </AlertDialogTitle>
+                                    <AlertDialogDescription className="text-base">
+                                        {book.status === 'published' 
+                                            ? 'Pembaruan Anda akan ditinjau oleh tim admin kami. Versi buku yang saat ini tayang tidak akan berubah sampai tim menyetujui versi terbaru ini.' 
+                                            : 'Karya Anda akan dikirim ke tim admin Elitera untuk proses moderasi kualitas. Setelah disetujui, buku Anda akan dapat dinikmati oleh pembaca!'
+                                        }
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter className="mt-6 gap-2">
+                                    <AlertDialogCancel onClick={() => setIsReviewDialogOpen(false)} className="rounded-full">Batal</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleSubmitForReview} className="rounded-full px-8 font-bold">
+                                        {book.status === 'published' ? 'Ya, Kirim Pembaruan' : 'Kirim Sekarang'}
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    ) : null}
+
+                    <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeletingDialogOpen}>
+                        <AlertDialogTrigger asChild>
+                            <Button size="icon" variant="ghost" className="rounded-full text-destructive hover:text-destructive hover:bg-destructive/10" disabled={isDeleting}>
+                                <Trash2 className="h-5 w-5" />
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent onCloseAutoFocus={(e) => { e.preventDefault(); document.body.style.pointerEvents = ''; }}>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle className="text-destructive font-headline text-2xl">Hapus Permanen?</AlertDialogTitle>
+                                <AlertDialogDescription className="text-base">
+                                    Tindakan ini akan menghapus buku <strong>"{book.title}"</strong> beserta seluruh bab dan komentarnya secara permanen. Anda tidak dapat membatalkan ini.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter className="mt-6">
+                                <AlertDialogCancel onClick={() => setIsDeletingDialogOpen(false)} className="rounded-full">Batal</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleDeleteBook} className="bg-destructive hover:bg-destructive/90 rounded-full px-8 font-bold text-white">
+                                    {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Ya, Hapus Karya Ini'}
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                </div>
+            </div>
+        </header>
+
+        {/* Writing/Settings Body */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar relative">
+            <AnimatePresence mode="wait">
+                {activeTab === 'settings' ? (
+                    <motion.div 
+                        key="settings"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="max-w-3xl mx-auto py-12 px-6"
+                    >
+                        <div className="mb-10">
+                            <h2 className="text-3xl font-headline font-bold mb-2">Detail & Identitas Buku</h2>
+                            <p className="text-muted-foreground">Informasi di bawah ini adalah wajah pertama yang akan dilihat oleh pembaca Anda.</p>
+                        </div>
+
+                        <Form {...settingsForm}>
+                            <form onSubmit={settingsForm.handleSubmit(onSettingsSubmit)} className="space-y-10 pb-20">
+                                <div className="grid md:grid-cols-12 gap-10">
+                                    {/* Cover Side */}
+                                    <div className="md:col-span-4 space-y-4">
+                                        <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Sampul Buku</Label>
+                                        <div 
+                                            className="aspect-[2/3] bg-muted rounded-2xl border-2 border-dashed border-primary/20 flex flex-col items-center justify-center relative overflow-hidden group cursor-pointer hover:border-primary/50 transition-all shadow-xl"
+                                            onClick={() => document.getElementById('edit-cover-upload')?.click()}
+                                        >
+                                            {previewUrl ? (
+                                                <Image src={previewUrl} alt="Preview Sampul" fill className="object-cover transition-transform duration-500 group-hover:scale-110" />
+                                            ) : (
+                                                <>
+                                                    <FileImage className="h-12 w-12 text-muted-foreground/40 mb-3" />
+                                                    <span className="text-[10px] font-bold uppercase text-muted-foreground px-4 text-center">Klik untuk ganti sampul</span>
+                                                </>
+                                            )}
+                                            <div className="absolute inset-0 bg-primary/60 backdrop-blur-sm opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-opacity duration-300">
+                                                <Upload className="h-8 w-8 text-white mb-2" />
+                                                <span className="text-xs font-bold text-white uppercase tracking-wider">Unggah Baru</span>
+                                            </div>
                                         </div>
+                                        <p className="text-[10px] text-center text-muted-foreground italic">Gunakan gambar rasio 2:3 dengan resolusi tinggi.</p>
+                                        <input id="edit-cover-upload" type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
                                     </div>
-                                    <input id="edit-cover-upload" type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+
+                                    {/* Form Side */}
+                                    <div className="md:col-span-8 space-y-6">
+                                        <FormField
+                                            control={settingsForm.control}
+                                            name="title"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel className="font-bold">Judul Karya</FormLabel>
+                                                    <FormControl><Input {...field} className="h-12 text-lg rounded-xl focus-visible:ring-primary/20 font-medium" /></FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        
+                                        <FormField
+                                            control={settingsForm.control}
+                                            name="genre"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel className="font-bold">Kategori/Genre</FormLabel>
+                                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                        <FormControl>
+                                                            <SelectTrigger className="h-12 rounded-xl focus:ring-primary/20">
+                                                                <SelectValue placeholder="Pilih genre yang tepat" />
+                                                            </SelectTrigger>
+                                                        </FormControl>
+                                                        <SelectContent className="rounded-xl">
+                                                            <SelectItem value="self-improvement">Pengembangan Diri</SelectItem>
+                                                            <SelectItem value="novel">Novel</SelectItem>
+                                                            <SelectItem value="mental-health">Kesehatan Mental</SelectItem>
+                                                            <SelectItem value="sci-fi">Fiksi Ilmiah</SelectItem>
+                                                            <SelectItem value="fantasy">Fantasi</SelectItem>
+                                                            <SelectItem value="mystery">Misteri</SelectItem>
+                                                            <SelectItem value="romance">Romansa</SelectItem>
+                                                            <SelectItem value="horror">Horor</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+
+                                        <FormField
+                                            control={settingsForm.control}
+                                            name="visibility"
+                                            render={({ field }) => (
+                                            <FormItem className="space-y-3">
+                                                <FormLabel className="font-bold">Visibilitas</FormLabel>
+                                                <FormControl>
+                                                <RadioGroup
+                                                    onValueChange={field.onChange}
+                                                    value={field.value}
+                                                    className="grid grid-cols-1 sm:grid-cols-2 gap-3"
+                                                >
+                                                    <FormItem className={cn(
+                                                        "flex items-center space-x-3 space-y-0 p-4 rounded-xl border transition-all cursor-pointer",
+                                                        field.value === 'public' ? "border-primary bg-primary/5 ring-1 ring-primary/20" : "hover:bg-muted/50"
+                                                    )}>
+                                                        <FormControl><RadioGroupItem value="public" className="sr-only" /></FormControl>
+                                                        <Label className="flex items-center gap-3 cursor-pointer w-full font-normal" onClick={() => field.onChange('public')}>
+                                                            <div className={cn("p-2 rounded-lg", field.value === 'public' ? "bg-primary text-white" : "bg-muted text-muted-foreground")}>
+                                                                <Globe className="h-4 w-4" />
+                                                            </div>
+                                                            <div className="flex flex-col">
+                                                                <span className="font-bold text-sm">Publik</span>
+                                                                <span className="text-[10px] text-muted-foreground">Terbuka untuk semua</span>
+                                                            </div>
+                                                        </Label>
+                                                    </FormItem>
+                                                    
+                                                    <FormItem className={cn(
+                                                        "flex items-center space-x-3 space-y-0 p-4 rounded-xl border transition-all cursor-pointer",
+                                                        field.value === 'followers_only' ? "border-primary bg-primary/5 ring-1 ring-primary/20" : "hover:bg-muted/50"
+                                                    )}>
+                                                        <FormControl><RadioGroupItem value="followers_only" className="sr-only" /></FormControl>
+                                                        <Label className="flex items-center gap-3 cursor-pointer w-full font-normal" onClick={() => field.onChange('followers_only')}>
+                                                            <div className={cn("p-2 rounded-lg", field.value === 'followers_only' ? "bg-primary text-white" : "bg-muted text-muted-foreground")}>
+                                                                <Users className="h-4 w-4" />
+                                                            </div>
+                                                            <div className="flex flex-col">
+                                                                <span className="font-bold text-sm">Privat</span>
+                                                                <span className="text-[10px] text-muted-foreground">Hanya pengikut setia</span>
+                                                            </div>
+                                                        </Label>
+                                                    </FormItem>
+                                                </RadioGroup>
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                            )}
+                                        />
+                                    </div>
                                 </div>
-                            </div>
 
-                            <FormField
-                                control={settingsForm.control}
-                                name="visibility"
-                                render={({ field }) => (
-                                <FormItem className="space-y-3">
-                                    <FormLabel>Visibilitas</FormLabel>
-                                    <FormControl>
-                                    <RadioGroup
-                                        onValueChange={field.onChange}
-                                        value={field.value}
-                                        className="flex flex-col space-y-1"
-                                    >
-                                        <FormItem className="flex items-center space-x-3 space-y-0 p-3 rounded-md border border-input bg-background hover:bg-accent transition-colors">
-                                        <FormControl>
-                                            <RadioGroupItem value="public" />
-                                        </FormControl>
-                                        <Label className="flex items-center gap-2 cursor-pointer w-full font-normal">
-                                            <Globe className="h-4 w-4 text-primary" />
-                                            <div className="flex flex-col">
-                                                <span className="font-semibold">Publik</span>
-                                                <span className="text-xs text-muted-foreground">Semua orang dapat melihat dan membaca buku ini.</span>
-                                            </div>
-                                        </Label>
+                                <FormField
+                                    control={settingsForm.control}
+                                    name="synopsis"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="font-bold">Sinopsis Cerita</FormLabel>
+                                            <FormControl>
+                                                <Textarea 
+                                                    rows={8} 
+                                                    {...field} 
+                                                    className="rounded-2xl text-base leading-relaxed focus-visible:ring-primary/20 font-serif" 
+                                                    placeholder="Tulis ringkasan menarik yang membuat pembaca penasaran..."
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
                                         </FormItem>
-                                        <FormItem className="flex items-center space-x-3 space-y-0 p-3 rounded-md border border-input bg-background hover:bg-accent transition-colors">
-                                        <FormControl>
-                                            <RadioGroupItem value="followers_only" />
-                                        </FormControl>
-                                        <Label className="flex items-center gap-2 cursor-pointer w-full font-normal">
-                                            <Users className="h-4 w-4 text-primary" />
-                                            <div className="flex flex-col">
-                                                <span className="font-semibold">Hanya Pengikut</span>
-                                                <span className="text-xs text-muted-foreground">Hanya pengikut Anda yang dapat melihat dan membaca buku ini.</span>
-                                            </div>
-                                        </Label>
-                                        </FormItem>
-                                    </RadioGroup>
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
+                                    )}
+                                />
+
+                                <div className="flex justify-end pt-4">
+                                    <Button type="submit" size="lg" className="rounded-full px-10 h-14 font-bold shadow-xl shadow-primary/20" disabled={isSavingSettings}>
+                                        {isSavingSettings ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Sparkles className="mr-2 h-5 w-5" />}
+                                        Simpan Perubahan Identitas
+                                    </Button>
+                                </div>
+                            </form>
+                        </Form>
+                    </motion.div>
+                ) : activeChapter ? (
+                    <motion.div 
+                        key={activeChapterId}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="max-w-4xl mx-auto py-12 px-6 lg:px-12"
+                    >
+                        <Form {...chapterForm}>
+                            <form className="space-y-8 pb-32">
+                                {book.status === 'pending_review' && (
+                                <Alert className="bg-primary/5 border-primary/20 rounded-2xl">
+                                    <Info className="h-4 w-4 text-primary" />
+                                    <AlertTitle className="font-bold">Sedang Ditinjau</AlertTitle>
+                                    <AlertDescription className="text-muted-foreground">Buku ini sedang dalam peninjauan admin. {isAdmin ? 'Sebagai admin, Anda masih dapat mengubahnya.' : 'Akses edit ditutup sementara untuk penulis.'}</AlertDescription>
+                                </Alert>
                                 )}
-                            />
+                                {book.status === 'rejected' && (
+                                <Alert variant="destructive" className="rounded-2xl bg-destructive/5 border-destructive/20">
+                                    <Info className="h-4 w-4" />
+                                    <AlertTitle className="font-bold">Ditolak</AlertTitle>
+                                    <AlertDescription>Buku ini ditolak oleh tim moderasi. Silakan perbaiki berdasarkan umpan balik (jika ada) dan ajukan kembali.</AlertDescription>
+                                </Alert>
+                                )}
 
-                            <FormField
-                                control={settingsForm.control}
-                                name="synopsis"
-                                render={({ field }) => (
+                                <FormField
+                                    control={chapterForm.control}
+                                    name="title"
+                                    render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Sinopsis</FormLabel>
-                                        <FormControl><Textarea rows={6} {...field} /></FormControl>
+                                        <FormControl>
+                                            <Input 
+                                                placeholder="Judul Bab..." 
+                                                {...field} 
+                                                disabled={isReviewing} 
+                                                className="border-none shadow-none text-4xl md:text-5xl font-headline font-black px-0 h-auto focus-visible:ring-0 placeholder:text-muted-foreground/30 mb-2"
+                                            />
+                                        </FormControl>
                                         <FormMessage />
                                     </FormItem>
-                                )}
-                            />
-                            <Button type="submit" size="lg" className="w-full" disabled={isSavingSettings}>
-                                {isSavingSettings ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
-                                Simpan Perubahan Detail
-                            </Button>
-                        </form>
-                    </Form>
-                </div>
-            ) : activeChapter ? (
-                 <Form {...chapterForm}>
-                    <form className="space-y-6 max-w-3xl mx-auto">
-                        {book.status === 'pending_review' && (
-                          <Alert>
-                            <Info className="h-4 w-4" />
-                            <AlertTitle>Sedang Ditinjau</AlertTitle>
-                            <AlertDescription>Buku ini sedang dalam peninjauan. {isAdmin ? 'Sebagai admin, Anda masih dapat mengeditnya.' : 'Anda tidak dapat mengeditnya saat ini.'}</AlertDescription>
-                          </Alert>
-                        )}
-                        {book.status === 'rejected' && (
-                           <Alert variant="destructive">
-                            <Info className="h-4 w-4" />
-                            <AlertTitle>Ditolak</AlertTitle>
-                            <AlertDescription>Buku ini ditolak oleh admin. Anda dapat melakukan perubahan dan mengirimkannya kembali.</AlertDescription>
-                          </Alert>
-                        )}
-                        <FormField
-                            control={chapterForm.control}
-                            name="title"
-                            render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Judul Bab</FormLabel>
-                                <FormControl>
-                                    <Input placeholder="Judul Bab Anda" {...field} disabled={isReviewing} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={chapterForm.control}
-                            name="content"
-                            render={({ field }) => (
-                            <FormItem>
-                                <FormLabel className="sr-only">Konten Bab</FormLabel>
-                                <FormControl>
-                                    <Textarea placeholder="Mulai menulis..." {...field} className="min-h-[60vh] border-0 shadow-none px-0 focus-visible:ring-0 text-lg leading-relaxed resize-none" disabled={isReviewing} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                            )}
-                        />
-                    </form>
-                 </Form>
-            ) : (
-                <div className="flex flex-col items-center justify-center h-full text-center space-y-4">
-                    <div className="p-4 bg-muted rounded-full"><PlusCircle className="h-12 w-12 text-muted-foreground" /></div>
-                    <div className="space-y-2">
-                        <h4 className="text-xl font-semibold">Mulai Menulis</h4>
-                        <p className="text-muted-foreground max-w-sm">Pilih bab dari bilah sisi atau buat bab baru untuk mulai berbagi cerita Anda.</p>
+                                    )}
+                                />
+
+                                <div className="w-16 h-1 bg-primary/20 rounded-full mb-10" />
+
+                                <FormField
+                                    control={chapterForm.control}
+                                    name="content"
+                                    render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="sr-only">Konten Bab</FormLabel>
+                                        <FormControl>
+                                            <Textarea 
+                                                placeholder="Mulai tulis petualangan Anda di sini..." 
+                                                {...field} 
+                                                className="min-h-[70vh] border-none shadow-none px-0 focus-visible:ring-0 text-xl md:text-2xl leading-[1.8] font-serif resize-none bg-transparent placeholder:text-muted-foreground/20 scroll-smooth" 
+                                                disabled={isReviewing} 
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                    )}
+                                />
+                            </form>
+                        </Form>
+                    </motion.div>
+                ) : (
+                    <div className="flex flex-col items-center justify-center h-full text-center p-12">
+                        <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-6 animate-bounce duration-[3000ms]">
+                            <PlusCircle className="h-12 w-12 text-muted-foreground/40" />
+                        </div>
+                        <div className="space-y-2 mb-8">
+                            <h4 className="text-2xl font-headline font-bold">Mulai Tuangkan Ide</h4>
+                            <p className="text-muted-foreground max-w-sm mx-auto">Pilih bab dari bilah sisi atau buat bab baru untuk mulai berbagi cerita Anda kepada dunia.</p>
+                        </div>
+                        <Button onClick={handleAddChapter} size="lg" className="rounded-full px-8 font-bold shadow-lg shadow-primary/10">
+                            <PlusCircle className="mr-2 h-5 w-5" /> Buat Bab Pertama
+                        </Button>
                     </div>
-                    <Button onClick={handleAddChapter}><PlusCircle className="mr-2 h-4 w-4" /> Buat Bab Pertama</Button>
-                </div>
-            )}
+                )}
+            </AnimatePresence>
         </div>
-      </div>
+      </main>
+      
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(0, 0, 0, 0.05);
+          border-radius: 10px;
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.05);
+        }
+      `}</style>
     </div>
   );
 }
