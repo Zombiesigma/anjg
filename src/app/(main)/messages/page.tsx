@@ -291,11 +291,11 @@ export default function MessagesPage() {
   
   return (
     <div className="h-[calc(100vh-theme(spacing.14)-2px-theme(spacing.16))] md:h-[calc(100vh-theme(spacing.14)-theme(spacing.12)-2px)] -mt-6 -mx-4 md:-mx-6 border rounded-lg overflow-hidden flex flex-col bg-background">
-      <div className="grid grid-cols-12 flex-1 overflow-hidden">
+      <div className="grid grid-cols-12 flex-1 h-full overflow-hidden">
         
         {/* Sidebar: Chat List */}
         <div className={cn(
-          "col-span-12 md:col-span-4 lg:col-span-3 border-r h-full flex flex-col bg-card/30",
+          "col-span-12 md:col-span-4 lg:col-span-3 border-r h-full flex flex-col bg-card/30 overflow-hidden",
           selectedChatId ? "hidden md:flex" : "flex"
         )}>
           <div className="p-4 border-b shrink-0 bg-background/50 backdrop-blur-sm">
@@ -310,96 +310,98 @@ export default function MessagesPage() {
                 />
             </div>
           </div>
-          <ScrollArea className="flex-1">
-            {isLoadingThreads && (
-                <div className="p-8 space-y-4">
-                    {Array.from({length: 5}).map((_, i) => (
-                        <div key={i} className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-full bg-muted animate-pulse" />
-                            <div className="flex-1 space-y-2">
-                                <div className="h-3 w-1/2 bg-muted animate-pulse rounded" />
-                                <div className="h-2 w-3/4 bg-muted animate-pulse rounded" />
+          <div className="flex-1 overflow-hidden relative">
+            <ScrollArea className="h-full">
+                {isLoadingThreads && (
+                    <div className="p-8 space-y-4">
+                        {Array.from({length: 5}).map((_, i) => (
+                            <div key={i} className="flex items-center gap-3">
+                                <div className="w-12 h-12 rounded-full bg-muted animate-pulse" />
+                                <div className="flex-1 space-y-2">
+                                    <div className="h-3 w-1/2 bg-muted animate-pulse rounded" />
+                                    <div className="h-2 w-3/4 bg-muted animate-pulse rounded" />
+                                </div>
                             </div>
-                        </div>
-                    ))}
-                </div>
-            )}
-            {!isLoadingThreads && chatThreads?.length === 0 && (
-              <div className="p-10 text-center flex flex-col items-center gap-4">
-                <div className="p-4 bg-muted rounded-full">
-                    <MessageSquare className="h-8 w-8 text-muted-foreground/40" />
-                </div>
-                <div>
-                    <h3 className="font-semibold text-foreground">Mulai Mengobrol</h3>
-                    <p className="text-xs text-muted-foreground">Kirim pesan kepada penulis atau pembaca favorit Anda.</p>
-                </div>
-              </div>
-            )}
-            <div className="flex flex-col p-2 gap-1">
-              {sortedAndFilteredChatThreads.map(chat => {
-                const otherP = chat.participants.find(p => p.uid !== currentUser?.uid);
-                if (!otherP) return null;
-                const unreadCount = chat.unreadCounts?.[currentUser?.uid ?? ''] ?? 0;
-                const isOnline = onlineStatus[otherP.uid];
-                
-                return (
-                  <button
-                    key={chat.id}
-                    onClick={() => handleSelectChat(chat.id)}
-                    className={cn(
-                      "flex items-start gap-3 p-3 text-left rounded-xl transition-all duration-200 group relative",
-                      selectedChatId === chat.id 
-                        ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-[1.02] z-10" 
-                        : "hover:bg-accent hover:translate-x-1"
-                    )}
-                  >
-                    <div className="relative shrink-0">
-                      <Avatar className={cn(
-                          "h-12 w-12 border-2 transition-all", 
-                          selectedChatId === chat.id ? "border-primary-foreground/20" : "border-background group-hover:border-primary/10"
-                      )}>
-                        <AvatarImage src={otherP.photoURL} alt={otherP.displayName} />
-                        <AvatarFallback>{otherP.displayName.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                      {isOnline && (
-                        <span className="absolute bottom-0.5 right-0.5 block h-3 w-3 rounded-full bg-green-500 ring-2 ring-background shadow-sm animate-pulse" />
-                      )}
+                        ))}
                     </div>
-                    <div className="flex-1 min-w-0 py-0.5">
-                        <div className="flex items-center justify-between gap-2">
-                            <p className="font-bold truncate text-sm">{otherP.displayName}</p>
-                            {chat.lastMessage?.timestamp && (
-                                <p className={cn(
-                                    "text-[10px] whitespace-nowrap font-medium",
-                                    selectedChatId === chat.id ? "text-primary-foreground/70" : "text-muted-foreground"
-                                )}>
-                                    {formatShortTime(chat.lastMessage.timestamp)}
-                                </p>
-                            )}
-                        </div>
-                      <p className={cn(
-                          "text-xs truncate mt-0.5 max-w-full",
-                          selectedChatId === chat.id 
-                            ? "text-primary-foreground/80" 
-                            : (unreadCount > 0 ? "font-bold text-foreground" : "text-muted-foreground")
-                      )}>
-                        {chat.lastMessage?.senderId === currentUser?.uid && <span className="opacity-70 italic">Anda: </span>}
-                        {chat.lastMessage?.text || "Percakapan dimulai."}
-                      </p>
+                )}
+                {!isLoadingThreads && chatThreads?.length === 0 && (
+                <div className="p-10 text-center flex flex-col items-center gap-4">
+                    <div className="p-4 bg-muted rounded-full">
+                        <MessageSquare className="h-8 w-8 text-muted-foreground/40" />
                     </div>
-                    {unreadCount > 0 && selectedChatId !== chat.id && (
-                      <div className="absolute right-3 bottom-3 h-5 min-w-[20px] px-1.5 flex items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-black shadow-sm ring-2 ring-background">
-                        {unreadCount}
-                      </div>
-                    )}
-                  </button>
-                )
-              })}
-              {!isLoadingThreads && searchQuery && sortedAndFilteredChatThreads.length === 0 && (
-                  <p className="text-center text-xs text-muted-foreground py-10">Tidak ada obrolan ditemukan untuk "{searchQuery}"</p>
-              )}
-            </div>
-          </ScrollArea>
+                    <div>
+                        <h3 className="font-semibold text-foreground">Mulai Mengobrol</h3>
+                        <p className="text-xs text-muted-foreground">Kirim pesan kepada penulis atau pembaca favorit Anda.</p>
+                    </div>
+                </div>
+                )}
+                <div className="flex flex-col p-2 gap-1 pb-20"> {/* Tambahkan padding bottom ekstra untuk memastikan item terakhir bisa di-scroll */}
+                {sortedAndFilteredChatThreads.map(chat => {
+                    const otherP = chat.participants.find(p => p.uid !== currentUser?.uid);
+                    if (!otherP) return null;
+                    const unreadCount = chat.unreadCounts?.[currentUser?.uid ?? ''] ?? 0;
+                    const isOnline = onlineStatus[otherP.uid];
+                    
+                    return (
+                    <button
+                        key={chat.id}
+                        onClick={() => handleSelectChat(chat.id)}
+                        className={cn(
+                        "flex items-start gap-3 p-3 text-left rounded-xl transition-all duration-200 group relative w-full",
+                        selectedChatId === chat.id 
+                            ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-[1.02] z-10" 
+                            : "hover:bg-accent hover:translate-x-1"
+                        )}
+                    >
+                        <div className="relative shrink-0">
+                        <Avatar className={cn(
+                            "h-12 w-12 border-2 transition-all", 
+                            selectedChatId === chat.id ? "border-primary-foreground/20" : "border-background group-hover:border-primary/10"
+                        )}>
+                            <AvatarImage src={otherP.photoURL} alt={otherP.displayName} />
+                            <AvatarFallback>{otherP.displayName.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        {isOnline && (
+                            <span className="absolute bottom-0.5 right-0.5 block h-3 w-3 rounded-full bg-green-500 ring-2 ring-background shadow-sm animate-pulse" />
+                        )}
+                        </div>
+                        <div className="flex-1 min-w-0 py-0.5">
+                            <div className="flex items-center justify-between gap-2">
+                                <p className="font-bold truncate text-sm">{otherP.displayName}</p>
+                                {chat.lastMessage?.timestamp && (
+                                    <p className={cn(
+                                        "text-[10px] whitespace-nowrap font-medium",
+                                        selectedChatId === chat.id ? "text-primary-foreground/70" : "text-muted-foreground"
+                                    )}>
+                                        {formatShortTime(chat.lastMessage.timestamp)}
+                                    </p>
+                                )}
+                            </div>
+                        <p className={cn(
+                            "text-xs truncate mt-0.5 max-w-full",
+                            selectedChatId === chat.id 
+                                ? "text-primary-foreground/80" 
+                                : (unreadCount > 0 ? "font-bold text-foreground" : "text-muted-foreground")
+                        )}>
+                            {chat.lastMessage?.senderId === currentUser?.uid && <span className="opacity-70 italic">Anda: </span>}
+                            {chat.lastMessage?.text || "Percakapan dimulai."}
+                        </p>
+                        </div>
+                        {unreadCount > 0 && selectedChatId !== chat.id && (
+                        <div className="absolute right-3 bottom-3 h-5 min-w-[20px] px-1.5 flex items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-black shadow-sm ring-2 ring-background">
+                            {unreadCount}
+                        </div>
+                        )}
+                    </button>
+                    )
+                })}
+                {!isLoadingThreads && searchQuery && sortedAndFilteredChatThreads.length === 0 && (
+                    <p className="text-center text-xs text-muted-foreground py-10">Tidak ada obrolan ditemukan untuk "{searchQuery}"</p>
+                )}
+                </div>
+            </ScrollArea>
+          </div>
         </div>
 
         {/* Chat Box: Messages Area */}
@@ -477,7 +479,7 @@ export default function MessagesPage() {
               </div>
               
               {/* Messages Content */}
-              <div className="flex-1 overflow-hidden">
+              <div className="flex-1 overflow-hidden relative">
                 <ScrollArea className="h-full px-4 md:px-6">
                     {isLoadingMessages && <div className="flex justify-center items-center py-12"><Loader2 className="h-8 w-8 animate-spin text-primary/30"/></div>}
                     <div className="py-6 space-y-6">
