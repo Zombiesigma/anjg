@@ -88,8 +88,10 @@ export default function MessagesPage() {
         profilesMap.forEach((profile, uid) => {
             // Safety check: ensure lastSeen is a Timestamp before calling toMillis()
             let lastSeenMillis = 0;
-            if (profile.lastSeen && typeof profile.lastSeen.toMillis === 'function') {
-                lastSeenMillis = profile.lastSeen.toMillis();
+            if (profile.lastSeen && typeof (profile.lastSeen as any).toMillis === 'function') {
+                lastSeenMillis = (profile.lastSeen as any).toMillis();
+            } else if (profile.lastSeen instanceof Date) {
+                lastSeenMillis = profile.lastSeen.getTime();
             }
 
             const isOnline = profile.status === 'online' && lastSeenMillis > fiveMinutesAgo;
@@ -142,11 +144,11 @@ export default function MessagesPage() {
     const grouped: MessageGroupItem[] = [];
     
     messages.forEach((msg, index) => {
-        if (!msg.createdAt || typeof msg.createdAt.toDate !== 'function') return; 
+        if (!msg.createdAt || typeof (msg.createdAt as any).toDate !== 'function') return; 
         
-        const msgDate = msg.createdAt.toDate();
-        const prevMsgDate = index > 0 && messages[index - 1].createdAt && typeof messages[index - 1].createdAt.toDate === 'function' 
-            ? messages[index - 1].createdAt.toDate() 
+        const msgDate = (msg.createdAt as any).toDate();
+        const prevMsgDate = index > 0 && messages[index - 1].createdAt && typeof (messages[index - 1].createdAt as any).toDate === 'function' 
+            ? (messages[index - 1].createdAt as any).toDate() 
             : null;
 
         if (index === 0 || (prevMsgDate && !isSameDay(prevMsgDate, msgDate))) {
@@ -257,38 +259,38 @@ export default function MessagesPage() {
   const sortedChatThreads = useMemo(() => {
     if (!chatThreads) return [];
     return [...chatThreads].sort((a, b) => {
-        const timeA = (a.lastMessage?.timestamp && typeof a.lastMessage.timestamp.toMillis === 'function') 
-            ? a.lastMessage.timestamp.toMillis() 
+        const timeA = (a.lastMessage?.timestamp && typeof (a.lastMessage.timestamp as any).toMillis === 'function') 
+            ? (a.lastMessage.timestamp as any).toMillis() 
             : 0;
-        const timeB = (b.lastMessage?.timestamp && typeof b.lastMessage.timestamp.toMillis === 'function') 
-            ? b.lastMessage.timestamp.toMillis() 
+        const timeB = (b.lastMessage?.timestamp && typeof (b.lastMessage.timestamp as any).toMillis === 'function') 
+            ? (b.lastMessage.timestamp as any).toMillis() 
             : 0;
         return timeB - timeA;
     });
   }, [chatThreads]);
   
   return (
-    <div className="h-[calc(100vh-theme(spacing.14)-2px)] -mt-6 -mx-4 md:-mx-6 border rounded-lg overflow-hidden">
-      <div className="grid grid-cols-12 h-full">
+    <div className="h-[calc(100vh-theme(spacing.14)-2px-theme(spacing.16))] md:h-[calc(100vh-theme(spacing.14)-theme(spacing.12)-2px)] -mt-6 -mx-4 md:-mx-6 border rounded-lg overflow-hidden flex flex-col">
+      <div className="grid grid-cols-12 flex-1 overflow-hidden">
         {/* Chat List */}
         <div className={cn(
-          "col-span-12 md:col-span-4 lg:col-span-3 border-r h-full flex flex-col",
+          "col-span-12 md:col-span-4 lg:col-span-3 border-r h-full flex flex-col bg-background",
           selectedChatId ? "hidden md:flex" : "flex"
         )}>
-          <div className="p-4 border-b">
+          <div className="p-4 border-b shrink-0">
             <h1 className="text-2xl font-headline font-bold">Pesan</h1>
             <div className="relative mt-2">
                 <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Cari obrolan atau mulai yang baru" className="pl-8" />
+                <Input placeholder="Cari obrolan..." className="pl-8" />
             </div>
           </div>
-          <ScrollArea className="flex-1">
+          <ScrollArea className="flex-1 overflow-y-auto">
             {isLoadingThreads && <div className="p-4 text-center text-sm text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></div>}
             {!isLoadingThreads && chatThreads?.length === 0 && (
               <div className="p-8 text-center text-sm text-muted-foreground">
                 <MessageSquare className="mx-auto h-10 w-10 text-muted-foreground/30 mb-4" />
                 <h3 className="font-semibold text-base text-foreground">Tidak Ada Pesan</h3>
-                <p>Mulai percakapan di halaman profil seseorang untuk melihatnya di sini.</p>
+                <p>Mulai percakapan di profil seseorang.</p>
               </div>
             )}
             <div className="flex flex-col">
@@ -319,9 +321,9 @@ export default function MessagesPage() {
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
                             <p className="font-semibold truncate">{otherP.displayName}</p>
-                            {chat.lastMessage?.timestamp && typeof chat.lastMessage.timestamp.toDate === 'function' && (
-                                <p className="text-xs text-muted-foreground whitespace-nowrap">
-                                    {formatDistanceToNow(chat.lastMessage.timestamp.toDate(), { locale: id, addSuffix: true })}
+                            {chat.lastMessage?.timestamp && typeof (chat.lastMessage.timestamp as any).toDate === 'function' && (
+                                <p className="text-xs text-muted-foreground whitespace-nowrap ml-2">
+                                    {formatDistanceToNow((chat.lastMessage.timestamp as any).toDate(), { locale: id, addSuffix: true })}
                                 </p>
                             )}
                         </div>
@@ -333,7 +335,7 @@ export default function MessagesPage() {
                       </p>
                     </div>
                     {unreadCount > 0 && (
-                      <Badge className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full p-0 self-center">
+                      <Badge className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full p-0 ml-2 self-center">
                         {unreadCount}
                       </Badge>
                     )}
@@ -346,19 +348,19 @@ export default function MessagesPage() {
 
         {/* Chat Box */}
         <div className={cn(
-            "col-span-12 md:col-span-8 lg:col-span-9 h-full flex flex-col",
+            "col-span-12 md:col-span-8 lg:col-span-9 h-full flex flex-col overflow-hidden",
             selectedChatId ? 'flex' : 'hidden md:flex'
         )}>
           {!selectedChatId && !searchParams.get('chatId') ? (
             <div className="items-center justify-center h-full text-center hidden md:flex flex-col gap-2 bg-muted/30">
               <MessageSquare className="h-16 w-16 mx-auto text-muted-foreground/30" />
               <h2 className="mt-2 text-xl font-semibold">Pesan Elitera Anda</h2>
-              <p className="text-muted-foreground max-w-sm">Pilih dari obrolan yang ada, atau mulai percakapan baru di halaman profil pengguna.</p>
+              <p className="text-muted-foreground max-w-sm px-4">Pilih dari obrolan yang ada untuk mulai mengirim pesan.</p>
             </div>
           ) : (
-            <div className="flex flex-col h-full bg-muted/20 overflow-hidden">
-              {/* Chat Header */}
-              <div className="flex items-center p-2.5 border-b bg-background shadow-sm shrink-0">
+            <div className="flex flex-col h-full bg-muted/20 overflow-hidden relative">
+              {/* Chat Header - Tetap Diam */}
+              <div className="flex items-center p-2.5 border-b bg-background shadow-sm shrink-0 z-20">
                 <Button variant="ghost" size="icon" className="md:hidden mr-2" onClick={handleGoBack}>
                     <ArrowLeft />
                 </Button>
@@ -374,17 +376,17 @@ export default function MessagesPage() {
                        )}
                     </div>
                     <div className="min-w-0">
-                      <h2 className="font-semibold group-hover:underline">{otherParticipant.displayName}</h2>
+                      <h2 className="font-semibold group-hover:underline truncate">{otherParticipant.displayName}</h2>
                        {isOtherParticipantOnline ? (
                           <p className="text-xs text-green-600">Online</p>
                        ) : (
-                          otherParticipantProfile?.lastSeen && typeof otherParticipantProfile.lastSeen.toDate === 'function' && 
-                          <p className="text-xs text-muted-foreground">Aktif {formatDistanceToNow(otherParticipantProfile.lastSeen.toDate(), { locale: id, addSuffix: true })}</p>
+                          otherParticipantProfile?.lastSeen && typeof (otherParticipantProfile.lastSeen as any).toDate === 'function' && 
+                          <p className="text-xs text-muted-foreground">Aktif {formatDistanceToNow((otherParticipantProfile.lastSeen as any).toDate(), { locale: id, addSuffix: true })}</p>
                        )}
                     </div>
                    </Link>
                 )}
-                <div className="ml-auto">
+                <div className="ml-auto flex items-center">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon"><MoreVertical /></Button>
@@ -408,122 +410,129 @@ export default function MessagesPage() {
                 </div>
               </div>
               
-              {/* Messages Area */}
-              <ScrollArea className="flex-1">
-                {isLoadingMessages && <div className="flex justify-center items-center h-full"><Loader2 className="h-8 w-8 animate-spin text-primary"/></div>}
-                <div className="p-4 md:p-6 space-y-2">
-                  <AnimatePresence>
-                    {messageGroups.map((item) => {
-                      if ('type' in item && item.type === 'date_marker') {
+              {/* Messages Area - Satu-satunya yang bisa di-scroll */}
+              <div className="flex-1 overflow-hidden relative">
+                <ScrollArea className="h-full">
+                    {isLoadingMessages && <div className="flex justify-center items-center py-10"><Loader2 className="h-8 w-8 animate-spin text-primary"/></div>}
+                    <div className="p-4 md:p-6 space-y-4">
+                    <AnimatePresence initial={false}>
+                        {messageGroups.map((item) => {
+                        if ('type' in item && item.type === 'date_marker') {
+                            return (
+                            <motion.div
+                                key={item.id}
+                                layout
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="flex items-center justify-center my-6"
+                            >
+                                <div className="h-px bg-border flex-1" />
+                                <span className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground px-4 bg-muted/50 py-1 rounded-full border">
+                                {formatDateMarker(item.date)}
+                                </span>
+                                <div className="h-px bg-border flex-1" />
+                            </motion.div>
+                            );
+                        }
+
+                        const msg = item as ChatMessage;
+                        const isSender = msg.senderId === currentUser?.uid;
+
                         return (
-                          <motion.div
-                            key={item.id}
+                            <motion.div
+                            key={msg.id}
                             layout
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.9 }}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.2 }}
-                            className="flex items-center justify-center my-4"
-                          >
-                            <div className="h-px bg-border flex-1" />
-                            <span className="text-xs text-muted-foreground px-3">
-                              {formatDateMarker(item.date)}
-                            </span>
-                            <div className="h-px bg-border flex-1" />
-                          </motion.div>
-                        );
-                      }
-
-                      const msg = item as ChatMessage;
-                      const isSender = msg.senderId === currentUser?.uid;
-
-                      return (
-                        <motion.div
-                          key={msg.id}
-                          layout
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: 10 }}
-                          transition={{ duration: 0.3, ease: 'easeOut' }}
-                          className={cn("flex items-end gap-2.5", isSender && "justify-end")}
-                        >
-                          {!isSender && otherParticipant && (
-                            <Avatar className="h-8 w-8 self-end">
-                              <AvatarImage src={otherParticipant?.photoURL} alt={otherParticipant?.displayName} />
-                              <AvatarFallback>{otherParticipant?.displayName.charAt(0)}</AvatarFallback>
-                            </Avatar>
-                          )}
-                          
-                           {msg.type === 'book_share' && msg.book ? (
+                            className={cn("flex items-end gap-2", isSender && "justify-end")}
+                            >
+                            {!isSender && (
+                                <Avatar className="h-7 w-7 mb-1 shrink-0">
+                                <AvatarImage src={otherParticipant?.photoURL} alt={otherParticipant?.displayName} />
+                                <AvatarFallback>{otherParticipant?.displayName.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                            )}
+                            
+                            {msg.type === 'book_share' && msg.book ? (
+                                    <div className={cn(
+                                        "max-w-[280px] rounded-2xl overflow-hidden shadow-md w-full border",
+                                        isSender
+                                        ? "bg-primary text-primary-foreground rounded-br-none border-primary"
+                                        : "bg-background rounded-bl-none"
+                                    )}>
+                                    <Link href={`/books/${msg.book.id}`} className="block hover:opacity-90 transition-opacity">
+                                        <div className="p-3">
+                                            <p className="text-[10px] uppercase font-bold tracking-tight opacity-80">Membagikan Buku</p>
+                                        </div>
+                                        <div className={cn("p-3 flex gap-3 items-start", isSender ? "bg-black/10" : "bg-muted/50")}>
+                                            <div className="relative h-20 w-14 flex-shrink-0 shadow-sm">
+                                                <Image src={msg.book.coverUrl} alt={msg.book.title} fill className="object-cover rounded-sm bg-muted"/>
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="font-bold text-sm truncate">{msg.book.title}</p>
+                                                <p className={cn("text-xs mt-0.5", isSender ? "text-primary-foreground/80" : "text-muted-foreground")}>
+                                                    oleh {msg.book.authorName}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </Link>
+                                    </div>
+                            ) : (
                                 <div className={cn(
-                                    "max-w-xs rounded-2xl overflow-hidden shadow-sm w-full",
+                                    "max-w-[75%] md:max-w-[60%] p-3 rounded-2xl shadow-sm",
                                     isSender
                                     ? "bg-primary text-primary-foreground rounded-br-none"
                                     : "bg-background rounded-bl-none border"
                                 )}>
-                                <Link href={`/books/${msg.book.id}`} className="block hover:bg-black/10 transition-colors">
-                                    <div className="p-3">
-                                        <p className="text-sm font-medium">Lihat buku yang saya bagikan:</p>
-                                    </div>
-                                    <div className={cn("p-3 flex gap-3 items-start", isSender ? "bg-black/20" : "bg-muted")}>
-                                        <div className="relative h-20 w-14 flex-shrink-0">
-                                            <Image src={msg.book.coverUrl} alt={msg.book.title} fill className="object-cover rounded-sm bg-muted"/>
-                                        </div>
-                                        <div className="min-w-0">
-                                            <p className="font-bold truncate">{msg.book.title}</p>
-                                            <p className={cn("text-sm", isSender ? "text-primary-foreground/90" : "text-muted-foreground")}>
-                                                oleh {msg.book.authorName}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </Link>
+                                    <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.text}</p>
+                                    <p className={cn(
+                                        "text-[9px] mt-1 text-right opacity-70",
+                                        isSender ? "text-primary-foreground" : "text-muted-foreground"
+                                    )}>
+                                        {msg.createdAt && typeof (msg.createdAt as any).toDate === 'function' && format((msg.createdAt as any).toDate(), 'HH:mm')}
+                                    </p>
                                 </div>
-                           ) : (
-                               <div className={cn(
-                                "max-w-lg p-3 rounded-2xl",
-                                isSender
-                                ? "bg-primary text-primary-foreground rounded-br-lg"
-                                : "bg-background rounded-bl-lg shadow-sm"
-                               )}>
-                                  <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>
-                               </div>
-                           )}
+                            )}
+                            </motion.div>
+                        );
+                        })}
+                    </AnimatePresence>
+                    <div ref={messagesEndRef} className="h-2" />
+                    </div>
+                </ScrollArea>
+              </div>
 
-                          {isSender && currentUser && (
-                            <Avatar className="h-8 w-8 self-end">
-                                <AvatarImage src={currentUser.photoURL ?? ''} alt={currentUser.displayName ?? ''}/>
-                                <AvatarFallback>{currentUser.displayName?.charAt(0) ?? 'U'}</AvatarFallback>
-                            </Avatar>
-                          )}
-                        </motion.div>
-                      );
-                    })}
-                  </AnimatePresence>
-                   <div ref={messagesEndRef} />
-                </div>
-              </ScrollArea>
-
-              {/* Message Input */}
-              <div className="p-2 border-t bg-background/80 backdrop-blur-sm shrink-0">
-                  <form onSubmit={handleSendMessage} className="relative">
-                      <Textarea 
-                        ref={textareaRef}
-                        placeholder="Ketik sebuah pesan..." 
-                        className="w-full resize-none rounded-lg border-input bg-background p-3 pr-14 min-h-0"
-                        rows={1}
-                        value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault();
-                                handleSendMessage(e as unknown as React.FormEvent<HTMLFormElement>);
-                            }
-                        }}
-                        disabled={isSending}
-                      />
-                      <Button type="submit" size="icon" className="absolute top-1/2 right-2.5 -translate-y-1/2 h-9 w-9" disabled={isSending || !newMessage.trim()}>
-                        {isSending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5"/>}
-                      </Button>
+              {/* Message Input - Tetap Diam */}
+              <div className="p-3 border-t bg-background/95 backdrop-blur-md shrink-0 z-20">
+                  <form onSubmit={handleSendMessage} className="relative flex items-end gap-2 max-w-4xl mx-auto">
+                      <div className="relative flex-1">
+                        <Textarea 
+                            ref={textareaRef}
+                            placeholder="Ketik sebuah pesan..." 
+                            className="w-full resize-none rounded-2xl border-input bg-muted/50 p-3 pr-12 min-h-[44px] max-h-32 focus-visible:ring-primary py-2.5"
+                            rows={1}
+                            value={newMessage}
+                            onChange={(e) => setNewMessage(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault();
+                                    handleSendMessage(e as any);
+                                }
+                            }}
+                            disabled={isSending}
+                        />
+                        <div className="absolute right-2 bottom-1.5">
+                            <Button 
+                                type="submit" 
+                                size="icon" 
+                                className="h-8 w-8 rounded-full shadow-md" 
+                                disabled={isSending || !newMessage.trim()}
+                            >
+                                {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4 ml-0.5"/>}
+                            </Button>
+                        </div>
+                      </div>
                   </form>
               </div>
             </div>
