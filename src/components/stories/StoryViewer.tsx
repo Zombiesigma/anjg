@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -14,6 +15,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { formatDistanceToNow } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { StoryViewersSheet } from './StoryViewersSheet';
+import Image from 'next/image';
 
 
 interface StoryViewerProps {
@@ -257,39 +259,62 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
                 </div>
                 
                 {/* Header */}
-                <div className="absolute top-4 left-2 right-2 p-2 z-20 flex items-center gap-2">
+                <div className="absolute top-4 left-2 right-2 p-2 z-30 flex items-center gap-2 bg-gradient-to-b from-black/40 to-transparent rounded-t-lg">
                     <Avatar>
                         <AvatarImage src={currentGroup.authorAvatarUrl}/>
                         <AvatarFallback>{currentGroup.authorName.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div className='min-w-0'>
-                        <p className="font-semibold text-sm">{currentGroup.authorName}</p>
-                        <p className="text-xs text-white/70">
+                        <p className="font-semibold text-sm shadow-sm">{currentGroup.authorName}</p>
+                        <p className="text-xs text-white/70 shadow-sm">
                             {formatDistanceToNow(currentStory.createdAt.toDate(), { locale: id, addSuffix: true })}
                         </p>
                     </div>
                 </div>
 
-                {/* Content */}
-                <div className="flex-1 flex items-center justify-center p-6 text-center">
-                    <p className="text-xl md:text-2xl font-medium whitespace-pre-wrap">{currentStory.content}</p>
+                {/* Content Area */}
+                <div className="flex-1 relative flex items-center justify-center overflow-hidden">
+                  {currentStory.type === 'image' && currentStory.imageUrl ? (
+                    <div className="absolute inset-0 w-full h-full">
+                      <Image 
+                        src={currentStory.imageUrl} 
+                        alt="Story Content" 
+                        fill 
+                        className="object-cover" 
+                        priority
+                      />
+                      {currentStory.content && (
+                        <div className="absolute bottom-20 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent">
+                          <p className="text-white text-center text-lg font-medium drop-shadow-md">
+                            {currentStory.content}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center p-8 text-center bg-gradient-to-br from-primary to-accent">
+                      <p className="text-xl md:text-2xl font-black whitespace-pre-wrap leading-tight">
+                        {currentStory.content}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
-                {/* Footer */}
-                <div className="p-4 z-20 space-y-2">
+                {/* Footer Controls */}
+                <div className="p-4 z-30 space-y-2 bg-gradient-to-t from-black/60 to-transparent">
                    <div className='flex items-center gap-4 text-sm text-white/80'>
-                     <button onClick={handleToggleLike} disabled={isLikeLoading} className="flex items-center gap-2 hover:text-white">
+                     <button onClick={handleToggleLike} disabled={isLikeLoading} className="flex items-center gap-2 hover:text-white drop-shadow-sm">
                         <Heart className={isLiked ? "fill-red-500 text-red-500" : ""}/> 
-                        <span>{currentStory.likes}</span>
+                        <span className="font-bold">{currentStory.likes}</span>
                      </button>
-                      <button className="flex items-center gap-2 hover:text-white">
+                      <button className="flex items-center gap-2 hover:text-white drop-shadow-sm">
                           <MessageCircle/> 
-                          <span>{currentStory.commentCount}</span>
+                          <span className="font-bold">{currentStory.commentCount}</span>
                       </button>
                       {isAuthor && (
-                        <button onClick={() => setShowViews(true)} className="flex items-center gap-2 hover:text-white ml-auto">
+                        <button onClick={() => setShowViews(true)} className="flex items-center gap-2 hover:text-white ml-auto drop-shadow-sm">
                             <Eye/>
-                            <span>{currentStory.viewCount}</span>
+                            <span className="font-bold">{currentStory.viewCount}</span>
                         </button>
                       )}
                    </div>
@@ -297,11 +322,11 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
                         <Input 
                             value={comment}
                             onChange={(e) => setComment(e.target.value)}
-                            placeholder='Kirim komentar...' 
-                            className='bg-black/30 border-white/30 focus-visible:ring-primary'
+                            placeholder='Balas cerita ini...' 
+                            className='bg-white/10 border-white/20 text-white placeholder:text-white/50 focus-visible:ring-primary backdrop-blur-md h-10'
                         />
-                        <Button size="icon" onClick={handleComment} disabled={isSendingComment || !comment.trim()}>
-                           {isSendingComment ? <Loader2 className="animate-spin" /> : <Send />}
+                        <Button size="icon" className="h-10 w-10 shrink-0" onClick={handleComment} disabled={isSendingComment || !comment.trim()}>
+                           {isSendingComment ? <Loader2 className="animate-spin h-4 w-4" /> : <Send className="h-4 w-4" />}
                         </Button>
                     </div>
                 </div>

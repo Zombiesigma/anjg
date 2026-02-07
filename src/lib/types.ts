@@ -156,11 +156,13 @@ export type Follow = {
 
 export type Story = {
   id: string;
+  type: 'text' | 'image';
   authorId: string;
   authorName: string;
   authorAvatarUrl: string;
   authorRole: 'penulis' | 'pembaca' | 'admin';
-  content: string;
+  content: string; // For text stories or caption
+  imageUrl?: string; // For image stories
   createdAt: Timestamp;
   likes: number;
   commentCount: number;
