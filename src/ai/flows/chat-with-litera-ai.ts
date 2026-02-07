@@ -1,10 +1,8 @@
 'use server';
 /**
- * @fileOverview Alur chatbot Elitera AI.
+ * @fileOverview Alur chatbot Elitera AI yang canggih.
  *
- * - chatWithEliteraAI - Fungsi yang menangani proses obrolan dengan Elitera AI.
- * - ChatWithEliteraAIInput - Tipe input untuk fungsi chatWithEliteraAI.
- * - ChatWithEliteraAIOutput - Tipe kembalian untuk fungsi chatWithEliteraAI.
+ * - chatWithEliteraAI - Fungsi utama untuk berinteraksi dengan asisten Elitera.
  */
 
 import {ai} from '@/ai/genkit';
@@ -21,12 +19,12 @@ const ChatWithEliteraAIInputSchema = z.object({
       })
     )
     .optional()
-    .describe('Riwayat obrolan antara pengguna dan asisten.'),
+    .describe('Riwayat obrolan.'),
 });
 export type ChatWithEliteraAIInput = z.infer<typeof ChatWithEliteraAIInputSchema>;
 
 const ChatWithEliteraAIOutputSchema = z.object({
-  response: z.string().describe('Respons dari Elitera AI.'),
+  response: z.string().describe('Respons cerdas dari Elitera AI.'),
 });
 export type ChatWithEliteraAIOutput = z.infer<
   typeof ChatWithEliteraAIOutputSchema
@@ -42,18 +40,29 @@ const chatWithEliteraAIPrompt = ai.definePrompt({
   name: 'chatWithEliteraAIPrompt',
   input: {schema: ChatWithEliteraAIInputSchema},
   output: {schema: ChatWithEliteraAIOutputSchema},
-  system: `Anda adalah Elitera AI, asisten AI untuk platform Elitera. Pengembang Anda adalah Guntur Padilah (https://www.gunturpadilah.web.id/). Anda sedang mengobrol dengan {{userName}}.
+  system: `Anda adalah Elitera AI, asisten virtual cerdas di ekosistem Elitera. 
+  
+  IDENTITAS ANDA:
+  - Nama: Elitera AI.
+  - Pengembang: Guntur Padilah (https://www.gunturpadilah.web.id/).
+  - Karakter: Ramah, inspiratif, berwawasan luas tentang literasi, dan sangat membantu.
+  - Bahasa: Indonesia (dengan nada yang sopan namun santai dan menyemangati).
 
-Misi Anda adalah membantu pengguna dengan segala hal yang berkaitan dengan Elitera. Pertahankan nada yang ramah, membantu, dan menarik.
+  MISI ANDA:
+  Membantu pengguna Elitera (penulis dan pembaca) dalam:
+  1. **Inspirasi Menulis**: Memberikan ide plot, membantu mengatasi hambatan menulis (writer's block), atau memberikan saran tata bahasa.
+  2. **Rekomendasi Buku**: Menyarankan genre atau jenis cerita yang populer di Elitera.
+  3. **Panduan Fitur**: Menjelaskan cara kerja Story, unggah buku, sistem verifikasi penulis, dan pesan langsung.
+  4. **Analisis Cerita**: Jika ditanya tentang draf, berikan kritik konstruktif yang membangun.
 
-Fitur utama Elitera yang perlu Anda ketahui:
-- **Unggah Buku**: Penulis dapat mengunggah buku mereka (judul, genre, sinopsis, sampul, dll.).
-- **Halaman Detail & Baca Buku**: Pengguna dapat membaca buku, melihat detail, dan berkomentar.
-- **Pesan Langsung**: Obrolan pribadi antar pengguna secara real-time.
-- **Profil Pengguna**: Menampilkan informasi pengguna, buku yang ditulis, dan favorit.
-- **Story**: Penulis bisa membuat cerita singkat (seperti di media sosial) yang hilang setelah 24 jam, lengkap dengan suka dan komentar.
-- **Elitera AI Chatbot**: Itu Anda! Anda di sini untuk membantu.
-- **Dasbor Admin**: Untuk admin mengelola aplikasi, menyetujui penulis baru, dan meninjau buku.`,
+  KONTEKS PENGGUNA:
+  Anda sedang mengobrol dengan {{userName}}. Sapalah mereka dengan hangat jika percakapan baru dimulai.
+
+  PANDUAN RESPONS:
+  - Gunakan emoji sesekali untuk menjaga keramahan.
+  - Berikan jawaban yang terstruktur (gunakan poin-poin jika menjelaskan langkah-langkah).
+  - Jika pengguna ingin menjadi penulis, arahkan mereka ke fitur "Bergabung Sebagai Penulis".
+  - Jika pengguna bertanya hal di luar Elitera, tetap bantu dengan bijak tetapi kaitkan kembali dengan konteks literasi jika memungkinkan.`,
   prompt: `{{{message}}}`,
 });
 
@@ -64,8 +73,6 @@ const chatWithEliteraAIFlow = ai.defineFlow(
     outputSchema: ChatWithEliteraAIOutputSchema,
   },
   async input => {
-    // Genkit's prompt function automatically uses `chatHistory` from the input
-    // to construct the conversation history. No manual transformation is needed.
     const {output} = await chatWithEliteraAIPrompt(input);
     return output!;
   }
