@@ -14,8 +14,10 @@ import { useToast } from '@/hooks/use-toast';
 import { signUpWithEmail, signInWithGoogle } from '@/firebase/auth/service';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Upload, User as UserIcon } from 'lucide-react';
 import { useAuthRedirect } from '@/hooks/use-auth-redirect';
+import { uploadFile } from '@/lib/uploader';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const formSchema = z.object({
   fullName: z.string().min(3, { message: 'Nama lengkap minimal 3 karakter.' }),
@@ -28,6 +30,8 @@ export default function RegisterPage() {
   const { toast } = useToast();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -38,23 +42,55 @@ export default function RegisterPage() {
     },
   });
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        toast({
+          variant: 'destructive',
+          title: 'File Terlalu Besar',
+          description: 'Maksimal ukuran foto adalah 2MB.',
+        });
+        return;
+      }
+      setSelectedFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
+    }
+  };
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
-    const { error } = await signUpWithEmail(values.email, values.password, values.fullName);
-    if (error) {
+    let photoURL = '';
+
+    try {
+      if (selectedFile) {
+        photoURL = await uploadFile(selectedFile);
+      }
+
+      const { error } = await signUpWithEmail(values.email, values.password, values.fullName, photoURL);
+      
+      if (error) {
+        toast({
+          variant: 'destructive',
+          title: 'Gagal Mendaftar',
+          description: (error as Error).message || 'Email ini mungkin sudah digunakan. Silakan coba lagi.',
+        });
+      } else {
+        toast({
+          title: 'Pendaftaran Berhasil',
+          description: 'Kami telah mengirimkan tautan verifikasi ke email Anda.',
+        });
+        router.push('/verify-email');
+      }
+    } catch (uploadError) {
       toast({
         variant: 'destructive',
-        title: 'Gagal Mendaftar',
-        description: (error as Error).message || 'Email ini mungkin sudah digunakan. Silakan coba lagi.',
+        title: 'Gagal Mengunggah Foto',
+        description: 'Terjadi kesalahan saat mengunggah foto profil Anda.',
       });
-    } else {
-      toast({
-        title: 'Pendaftaran Berhasil',
-        description: 'Kami telah mengirimkan tautan verifikasi ke email Anda.',
-      });
-      router.push('/verify-email');
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }
 
   async function handleGoogleSignIn() {
@@ -86,6 +122,26 @@ export default function RegisterPage() {
         <CardDescription>Masukkan informasi Anda untuk membuat akun</CardDescription>
       </CardHeader>
       <CardContent>
+        <div className="flex flex-col items-center mb-6">
+          <div className="relative group">
+            <Avatar className="h-20 w-20 border-2 border-muted cursor-pointer" onClick={() => document.getElementById('avatar-upload')?.click()}>
+              <AvatarImage src={previewUrl || ''} />
+              <AvatarFallback><UserIcon className="h-10 w-10 text-muted-foreground" /></AvatarFallback>
+            </Avatar>
+            <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer pointer-events-none">
+              <Upload className="h-6 w-6 text-white" />
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">Pilih Foto Profil (Opsional)</p>
+          <input
+            id="avatar-upload"
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleFileChange}
+          />
+        </div>
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
             <FormField

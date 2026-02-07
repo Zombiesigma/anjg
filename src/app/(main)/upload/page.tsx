@@ -14,9 +14,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Sparkles, AlertTriangle, BookUser } from "lucide-react";
+import { Loader2, Sparkles, AlertTriangle, BookUser, Upload, FileImage } from "lucide-react";
 import type { User as AppUser } from '@/lib/types';
 import Link from 'next/link';
+import { uploadFile } from '@/lib/uploader';
+import Image from 'next/image';
 
 const formSchema = z.object({
   title: z.string().min(3, { message: "Judul minimal 3 karakter." }).max(100, { message: "Judul maksimal 100 karakter."}),
@@ -30,6 +32,8 @@ export default function CreateBookPage() {
   const { user: currentUser, isLoading: isUserAuthLoading } = useUser();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const userProfileRef = (firestore && currentUser) ? doc(firestore, 'users', currentUser.uid) : null;
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<AppUser>(userProfileRef);
@@ -41,6 +45,22 @@ export default function CreateBookPage() {
       synopsis: "",
     },
   });
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          variant: 'destructive',
+          title: 'File Terlalu Besar',
+          description: 'Maksimal ukuran sampul buku adalah 5MB.',
+        });
+        return;
+      }
+      setSelectedFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
+    }
+  };
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (!firestore || !currentUser) {
@@ -55,6 +75,21 @@ export default function CreateBookPage() {
     setIsSubmitting(true);
 
     try {
+      let coverUrl = `https://picsum.photos/seed/${Date.now()}/400/600`;
+      
+      if (selectedFile) {
+        try {
+          coverUrl = await uploadFile(selectedFile);
+        } catch (uploadError) {
+          console.error("Upload failed, using placeholder", uploadError);
+          toast({
+            variant: "destructive",
+            title: "Gagal Mengunggah Sampul",
+            description: "Gagal mengunggah sampul buku. Menggunakan sampul sementara.",
+          });
+        }
+      }
+
       const bookData = {
         ...values,
         authorId: currentUser.uid,
@@ -64,7 +99,7 @@ export default function CreateBookPage() {
         viewCount: 0,
         favoriteCount: 0,
         chapterCount: 0,
-        coverUrl: `https://picsum.photos/seed/${Date.now()}/400/600`,
+        coverUrl: coverUrl,
         createdAt: serverTimestamp(),
       };
       
@@ -139,47 +174,72 @@ export default function CreateBookPage() {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <CardContent className="space-y-6">
-              <FormField
-                control={form.control}
-                name="title"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Judul Buku</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Petualangan di Negeri Awan" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="genre"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Genre</FormLabel>
-                     <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <div className="flex flex-col md:flex-row gap-6">
+                <div className="flex-1 space-y-6">
+                  <FormField
+                    control={form.control}
+                    name="title"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Judul Buku</FormLabel>
                         <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Pilih genre yang paling sesuai" />
-                          </SelectTrigger>
+                          <Input placeholder="Petualangan di Negeri Awan" {...field} />
                         </FormControl>
-                        <SelectContent>
-                          <SelectItem value="self-improvement">Pengembangan Diri</SelectItem>
-                          <SelectItem value="novel">Novel</SelectItem>
-                          <SelectItem value="mental-health">Kesehatan Mental</SelectItem>
-                          <SelectItem value="sci-fi">Fiksi Ilmiah</SelectItem>
-                          <SelectItem value="fantasy">Fantasi</SelectItem>
-                          <SelectItem value="mystery">Misteri</SelectItem>
-                          <SelectItem value="romance">Romansa</SelectItem>
-                          <SelectItem value="horror">Horor</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="genre"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Genre</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Pilih genre yang paling sesuai" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="self-improvement">Pengembangan Diri</SelectItem>
+                              <SelectItem value="novel">Novel</SelectItem>
+                              <SelectItem value="mental-health">Kesehatan Mental</SelectItem>
+                              <SelectItem value="sci-fi">Fiksi Ilmiah</SelectItem>
+                              <SelectItem value="fantasy">Fantasi</SelectItem>
+                              <SelectItem value="mystery">Misteri</SelectItem>
+                              <SelectItem value="romance">Romansa</SelectItem>
+                              <SelectItem value="horror">Horor</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="w-full md:w-48 shrink-0">
+                  <FormLabel>Sampul Buku</FormLabel>
+                  <div 
+                    className="mt-2 aspect-[2/3] bg-muted rounded-md border-2 border-dashed flex flex-col items-center justify-center relative overflow-hidden group cursor-pointer"
+                    onClick={() => document.getElementById('cover-upload')?.click()}
+                  >
+                    {previewUrl ? (
+                      <Image src={previewUrl} alt="Preview Sampul" fill className="object-cover" />
+                    ) : (
+                      <>
+                        <FileImage className="h-10 w-10 text-muted-foreground mb-2" />
+                        <span className="text-xs text-muted-foreground text-center px-2">Klik untuk pilih gambar</span>
+                      </>
+                    )}
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                      <Upload className="h-6 w-6 text-white" />
+                    </div>
+                  </div>
+                  <input id="cover-upload" type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+                </div>
+              </div>
 
               <FormField
                 control={form.control}

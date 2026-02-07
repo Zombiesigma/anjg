@@ -19,7 +19,7 @@ provider.setCustomParameters({
   prompt: 'select_account'
 });
 
-async function createUserProfile(user: User) {
+async function createUserProfile(user: User, customPhotoURL?: string) {
   const userDocRef = doc(firestore, 'users', user.uid);
   const userDoc = await getDoc(userDocRef);
 
@@ -28,7 +28,7 @@ async function createUserProfile(user: User) {
       uid: user.uid,
       email: user.email,
       displayName: user.displayName,
-      photoURL: user.photoURL,
+      photoURL: customPhotoURL || user.photoURL,
       role: 'pembaca', // default role
       username: user.email?.split('@')[0] || user.uid,
       bio: 'Pengguna baru Elitera',
@@ -46,7 +46,7 @@ async function createUserProfile(user: User) {
   }
 }
 
-export async function signUpWithEmail(email: string, password: string, displayName: string) {
+export async function signUpWithEmail(email: string, password: string, displayName: string, photoURL?: string) {
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
@@ -54,18 +54,18 @@ export async function signUpWithEmail(email: string, password: string, displayNa
     // Send verification email
     await sendEmailVerification(user);
 
-    // Generate a default photoURL
-    const photoURL = `https://api.dicebear.com/8.x/identicon/svg?seed=${user.uid}`;
-    await updateProfile(user, { displayName, photoURL });
+    // Default photo if none provided
+    const finalPhotoURL = photoURL || `https://api.dicebear.com/8.x/identicon/svg?seed=${user.uid}`;
+    await updateProfile(user, { displayName, photoURL: finalPhotoURL });
     
     // Create a new user object to pass to createUserProfile
     const userWithProfile = {
       ...user,
       displayName: displayName,
-      photoURL: photoURL
+      photoURL: finalPhotoURL
     };
 
-    await createUserProfile(userWithProfile);
+    await createUserProfile(userWithProfile, finalPhotoURL);
     return { user: userWithProfile };
   } catch (error) {
     return { error };

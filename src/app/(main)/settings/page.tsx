@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useFirestore, useUser, useDoc } from '@/firebase';
@@ -22,7 +22,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Upload, User as UserIcon } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -32,6 +32,8 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from '@/components/ui/skeleton';
+import { uploadFile } from '@/lib/uploader';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const profileFormSchema = z.object({
   username: z.string().min(3, { message: "Nama pengguna minimal 3 karakter." }).regex(/^[a-zA-Z0-9_]+$/, 'Hanya boleh berisi huruf, angka, dan garis bawah.'),
@@ -54,6 +56,7 @@ export default function SettingsPage() {
   const { toast } = useToast();
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isSavingNotifications, setIsSavingNotifications] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [theme, setTheme] = useState('system');
 
   const userProfileRef = (firestore && currentUser) ? doc(firestore, 'users', currentUser.uid) : null;
@@ -110,6 +113,38 @@ export default function SettingsPage() {
       });
     }
   }, [userProfile, profileForm, notificationForm]);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast({
+        variant: 'destructive',
+        title: 'File Terlalu Besar',
+        description: 'Maksimal ukuran foto adalah 2MB.',
+      });
+      return;
+    }
+
+    setIsUploading(true);
+    try {
+      const url = await uploadFile(file);
+      profileForm.setValue('photoURL', url);
+      toast({
+        title: "Foto Berhasil Diunggah",
+        description: "Klik simpan untuk menerapkan perubahan profil Anda.",
+      });
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: "Upload Gagal",
+        description: "Gagal mengunggah foto. Silakan coba lagi.",
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   async function onProfileSubmit(values: z.infer<typeof profileFormSchema>) {
     if (!userProfileRef || !currentUser) return;
@@ -171,7 +206,7 @@ export default function SettingsPage() {
               <CardTitle>Profil</CardTitle>
               <CardDescription>Beginilah cara orang lain akan melihat Anda di situs.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-6">
               {isLoading ? (
                 <div className="space-y-4">
                   <div className="space-y-2"><Skeleton className="h-4 w-20" /><Skeleton className="h-10 w-full" /></div>
@@ -181,6 +216,33 @@ export default function SettingsPage() {
                 </div>
               ) : (
                 <>
+                  <div className="flex flex-col sm:flex-row items-center gap-6">
+                    <Avatar className="h-24 w-24 border-2 border-muted">
+                      <AvatarImage src={profileForm.watch('photoURL')} />
+                      <AvatarFallback><UserIcon className="h-12 w-12 text-muted-foreground" /></AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col gap-2">
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => document.getElementById('photo-upload')?.click()}
+                        disabled={isUploading}
+                      >
+                        {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+                        Unggah Foto Baru
+                      </Button>
+                      <p className="text-xs text-muted-foreground">Format JPG, PNG atau WebP. Maks 2MB.</p>
+                      <input 
+                        id="photo-upload" 
+                        type="file" 
+                        accept="image/*" 
+                        className="hidden" 
+                        onChange={handleFileUpload} 
+                      />
+                    </div>
+                  </div>
+
                   <FormField control={profileForm.control} name="username" render={({ field }) => (
                       <FormItem>
                         <FormLabel>Nama Pengguna</FormLabel>
@@ -201,6 +263,7 @@ export default function SettingsPage() {
                       <FormItem>
                         <FormLabel>URL Foto Profil</FormLabel>
                         <FormControl><Input placeholder="https://contoh.com/gambar.jpg" {...field} /></FormControl>
+                        <FormDescription>Anda dapat memasukkan URL langsung atau mengunggah file di atas.</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -217,7 +280,7 @@ export default function SettingsPage() {
               )}
             </CardContent>
             <CardFooter className="border-t px-6 py-4">
-              <Button type="submit" disabled={isSavingProfile || isLoading}>
+              <Button type="submit" disabled={isSavingProfile || isLoading || isUploading}>
                 {isSavingProfile && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Simpan Perubahan Profil
               </Button>
