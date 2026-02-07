@@ -8,7 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Loader2, Search } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -26,6 +26,16 @@ export function ShareBookDialog({ book, open, onOpenChange }: ShareBookDialogPro
     const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
     const [isSending, setIsSending] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
+
+    // Safety net: Pastikan pointer-events kembali normal saat dialog ditutup
+    useEffect(() => {
+        if (!open) {
+            const timer = setTimeout(() => {
+                document.body.style.pointerEvents = '';
+            }, 300);
+            return () => clearTimeout(timer);
+        }
+    }, [open]);
 
     const chatThreadsQuery = useMemo(() => (
         (firestore && currentUser)
@@ -81,12 +91,18 @@ export function ShareBookDialog({ book, open, onOpenChange }: ShareBookDialogPro
             });
 
             await batch.commit();
-            toast({ title: "Buku Dibagikan!", description: `"${book.title}" telah dikirim.` });
             
-            // Bersihkan state dan tutup modal
+            // Bersihkan state
             setSelectedChatId(null);
             setSearchTerm('');
+            
+            // Tutup dialog
             onOpenChange(false);
+
+            // Beri jeda sedikit sebelum toast agar tidak bentrok dengan penutupan modal
+            setTimeout(() => {
+                toast({ title: "Buku Dibagikan!", description: `"${book.title}" telah dikirim ke obrolan.` });
+            }, 100);
 
         } catch (error) {
             console.error(error);
@@ -100,7 +116,11 @@ export function ShareBookDialog({ book, open, onOpenChange }: ShareBookDialogPro
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent 
                 className="max-w-md"
-                onCloseAutoFocus={(e) => e.preventDefault()} // Mencegah pembekuan UI setelah modal ditutup
+                onCloseAutoFocus={(e) => {
+                    e.preventDefault();
+                    // Paksa body agar bisa diinteraksi kembali
+                    document.body.style.pointerEvents = '';
+                }}
             >
                 <DialogHeader>
                     <DialogTitle>Kirim Buku ke Obrolan</DialogTitle>

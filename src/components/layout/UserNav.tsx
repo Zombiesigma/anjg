@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Sheet,
@@ -55,6 +55,16 @@ export function UserNav() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isLogoutAlertOpen, setIsLogoutAlertOpen] = useState(false);
 
+  // Safety net: Pastikan pointer-events kembali normal saat logout alert ditutup
+  useEffect(() => {
+    if (!isLogoutAlertOpen) {
+        const timer = setTimeout(() => {
+            document.body.style.pointerEvents = '';
+        }, 300);
+        return () => clearTimeout(timer);
+    }
+  }, [isLogoutAlertOpen]);
+
   const userProfileRef = (firestore && user) ? doc(firestore, 'users', user.uid) : null;
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<AppUser>(userProfileRef);
   
@@ -69,11 +79,12 @@ export function UserNav() {
     setIsLogoutAlertOpen(false);
     setIsSheetOpen(false);
     
-    // Beri waktu sedikit untuk transisi modal selesai sebelum navigasi
+    // Beri waktu sedikit agar animasi selesai sebelum logout
     setTimeout(async () => {
         await signOut();
+        document.body.style.pointerEvents = ''; // Paksa aktifkan interaksi
         router.push('/login');
-    }, 100);
+    }, 150);
   };
   
   if (isLoading || !user) {
@@ -159,7 +170,6 @@ export function UserNav() {
             <Separator className="my-2" />
             
             <div className="p-4">
-              {/* Trigger AlertDialog via state untuk mencegah modal bertumpuk yang membekukan UI */}
               <Button 
                 variant="ghost" 
                 className="w-full justify-start gap-3 p-2 h-auto text-destructive hover:text-destructive hover:bg-destructive/10"
@@ -193,7 +203,6 @@ export function UserNav() {
         </SheetContent>
       </Sheet>
 
-      {/* AlertDialog dipisahkan dari Sheet untuk menghindari bug pointer-events Radix UI */}
       <AlertDialog open={isLogoutAlertOpen} onOpenChange={setIsLogoutAlertOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

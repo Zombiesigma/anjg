@@ -248,7 +248,6 @@ export default function BookDetailsClient() {
 
   return (
     <>
-      {book && <ShareBookDialog book={book} open={isShareDialogOpen} onOpenChange={setIsShareDialogOpen} />}
       <div className="space-y-8">
         <div className="grid md:grid-cols-3 gap-8">
           <div className="md:col-span-1">
@@ -312,13 +311,13 @@ export default function BookDetailsClient() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={handleExternalShare}>
+                  <DropdownMenuItem onSelect={handleExternalShare}>
                     <Share2 className="mr-2 h-4 w-4" />
                     <span>Bagikan ke Luar</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem 
                     onSelect={(e) => {
-                        e.preventDefault(); // Mencegah Dropdown menutup dan membekukan UI saat membuka Dialog
+                        e.preventDefault(); // Mencegah Dropdown menu membekukan fokus saat Dialog dibuka
                         setIsShareDialogOpen(true);
                     }}
                   >
@@ -372,6 +371,8 @@ export default function BookDetailsClient() {
           </div>
         </div>
       </div>
+      {/* Pindahkan Dialog ke paling bawah untuk memastikan stacking order terbaik */}
+      {book && <ShareBookDialog book={book} open={isShareDialogOpen} onOpenChange={setIsShareDialogOpen} />}
     </>
   );
 }
