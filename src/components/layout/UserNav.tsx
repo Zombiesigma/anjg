@@ -47,6 +47,7 @@ import { useRouter } from 'next/navigation';
 import { doc } from 'firebase/firestore';
 import type { User as AppUser } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export function UserNav() {
   const { user, isLoading } = useUser();
