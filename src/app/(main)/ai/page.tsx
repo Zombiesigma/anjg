@@ -21,12 +21,8 @@ const initialHistory: AiChatMessage[] = [
 ];
 
 export default function AiPage() {
-  // Perhitungan tinggi: 
-  // 100vh 
-  // - 56px (Header) 
-  // - 64px (Mobile Nav) 
-  // - 48px (Layout py-6)
-  // Total pengurangan: 168px
+  // Kalkulasi tinggi yang sangat ketat untuk mencegah scroll pada body
+  // 100vh - Header (56px) - Mobile Nav (64px) - Layout Padding (48px)
   return (
     <div className="h-[calc(100vh-168px-2px)] md:h-[calc(100vh-theme(spacing.28)-theme(spacing.12)-2px)] -mt-6 -mx-4 md:-mx-6 border rounded-lg overflow-hidden bg-background flex flex-col">
         <SidebarProvider className="h-full overflow-hidden">
@@ -89,11 +85,13 @@ export default function AiPage() {
                 </SidebarFooter>
             </Sidebar>
             <SidebarInset className="p-0 m-0 bg-background overflow-hidden h-full flex flex-col min-h-0">
+                 {/* Fixed Header AI */}
                  <div className="flex items-center gap-4 px-6 h-14 border-b bg-background/95 backdrop-blur-sm z-30 shrink-0 shadow-sm">
                     <SidebarTrigger className="md:hidden"/>
                     <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
                     <h3 className="font-bold text-sm md:text-base">Percakapan Inspirasi</h3>
                 </div>
+                {/* Chat Container yang mengambil sisa ruang */}
                 <div className="flex-1 overflow-hidden relative min-h-0">
                     <ChatClient history={initialHistory} />
                 </div>

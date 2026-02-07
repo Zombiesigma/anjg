@@ -30,6 +30,7 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // Fungsi scroll otomatis ke bawah yang lebih handal
   const scrollToBottom = () => {
     if (scrollAreaRef.current) {
         const viewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
@@ -95,6 +96,7 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
 
   return (
     <div className="flex flex-col h-full bg-background/50 overflow-hidden relative">
+      {/* Area Pesan yang dapat digulir */}
       <ScrollArea className="flex-1 min-h-0" ref={scrollAreaRef}>
         <div className="max-w-3xl mx-auto p-4 md:p-8 space-y-8 pb-10">
           
@@ -163,6 +165,7 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
                       : "bg-card border border-border/50 rounded-tl-none font-medium text-foreground/90"
                   )}
                 >
+                  {/* Markdown Rendering */}
                   <div className={cn(
                     "prose prose-sm max-w-none break-words dark:prose-invert prose-p:leading-relaxed prose-headings:font-headline prose-headings:mb-2 prose-headings:mt-4 first:prose-headings:mt-0 prose-pre:bg-muted prose-pre:text-muted-foreground",
                     m.role === "user" ? "prose-invert text-primary-foreground" : "text-foreground/90"
@@ -197,6 +200,7 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
         </div>
       </ScrollArea>
 
+      {/* Area Input yang Tetap (Fixed) di Bawah */}
       <div className="p-4 md:p-6 border-t bg-background/95 backdrop-blur-md shrink-0 z-20 shadow-up">
         <div className="max-w-3xl mx-auto">
             <form onSubmit={handleSubmit} className="relative flex items-end gap-3">
