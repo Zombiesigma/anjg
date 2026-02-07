@@ -9,9 +9,11 @@ import { collection, query, where, limit } from 'firebase/firestore';
 import type { Book, User } from '@/lib/types';
 
 import { Input } from '@/components/ui/input';
-import { Loader2, Search, Book as BookIcon, User as UserIcon, X } from 'lucide-react';
+import { Loader2, Search, Book as BookIcon, User as UserIcon, X, Command } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export function GlobalSearch() {
   const [queryValue, setQueryValue] = useState('');
@@ -26,14 +28,11 @@ export function GlobalSearch() {
       setDebouncedQuery(queryValue);
     }, 300);
 
-    return () => {
-      clearTimeout(handler);
-    };
+    return () => clearTimeout(handler);
   }, [queryValue]);
 
   const capitalizedQuery = useMemo(() => {
       if (!debouncedQuery.trim()) return '';
-      // Capitalize first letter for better matching on names/titles
       return debouncedQuery.charAt(0).toUpperCase() + debouncedQuery.slice(1);
   }, [debouncedQuery]);
 
@@ -71,9 +70,7 @@ export function GlobalSearch() {
     setIsFocused(false);
   };
   
-  const clearSearch = () => {
-    setQueryValue('');
-  }
+  const clearSearch = () => setQueryValue('');
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -82,110 +79,138 @@ export function GlobalSearch() {
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const showResults = isFocused && queryValue.trim().length > 0;
 
   return (
     <div className="relative w-full" ref={containerRef}>
-      <form onSubmit={handleSearchSubmit}>
-        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
+      <form onSubmit={handleSearchSubmit} className="relative group">
+        <Search className={cn(
+            "absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 transition-colors z-10",
+            isFocused ? "text-primary" : "text-muted-foreground"
+        )} />
         <Input
           type="search"
-          placeholder="Cari buku atau nama pengguna..."
-          className="w-full bg-muted pl-8 h-9"
+          placeholder="Cari karya atau penulis..."
+          className={cn(
+            "w-full bg-muted/40 pl-10 pr-12 h-10 rounded-2xl border-none transition-all duration-300",
+            "focus-visible:bg-background focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:shadow-inner"
+          )}
           value={queryValue}
           onChange={(e) => setQueryValue(e.target.value)}
           onFocus={() => setIsFocused(true)}
         />
-        {queryValue && (
-            <button type="button" onClick={clearSearch} className="absolute right-2.5 top-1/2 -translate-y-1/2 z-10">
-                <X className="h-4 w-4 text-muted-foreground hover:text-foreground" />
-            </button>
-        )}
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+            {queryValue ? (
+                <button type="button" onClick={clearSearch} className="p-1 hover:bg-muted rounded-full transition-colors">
+                    <X className="h-3.5 w-3.5 text-muted-foreground" />
+                </button>
+            ) : (
+                <div className="hidden md:flex items-center gap-1 px-1.5 py-0.5 rounded border border-border/50 bg-background/50 text-[10px] font-black text-muted-foreground/50">
+                    <Command className="h-2.5 w-2.5" /> K
+                </div>
+            )}
+        </div>
       </form>
 
-      {showResults && (
-        <div className="absolute top-full mt-2 w-full rounded-md border bg-background shadow-lg z-50 max-h-[70vh] overflow-y-auto">
-          <div className="p-2">
-            {isLoading && (
-              <div className="flex items-center justify-center p-4">
-                <Loader2 className="h-5 w-5 animate-spin" />
-              </div>
-            )}
-            {!isLoading && !books?.length && !users?.length && (
-              <p className="py-4 text-center text-sm text-muted-foreground">
-                Tidak ada hasil ditemukan untuk "{debouncedQuery}".
-              </p>
-            )}
+      <AnimatePresence>
+        {showResults && (
+            <motion.div 
+                initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 5, scale: 0.98 }}
+                className="absolute top-full mt-3 w-full rounded-[1.5rem] border bg-background shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15)] z-[110] overflow-hidden"
+            >
+                <div className="p-2">
+                    {isLoading && (
+                        <div className="flex flex-col items-center justify-center p-8 gap-3">
+                            <Loader2 className="h-6 w-6 animate-spin text-primary/40" />
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">Mencari di semesta Elitera...</p>
+                        </div>
+                    )}
+                    
+                    {!isLoading && !books?.length && !users?.length && (
+                        <div className="p-8 text-center space-y-2">
+                            <Search className="h-10 w-10 text-muted-foreground/20 mx-auto" />
+                            <p className="text-sm font-medium text-muted-foreground">
+                                Tidak ada hasil untuk "<span className="text-foreground">{debouncedQuery}</span>"
+                            </p>
+                        </div>
+                    )}
 
-            {users && users.length > 0 && (
-              <div className="space-y-1">
-                <p className="px-2 text-xs font-semibold text-muted-foreground">Pengguna</p>
-                {users.map(user => (
-                  <Link
-                    key={user.id}
-                    href={`/profile/${user.username}`}
-                    onClick={() => { setIsFocused(false); setQueryValue(''); }}
-                    className="flex items-center gap-3 p-2 rounded-md hover:bg-accent"
-                  >
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={user.photoURL} alt={user.displayName} />
-                      <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0">
-                      <p className="font-medium text-sm truncate">{user.displayName}</p>
-                      <p className="text-xs text-muted-foreground truncate">@{user.username}</p>
+                    <div className="space-y-4 p-2">
+                        {users && users.length > 0 && (
+                            <div className="space-y-2">
+                                <p className="px-2 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">Pujangga</p>
+                                {users.map(user => (
+                                    <Link
+                                        key={user.id}
+                                        href={`/profile/${user.username}`}
+                                        onClick={() => { setIsFocused(false); setQueryValue(''); }}
+                                        className="flex items-center gap-3 p-2 rounded-xl transition-all hover:bg-muted group"
+                                    >
+                                        <Avatar className="h-9 w-9 border-2 border-background shadow-sm transition-transform group-hover:scale-105">
+                                            <AvatarImage src={user.photoURL} alt={user.displayName} />
+                                            <AvatarFallback className="bg-primary/5 text-primary text-xs font-black">{user.displayName.charAt(0)}</AvatarFallback>
+                                        </Avatar>
+                                        <div className="min-w-0">
+                                            <p className="font-bold text-sm truncate group-hover:text-primary transition-colors">{user.displayName}</p>
+                                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">@{user.username}</p>
+                                        </div>
+                                    </Link>
+                                ))}
+                            </div>
+                        )}
+
+                        {users && users.length > 0 && books && books.length > 0 && <Separator className="opacity-50" />}
+
+                        {books && books.length > 0 && (
+                            <div className="space-y-2">
+                                <p className="px-2 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">Karya</p>
+                                {books.map(book => (
+                                    <Link
+                                        key={book.id}
+                                        href={`/books/${book.id}`}
+                                        onClick={() => { setIsFocused(false); setQueryValue(''); }}
+                                        className="flex items-center gap-3 p-2 rounded-xl transition-all hover:bg-muted group"
+                                    >
+                                        <div className="w-10 h-14 relative shrink-0 overflow-hidden rounded shadow-sm">
+                                            <AvatarImage src={book.coverUrl} className="object-cover" />
+                                            <div className="absolute inset-0 bg-muted flex items-center justify-center -z-10">
+                                                <BookIcon className="h-4 w-4 text-muted-foreground/40" />
+                                            </div>
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="font-bold text-sm truncate group-hover:text-primary transition-colors leading-tight">{book.title}</p>
+                                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">oleh {book.authorName}</p>
+                                        </div>
+                                    </Link>
+                                ))}
+                            </div>
+                        )}
                     </div>
-                  </Link>
-                ))}
-              </div>
-            )}
 
-            {users && users.length > 0 && books && books.length > 0 && (
-              <Separator className="my-2" />
-            )}
-
-            {books && books.length > 0 && (
-              <div className="space-y-1">
-                <p className="px-2 text-xs font-semibold text-muted-foreground">Buku</p>
-                 {books.map(book => (
-                  <Link
-                    key={book.id}
-                    href={`/books/${book.id}`}
-                    onClick={() => { setIsFocused(false); setQueryValue(''); }}
-                    className="flex items-center gap-3 p-2 rounded-md hover:bg-accent"
-                  >
-                     <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center bg-muted rounded">
-                        <BookIcon className="h-5 w-5 text-muted-foreground" />
-                     </div>
-                    <div className="min-w-0">
-                      <p className="font-medium text-sm truncate">{book.title}</p>
-                      <p className="text-xs text-muted-foreground truncate">oleh {book.authorName}</p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-            <div className="p-1 mt-1">
-                <button
-                    onClick={() => {
-                        if (!queryValue.trim()) return;
-                        router.push(`/search?q=${encodeURIComponent(queryValue.trim())}`);
-                        setQueryValue('');
-                        setIsFocused(false);
-                    }}
-                    className="text-sm font-medium text-primary hover:bg-accent rounded-md w-full text-center p-2"
-                >
-                    Lihat semua hasil
-                </button>
-            </div>
-          </div>
-        </div>
-      )}
+                    {!isLoading && (queryValue.trim().length > 0) && (
+                        <div className="p-2 pt-0 mt-2">
+                            <button
+                                onClick={() => {
+                                    if (!queryValue.trim()) return;
+                                    router.push(`/search?q=${encodeURIComponent(queryValue.trim())}`);
+                                    setQueryValue('');
+                                    setIsFocused(false);
+                                }}
+                                className="w-full h-10 flex items-center justify-center gap-2 rounded-xl bg-primary/5 text-primary text-xs font-black uppercase tracking-widest transition-all hover:bg-primary hover:text-white"
+                            >
+                                Lihat Semua Hasil <Search className="h-3 w-3" />
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
