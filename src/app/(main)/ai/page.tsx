@@ -21,8 +21,14 @@ const initialHistory: AiChatMessage[] = [
 ];
 
 export default function AiPage() {
+  // Perhitungan tinggi: 
+  // 100vh 
+  // - 14 (Header: 56px) 
+  // - 16 (Mobile Nav Spacer: 64px) 
+  // - 12 (Layout py-6: 48px)
+  // Total pengurangan: 42 (168px)
   return (
-    <div className="h-[calc(100vh-theme(spacing.14)-2px-theme(spacing.16))] md:h-[calc(100vh-theme(spacing.14)-theme(spacing.12)-2px)] -mx-4 md:-mx-6 border rounded-lg overflow-hidden bg-background">
+    <div className="h-[calc(100vh-theme(spacing.42)-2px)] md:h-[calc(100vh-theme(spacing.28)-theme(spacing.12)-2px)] -mt-6 -mx-4 md:-mx-6 border rounded-lg overflow-hidden bg-background flex flex-col">
         <SidebarProvider>
             <Sidebar collapsible="icon" className="border-r border-border/50">
                 <SidebarHeader className="p-4 border-b">

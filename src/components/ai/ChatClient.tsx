@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import type { FormEvent } from 'react';
-import { Bot, Send, Loader2, CornerDownLeft, Sparkles, Lightbulb, HelpCircle, BookOpen } from "lucide-react";
+import { Bot, Send, Loader2, Sparkles, Lightbulb, HelpCircle, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -92,9 +92,9 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
   };
 
   return (
-    <div className="flex flex-col h-full bg-background/50">
+    <div className="flex flex-col h-full bg-background/50 overflow-hidden">
       <ScrollArea className="flex-1" ref={scrollAreaRef}>
-        <div className="max-w-3xl mx-auto p-4 md:p-8 space-y-8 pb-32">
+        <div className="max-w-3xl mx-auto p-4 md:p-8 space-y-8 pb-10">
           
           {/* Welcome Message for Empty State */}
           {messages.length <= 1 && !isLoading && (
@@ -188,7 +188,7 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
         </div>
       </ScrollArea>
 
-      <div className="p-4 md:p-6 border-t bg-background/80 backdrop-blur-md shrink-0">
+      <div className="p-4 md:p-6 border-t bg-background/95 backdrop-blur-md shrink-0 z-20">
         <div className="max-w-3xl mx-auto">
             <form onSubmit={handleSubmit} className="relative flex items-end gap-3">
                 <div className="relative flex-1 group">
