@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useFirestore, useUser, useDoc } from '@/firebase';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
 import type { User } from '@/lib/types';
 import {
@@ -147,29 +147,78 @@ export default function SettingsPage() {
   };
 
   async function onProfileSubmit(values: z.infer<typeof profileFormSchema>) {
-    if (!userProfileRef || !currentUser) return;
+    if (!userProfileRef || !currentUser || !firestore) return;
     setIsSavingProfile(true);
     try {
+      // 1. Perbarui profil di Firebase Auth
       await updateProfile(currentUser, {
         displayName: values.displayName,
         photoURL: values.photoURL,
       });
-      await updateDoc(userProfileRef, {
+
+      // 2. Siapkan batch untuk sinkronisasi data
+      const batch = writeBatch(firestore);
+
+      // 3. Perbarui dokumen profil utama
+      batch.update(userProfileRef, {
         username: values.username,
         displayName: values.displayName,
         bio: values.bio,
         photoURL: values.photoURL,
       });
+
+      // 4. Sinkronisasi ke Buku yang ditulis pengguna
+      const booksQuery = query(collection(firestore, 'books'), where('authorId', '==', currentUser.uid));
+      const booksSnap = await getDocs(booksQuery);
+      booksSnap.forEach((bookDoc) => {
+        batch.update(bookDoc.ref, {
+          authorName: values.displayName,
+          authorAvatarUrl: values.photoURL,
+        });
+      });
+
+      // 5. Sinkronisasi ke Story yang aktif
+      const storiesQuery = query(collection(firestore, 'stories'), where('authorId', '==', currentUser.uid));
+      const storiesSnap = await getDocs(storiesQuery);
+      storiesSnap.forEach((storyDoc) => {
+        batch.update(storyDoc.ref, {
+          authorName: values.displayName,
+          authorAvatarUrl: values.photoURL,
+        });
+      });
+
+      // 6. Sinkronisasi ke Pesan/Obrolan
+      const chatsQuery = query(collection(firestore, 'chats'), where('participantUids', 'array-contains', currentUser.uid));
+      const chatsSnap = await getDocs(chatsQuery);
+      chatsSnap.forEach((chatDoc) => {
+        const chatData = chatDoc.data();
+        const updatedParticipants = chatData.participants.map((p: any) => {
+          if (p.uid === currentUser.uid) {
+            return { 
+              ...p, 
+              displayName: values.displayName, 
+              photoURL: values.photoURL, 
+              username: values.username 
+            };
+          }
+          return p;
+        });
+        batch.update(chatDoc.ref, { participants: updatedParticipants });
+      });
+
+      // 7. Eksekusi semua pembaruan secara atomik
+      await batch.commit();
+
       toast({
         title: "Profil Diperbarui",
-        description: "Perubahan profil Anda telah disimpan.",
+        description: "Perubahan Anda telah disinkronkan ke semua karya dan pesan Anda.",
       });
     } catch (error) {
       console.error("Error updating profile: ", error);
       toast({
         variant: "destructive",
         title: "Gagal Menyimpan",
-        description: "Nama pengguna tersebut mungkin sudah digunakan atau URL tidak valid.",
+        description: "Terjadi kesalahan saat menyinkronkan data profil Anda.",
       });
     } finally {
       setIsSavingProfile(false);
