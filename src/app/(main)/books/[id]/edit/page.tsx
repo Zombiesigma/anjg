@@ -13,8 +13,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PlusCircle, BookUp, GripVertical, FileEdit, Info, Trash2 } from "lucide-react";
+import { Loader2, PlusCircle, BookUp, GripVertical, FileEdit, Info, Trash2, Settings, FileImage, Upload, Sparkles } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,10 +29,18 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { uploadFile } from '@/lib/uploader';
+import Image from 'next/image';
 
 const chapterSchema = z.object({
   title: z.string().min(3, "Judul bab minimal 3 karakter."),
   content: z.string().min(10, "Konten bab minimal 10 karakter."),
+});
+
+const bookSettingsSchema = z.object({
+  title: z.string().min(3, { message: "Judul minimal 3 karakter." }).max(100, { message: "Judul maksimal 100 karakter."}),
+  genre: z.string({ required_error: "Genre harus dipilih."}),
+  synopsis: z.string().min(10, { message: "Sinopsis minimal 10 karakter." }).max(1000, { message: "Sinopsis maksimal 1000 karakter."}),
 });
 
 export default function EditBookPage() {
@@ -41,9 +50,13 @@ export default function EditBookPage() {
   const { user: currentUser } = useUser();
   const { toast } = useToast();
 
+  const [activeTab, setActiveTab] = useState<'editor' | 'settings'>('editor');
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [activeChapterId, setActiveChapterId] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const bookRef = useMemo(() => (
     firestore ? doc(firestore, 'books', params.id) : null
@@ -59,44 +72,75 @@ export default function EditBookPage() {
   ), [firestore, params.id]);
   const { data: chapters, isLoading: areChaptersLoading } = useCollection<Chapter>(chaptersQuery);
 
-  const form = useForm<z.infer<typeof chapterSchema>>({
+  const chapterForm = useForm<z.infer<typeof chapterSchema>>({
     resolver: zodResolver(chapterSchema),
     defaultValues: { title: '', content: '' },
+  });
+
+  const settingsForm = useForm<z.infer<typeof bookSettingsSchema>>({
+    resolver: zodResolver(bookSettingsSchema),
+    defaultValues: {
+      title: "",
+      synopsis: "",
+      genre: "",
+    },
   });
   
   const isAdmin = userProfile?.role === 'admin';
   const isAuthor = book?.authorId === currentUser?.uid;
   const isReviewing = book?.status === 'pending_review' && !isAdmin;
 
+  // Initialize settings form when book data is available
   useEffect(() => {
-    if (chapters && chapters.length > 0 && !activeChapterId) {
+    if (book) {
+      settingsForm.reset({
+        title: book.title,
+        synopsis: book.synopsis,
+        genre: book.genre,
+      });
+      setPreviewUrl(book.coverUrl);
+    }
+  }, [book, settingsForm]);
+
+  useEffect(() => {
+    if (chapters && chapters.length > 0 && !activeChapterId && activeTab === 'editor') {
       setActiveChapterId(chapters[0].id);
     }
-     if (chapters && activeChapterId) {
+     if (chapters && activeChapterId && activeTab === 'editor') {
         const activeChapter = chapters.find(c => c.id === activeChapterId);
         if (activeChapter) {
-            form.reset({
+            chapterForm.reset({
                 title: activeChapter.title,
                 content: activeChapter.content,
             });
         }
     }
-  }, [chapters, activeChapterId]);
+  }, [chapters, activeChapterId, activeTab]);
 
   const saveCurrentChapter = async () => {
-    if (!firestore || !activeChapterId || !form.formState.isDirty) {
+    if (!firestore || !activeChapterId || !chapterForm.formState.isDirty || activeTab !== 'editor') {
       return;
     }
     const chapterRef = doc(firestore, 'books', params.id, 'chapters', activeChapterId);
-    await updateDoc(chapterRef, form.getValues());
-    form.reset(form.getValues()); 
-    toast({ title: "Penyimpanan Otomatis", description: "Perubahan Anda telah disimpan." });
+    await updateDoc(chapterRef, chapterForm.getValues());
+    chapterForm.reset(chapterForm.getValues()); 
+    toast({ title: "Penyimpanan Otomatis", description: "Perubahan bab telah disimpan." });
+  };
+
+  const handleTabSwitch = async (tab: 'editor' | 'settings') => {
+    if (tab === activeTab) return;
+    if (activeTab === 'editor') await saveCurrentChapter();
+    setActiveTab(tab);
+    if (tab === 'settings') {
+        setActiveChapterId(null);
+    }
   };
 
   const handleChapterSelection = async (chapterId: string) => {
     if (chapterId === activeChapterId) return;
     try {
       await saveCurrentChapter();
+      setActiveTab('editor');
       setActiveChapterId(chapterId);
     } catch (e) {
       console.error("Error switching chapters:", e);
@@ -104,11 +148,69 @@ export default function EditBookPage() {
     }
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          variant: 'destructive',
+          title: 'File Terlalu Besar',
+          description: 'Maksimal ukuran sampul buku adalah 5MB.',
+        });
+        return;
+      }
+      setSelectedFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
+    }
+  };
+
+  const onSettingsSubmit = async (values: z.infer<typeof bookSettingsSchema>) => {
+    if (!firestore || !bookRef) return;
+    setIsSavingSettings(true);
+
+    try {
+      let coverUrl = book?.coverUrl || '';
+      
+      if (selectedFile) {
+        try {
+          coverUrl = await uploadFile(selectedFile);
+        } catch (uploadError) {
+          console.error("Upload failed", uploadError);
+          toast({
+            variant: "destructive",
+            title: "Gagal Mengunggah Sampul",
+            description: "Terjadi kesalahan saat mengunggah foto. Menggunakan sampul yang sudah ada.",
+          });
+        }
+      }
+
+      await updateDoc(bookRef, {
+        ...values,
+        coverUrl: coverUrl,
+      });
+
+      toast({
+        title: "Detail Buku Diperbarui",
+        description: "Informasi buku Anda telah berhasil diperbarui.",
+      });
+      setSelectedFile(null);
+    } catch (error) {
+      console.error("Error updating book settings:", error);
+      toast({
+        variant: "destructive",
+        title: "Gagal Menyimpan",
+        description: "Terjadi kesalahan saat memperbarui informasi buku.",
+      });
+    } finally {
+      setIsSavingSettings(false);
+    }
+  };
+
   const handleSubmitForReview = async () => {
     if (!firestore || !bookRef) return;
     setIsSubmittingReview(true);
     try {
-      await saveCurrentChapter();
+      if (activeTab === 'editor') await saveCurrentChapter();
       await updateDoc(bookRef, { status: 'pending_review' });
       toast({ title: "Buku Dikirim untuk Ditinjau", description: "Admin akan meninjau buku Anda sebelum dipublikasikan." });
     } catch (error) {
@@ -122,7 +224,7 @@ export default function EditBookPage() {
   const handleAddChapter = async () => {
     if (!firestore || !bookRef) return;
     try {
-      await saveCurrentChapter();
+      if (activeTab === 'editor') await saveCurrentChapter();
 
       const newOrder = chapters ? chapters.length + 1 : 1;
       const chapterData = {
@@ -140,6 +242,7 @@ export default function EditBookPage() {
       batch.update(bookRef, { chapterCount: increment(1) });
       await batch.commit();
 
+      setActiveTab('editor');
       setActiveChapterId(newChapterDoc.id);
     } catch (e) {
         console.error("Error adding chapter:", e);
@@ -152,31 +255,19 @@ export default function EditBookPage() {
     setIsDeleting(true);
     
     try {
-      // For production apps, deleting sub-collections should be handled by a Cloud Function 
-      // to ensure atomicity. Here, we'll delete the main book document.
       await deleteDoc(bookRef);
-      
-      toast({
-        title: "Buku Dihapus",
-        description: `"${book.title}" telah dihapus secara permanen.`,
-      });
-
+      toast({ title: "Buku Dihapus", description: `"${book.title}" telah dihapus secara permanen.` });
       router.push(`/profile/${userProfile.username}`);
-      
     } catch (error) {
       console.error("Error deleting book:", error);
-      toast({
-        variant: "destructive",
-        title: "Gagal Menghapus",
-        description: "Terjadi kesalahan saat menghapus buku.",
-      });
-       setIsDeleting(false);
+      toast({ variant: "destructive", title: "Gagal Menghapus", description: "Terjadi kesalahan." });
+      setIsDeleting(false);
     }
   };
 
 
   if (isBookLoading || areChaptersLoading || isProfileLoading) {
-    return <p>Memuat editor...</p>;
+    return <div className="flex items-center justify-center h-screen"><Loader2 className="h-8 w-8 animate-spin text-primary" /><p className="ml-2">Memuat editor...</p></div>;
   }
 
   if (!book) {
@@ -199,17 +290,30 @@ export default function EditBookPage() {
 
   return (
     <div className="grid md:grid-cols-12 gap-6 -m-6 h-screen">
-      <div className="md:col-span-3 lg:col-span-2 bg-muted/50 border-r flex flex-col h-screen">
+      <div className="md:col-span-3 lg:col-span-2 bg-muted/50 border-r flex flex-col h-screen overflow-hidden">
         <div className="p-4 border-b">
-            <p className="text-sm text-muted-foreground">Editor Konten</p>
-            <h2 className="font-headline text-xl font-bold truncate">{book.title}</h2>
+            <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Editor Buku</p>
+            <h2 className="font-headline text-lg font-bold truncate mt-1">{book.title}</h2>
         </div>
         <div className="flex-1 overflow-y-auto">
             <div className="p-2 space-y-1">
+                <Button 
+                    variant={activeTab === 'settings' ? "secondary" : "ghost"}
+                    className="w-full justify-start gap-2"
+                    onClick={() => handleTabSwitch('settings')}
+                >
+                    <Settings className="h-4 w-4 text-primary" />
+                    <span>Detail Buku</span>
+                </Button>
+                
+                <div className="pt-4 pb-2 px-2">
+                    <p className="text-[10px] text-muted-foreground uppercase font-bold">Daftar Bab</p>
+                </div>
+
                 {chapters?.map(chapter => (
                      <Button 
                         key={chapter.id} 
-                        variant={activeChapterId === chapter.id ? "secondary" : "ghost"}
+                        variant={activeTab === 'editor' && activeChapterId === chapter.id ? "secondary" : "ghost"}
                         className="w-full justify-start gap-2"
                         onClick={() => handleChapterSelection(chapter.id)}
                     >
@@ -223,9 +327,13 @@ export default function EditBookPage() {
             <Button variant="outline" className="w-full" onClick={handleAddChapter} disabled={isReviewing}><PlusCircle className="mr-2 h-4 w-4" /> Bab Baru</Button>
         </div>
       </div>
-      <div className="md:col-span-9 lg:col-span-10 flex flex-col h-screen">
-         <div className="p-4 border-b flex justify-between items-center">
-            <h3 className="text-lg font-semibold flex items-center gap-2"><FileEdit/> {activeChapter?.title || "Pilih Bab"}</h3>
+
+      <div className="md:col-span-9 lg:col-span-10 flex flex-col h-screen overflow-hidden">
+         <div className="p-4 border-b flex justify-between items-center bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10">
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+                {activeTab === 'settings' ? <Settings className="h-5 w-5"/> : <FileEdit className="h-5 w-5"/>}
+                {activeTab === 'settings' ? 'Pengaturan Detail Buku' : (activeChapter?.title || "Pilih Bab")}
+            </h3>
             <div className="flex items-center gap-2">
                 {book.status === 'draft' || book.status === 'rejected' || book.status === 'published' ? (
                   <AlertDialog>
@@ -256,23 +364,19 @@ export default function EditBookPage() {
                       </AlertDialogContent>
                   </AlertDialog>
                 ) : (
-                  <Badge variant='secondary'>
-                    Sedang Ditinjau
-                  </Badge>
+                  <Badge variant='secondary'>Sedang Ditinjau</Badge>
                 )}
                  <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button size="sm" variant="destructive" disabled={isDeleting}>
+                      <Button size="sm" variant="ghost" className="text-destructive hover:text-destructive hover:bg-destructive/10" disabled={isDeleting}>
                         <Trash2 className="mr-2 h-4 w-4" />
                         Hapus
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Apakah Anda yakin ingin menghapus buku ini?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Tindakan ini tidak dapat dibatalkan. Ini akan menghapus buku dan semua data terkait secara permanen.
-                        </AlertDialogDescription>
+                        <AlertDialogTitle>Hapus Buku?</AlertDialogTitle>
+                        <AlertDialogDescription>Tindakan ini tidak dapat dibatalkan. Buku dan semua bab akan dihapus secara permanen.</AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Batal</AlertDialogCancel>
@@ -284,9 +388,90 @@ export default function EditBookPage() {
                   </AlertDialog>
             </div>
         </div>
-        <div className="flex-1 overflow-y-auto p-6">
-            {activeChapter ? (
-                 <Form {...form}>
+
+        <div className="flex-1 overflow-y-auto p-6 bg-background">
+            {activeTab === 'settings' ? (
+                <div className="max-w-2xl mx-auto space-y-8">
+                    <Form {...settingsForm}>
+                        <form onSubmit={settingsForm.handleSubmit(onSettingsSubmit)} className="space-y-6">
+                            <div className="flex flex-col md:flex-row gap-6">
+                                <div className="flex-1 space-y-6">
+                                    <FormField
+                                        control={settingsForm.control}
+                                        name="title"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Judul Buku</FormLabel>
+                                                <FormControl><Input {...field} /></FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={settingsForm.control}
+                                        name="genre"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Genre</FormLabel>
+                                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                    <FormControl><SelectTrigger><SelectValue placeholder="Pilih genre" /></SelectTrigger></FormControl>
+                                                    <SelectContent>
+                                                        <SelectItem value="self-improvement">Pengembangan Diri</SelectItem>
+                                                        <SelectItem value="novel">Novel</SelectItem>
+                                                        <SelectItem value="mental-health">Kesehatan Mental</SelectItem>
+                                                        <SelectItem value="sci-fi">Fiksi Ilmiah</SelectItem>
+                                                        <SelectItem value="fantasy">Fantasi</SelectItem>
+                                                        <SelectItem value="mystery">Misteri</SelectItem>
+                                                        <SelectItem value="romance">Romansa</SelectItem>
+                                                        <SelectItem value="horror">Horor</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
+                                <div className="w-full md:w-48 shrink-0">
+                                    <FormLabel>Sampul Buku</FormLabel>
+                                    <div 
+                                        className="mt-2 aspect-[2/3] bg-muted rounded-md border-2 border-dashed flex flex-col items-center justify-center relative overflow-hidden group cursor-pointer"
+                                        onClick={() => document.getElementById('edit-cover-upload')?.click()}
+                                    >
+                                        {previewUrl ? (
+                                            <Image src={previewUrl} alt="Preview Sampul" fill className="object-cover" />
+                                        ) : (
+                                            <>
+                                                <FileImage className="h-10 w-10 text-muted-foreground mb-2" />
+                                                <span className="text-xs text-muted-foreground text-center px-2">Klik untuk ganti</span>
+                                            </>
+                                        )}
+                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                            <Upload className="h-6 w-6 text-white" />
+                                        </div>
+                                    </div>
+                                    <input id="edit-cover-upload" type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+                                </div>
+                            </div>
+                            <FormField
+                                control={settingsForm.control}
+                                name="synopsis"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Sinopsis</FormLabel>
+                                        <FormControl><Textarea rows={6} {...field} /></FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <Button type="submit" size="lg" className="w-full" disabled={isSavingSettings}>
+                                {isSavingSettings ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                                Simpan Perubahan Detail
+                            </Button>
+                        </form>
+                    </Form>
+                </div>
+            ) : activeChapter ? (
+                 <Form {...chapterForm}>
                     <form className="space-y-6 max-w-3xl mx-auto">
                         {book.status === 'pending_review' && (
                           <Alert>
@@ -299,11 +484,11 @@ export default function EditBookPage() {
                            <Alert variant="destructive">
                             <Info className="h-4 w-4" />
                             <AlertTitle>Ditolak</AlertTitle>
-                            <AlertDescription>Buku ini ditolak oleh admin. Anda dapat melakukan perubahan dan mengirimkannya kembali untuk ditinjau.</AlertDescription>
+                            <AlertDescription>Buku ini ditolak oleh admin. Anda dapat melakukan perubahan dan mengirimkannya kembali.</AlertDescription>
                           </Alert>
                         )}
                         <FormField
-                            control={form.control}
+                            control={chapterForm.control}
                             name="title"
                             render={({ field }) => (
                             <FormItem>
@@ -316,13 +501,13 @@ export default function EditBookPage() {
                             )}
                         />
                         <FormField
-                            control={form.control}
+                            control={chapterForm.control}
                             name="content"
                             render={({ field }) => (
                             <FormItem>
                                 <FormLabel className="sr-only">Konten Bab</FormLabel>
                                 <FormControl>
-                                    <Textarea placeholder="Mulai menulis..." {...field} className="min-h-[60vh] border-0 shadow-none px-0 focus-visible:ring-0 text-lg leading-relaxed" disabled={isReviewing} />
+                                    <Textarea placeholder="Mulai menulis..." {...field} className="min-h-[60vh] border-0 shadow-none px-0 focus-visible:ring-0 text-lg leading-relaxed resize-none" disabled={isReviewing} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -331,8 +516,13 @@ export default function EditBookPage() {
                     </form>
                  </Form>
             ) : (
-                <div className="flex flex-col items-center justify-center h-full text-center">
-                    <p className="text-muted-foreground">Pilih bab untuk diedit atau buat bab baru.</p>
+                <div className="flex flex-col items-center justify-center h-full text-center space-y-4">
+                    <div className="p-4 bg-muted rounded-full"><PlusCircle className="h-12 w-12 text-muted-foreground" /></div>
+                    <div className="space-y-2">
+                        <h4 className="text-xl font-semibold">Mulai Menulis</h4>
+                        <p className="text-muted-foreground max-w-sm">Pilih bab dari bilah sisi atau buat bab baru untuk mulai berbagi cerita Anda.</p>
+                    </div>
+                    <Button onClick={handleAddChapter}><PlusCircle className="mr-2 h-4 w-4" /> Buat Bab Pertama</Button>
                 </div>
             )}
         </div>
