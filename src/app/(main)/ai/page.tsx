@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/Logo';
-import { MessageSquarePlus, History, ShieldInfo, Zap, Star } from 'lucide-react';
+import { MessageSquarePlus, History, Info, Zap, Star } from 'lucide-react';
 import { ChatClient } from '@/components/ai/ChatClient';
 import type { AiChatMessage } from '@/lib/types';
 
@@ -75,7 +75,7 @@ export default function AiPage() {
                 </SidebarContent>
                  <SidebarFooter className="mt-auto border-t p-4">
                     <div className="flex items-center gap-3 p-3 rounded-2xl bg-muted/30 border border-border/50 group-data-[collapsible=icon]:hidden">
-                        <ShieldInfo className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <Info className="h-4 w-4 text-muted-foreground shrink-0" />
                         <p className="text-[10px] leading-relaxed text-muted-foreground font-medium">
                             AI dapat membuat kesalahan. Harap verifikasi informasi penting secara mandiri.
                         </p>
