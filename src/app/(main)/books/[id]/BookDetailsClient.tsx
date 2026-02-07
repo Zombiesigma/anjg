@@ -316,7 +316,12 @@ export default function BookDetailsClient() {
                     <Share2 className="mr-2 h-4 w-4" />
                     <span>Bagikan ke Luar</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setIsShareDialogOpen(true)}>
+                  <DropdownMenuItem 
+                    onSelect={(e) => {
+                        e.preventDefault(); // Mencegah Dropdown menutup dan membekukan UI saat membuka Dialog
+                        setIsShareDialogOpen(true);
+                    }}
+                  >
                     <Send className="mr-2 h-4 w-4" />
                     <span>Kirim ke Obrolan</span>
                   </DropdownMenuItem>
@@ -409,5 +414,3 @@ function BookDetailsSkeleton() {
         </div>
     )
 }
-
-    

@@ -82,9 +82,11 @@ export function ShareBookDialog({ book, open, onOpenChange }: ShareBookDialogPro
 
             await batch.commit();
             toast({ title: "Buku Dibagikan!", description: `"${book.title}" telah dikirim.` });
-            onOpenChange(false);
+            
+            // Bersihkan state dan tutup modal
             setSelectedChatId(null);
             setSearchTerm('');
+            onOpenChange(false);
 
         } catch (error) {
             console.error(error);
@@ -96,13 +98,16 @@ export function ShareBookDialog({ book, open, onOpenChange }: ShareBookDialogPro
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-md">
+            <DialogContent 
+                className="max-w-md"
+                onCloseAutoFocus={(e) => e.preventDefault()} // Mencegah pembekuan UI setelah modal ditutup
+            >
                 <DialogHeader>
                     <DialogTitle>Kirim Buku ke Obrolan</DialogTitle>
                     <DialogDescription>Pilih percakapan untuk membagikan buku "{book.title}".</DialogDescription>
                 </DialogHeader>
                 <div className="relative my-2">
-                     <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                     <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
                      <Input placeholder="Cari pengguna..." className="pl-8" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                 </div>
                 <ScrollArea className="h-64 border rounded-md">
@@ -112,7 +117,11 @@ export function ShareBookDialog({ book, open, onOpenChange }: ShareBookDialogPro
                             const otherP = chat.participants.find(p => p.uid !== currentUser?.uid);
                             if (!otherP) return null;
                             return (
-                                <button key={chat.id} onClick={() => setSelectedChatId(chat.id)} className={cn("flex items-center gap-3 p-2 text-left hover:bg-accent w-full transition-colors rounded-md", selectedChatId === chat.id && "bg-accent")}>
+                                <button 
+                                    key={chat.id} 
+                                    onClick={() => setSelectedChatId(chat.id)} 
+                                    className={cn("flex items-center gap-3 p-2 text-left hover:bg-accent w-full transition-colors rounded-md", selectedChatId === chat.id && "bg-accent")}
+                                >
                                     <Avatar>
                                         <AvatarImage src={otherP.photoURL} alt={otherP.displayName} />
                                         <AvatarFallback>{otherP.displayName.charAt(0)}</AvatarFallback>
