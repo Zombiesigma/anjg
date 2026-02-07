@@ -36,6 +36,7 @@ export default function MessagesPage() {
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [newMessage, setNewMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [onlineStatus, setOnlineStatus] = useState<{ [key: string]: boolean }>({});
@@ -258,9 +259,18 @@ export default function MessagesPage() {
     return format(date, 'eeee, d MMMM yyyy', { locale: id });
   }
 
-  const sortedChatThreads = useMemo(() => {
+  const sortedAndFilteredChatThreads = useMemo(() => {
     if (!chatThreads) return [];
-    return [...chatThreads].sort((a, b) => {
+    
+    // Filter by search query
+    let threads = chatThreads.filter(chat => {
+        if (!searchQuery.trim()) return true;
+        const otherP = chat.participants.find(p => p.uid !== currentUser?.uid);
+        return otherP?.displayName.toLowerCase().includes(searchQuery.toLowerCase());
+    });
+
+    // Sort by last message timestamp (newest first)
+    return [...threads].sort((a, b) => {
         const timeA = (a.lastMessage?.timestamp && typeof (a.lastMessage.timestamp as any).toMillis === 'function') 
             ? (a.lastMessage.timestamp as any).toMillis() 
             : 0;
@@ -269,7 +279,15 @@ export default function MessagesPage() {
             : 0;
         return timeB - timeA;
     });
-  }, [chatThreads]);
+  }, [chatThreads, searchQuery, currentUser?.uid]);
+
+  const formatShortTime = (timestamp: any) => {
+      if (!timestamp || typeof timestamp.toDate !== 'function') return '';
+      const date = timestamp.toDate();
+      if (isToday(date)) return format(date, 'HH:mm');
+      if (isYesterday(date)) return 'Kemarin';
+      return format(date, 'dd/MM/yy');
+  }
   
   return (
     <div className="h-[calc(100vh-theme(spacing.14)-2px-theme(spacing.16))] md:h-[calc(100vh-theme(spacing.14)-theme(spacing.12)-2px)] -mt-6 -mx-4 md:-mx-6 border rounded-lg overflow-hidden flex flex-col bg-background">
@@ -284,11 +302,28 @@ export default function MessagesPage() {
             <h1 className="text-2xl font-headline font-bold text-primary">Pesan</h1>
             <div className="relative mt-3">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Cari obrolan..." className="pl-9 h-10 bg-muted/50 border-none focus-visible:ring-primary/20" />
+                <Input 
+                    placeholder="Cari obrolan..." 
+                    className="pl-9 h-10 bg-muted/50 border-none focus-visible:ring-primary/20" 
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                />
             </div>
           </div>
           <ScrollArea className="flex-1">
-            {isLoadingThreads && <div className="p-8 text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin text-primary/40" /></div>}
+            {isLoadingThreads && (
+                <div className="p-8 space-y-4">
+                    {Array.from({length: 5}).map((_, i) => (
+                        <div key={i} className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-full bg-muted animate-pulse" />
+                            <div className="flex-1 space-y-2">
+                                <div className="h-3 w-1/2 bg-muted animate-pulse rounded" />
+                                <div className="h-2 w-3/4 bg-muted animate-pulse rounded" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
             {!isLoadingThreads && chatThreads?.length === 0 && (
               <div className="p-10 text-center flex flex-col items-center gap-4">
                 <div className="p-4 bg-muted rounded-full">
@@ -301,7 +336,7 @@ export default function MessagesPage() {
               </div>
             )}
             <div className="flex flex-col p-2 gap-1">
-              {sortedChatThreads.map(chat => {
+              {sortedAndFilteredChatThreads.map(chat => {
                 const otherP = chat.participants.find(p => p.uid !== currentUser?.uid);
                 if (!otherP) return null;
                 const unreadCount = chat.unreadCounts?.[currentUser?.uid ?? ''] ?? 0;
@@ -312,50 +347,57 @@ export default function MessagesPage() {
                     key={chat.id}
                     onClick={() => handleSelectChat(chat.id)}
                     className={cn(
-                      "flex items-start gap-3 p-3 text-left rounded-xl transition-all duration-200 group",
+                      "flex items-start gap-3 p-3 text-left rounded-xl transition-all duration-200 group relative",
                       selectedChatId === chat.id 
-                        ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20" 
-                        : "hover:bg-accent"
+                        ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-[1.02] z-10" 
+                        : "hover:bg-accent hover:translate-x-1"
                     )}
                   >
                     <div className="relative shrink-0">
-                      <Avatar className={cn("h-12 w-12 border-2", selectedChatId === chat.id ? "border-primary-foreground/20" : "border-background")}>
+                      <Avatar className={cn(
+                          "h-12 w-12 border-2 transition-all", 
+                          selectedChatId === chat.id ? "border-primary-foreground/20" : "border-background group-hover:border-primary/10"
+                      )}>
                         <AvatarImage src={otherP.photoURL} alt={otherP.displayName} />
                         <AvatarFallback>{otherP.displayName.charAt(0)}</AvatarFallback>
                       </Avatar>
                       {isOnline && (
-                        <span className="absolute bottom-0 right-0 block h-3.5 w-3.5 rounded-full bg-green-500 ring-2 ring-background shadow-sm" />
+                        <span className="absolute bottom-0.5 right-0.5 block h-3 w-3 rounded-full bg-green-500 ring-2 ring-background shadow-sm animate-pulse" />
                       )}
                     </div>
                     <div className="flex-1 min-w-0 py-0.5">
                         <div className="flex items-center justify-between gap-2">
                             <p className="font-bold truncate text-sm">{otherP.displayName}</p>
-                            {chat.lastMessage?.timestamp && typeof (chat.lastMessage.timestamp as any).toDate === 'function' && (
+                            {chat.lastMessage?.timestamp && (
                                 <p className={cn(
-                                    "text-[10px] whitespace-nowrap",
+                                    "text-[10px] whitespace-nowrap font-medium",
                                     selectedChatId === chat.id ? "text-primary-foreground/70" : "text-muted-foreground"
                                 )}>
-                                    {formatDistanceToNow((chat.lastMessage.timestamp as any).toDate(), { locale: id, addSuffix: false })}
+                                    {formatShortTime(chat.lastMessage.timestamp)}
                                 </p>
                             )}
                         </div>
                       <p className={cn(
-                          "text-xs truncate mt-0.5",
+                          "text-xs truncate mt-0.5 max-w-full",
                           selectedChatId === chat.id 
                             ? "text-primary-foreground/80" 
                             : (unreadCount > 0 ? "font-bold text-foreground" : "text-muted-foreground")
                       )}>
-                        {chat.lastMessage?.senderId === currentUser?.uid && 'Anda: '}{chat.lastMessage?.text}
+                        {chat.lastMessage?.senderId === currentUser?.uid && <span className="opacity-70 italic">Anda: </span>}
+                        {chat.lastMessage?.text || "Percakapan dimulai."}
                       </p>
                     </div>
                     {unreadCount > 0 && selectedChatId !== chat.id && (
-                      <Badge className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full p-0 bg-primary text-primary-foreground text-[10px] self-center">
+                      <div className="absolute right-3 bottom-3 h-5 min-w-[20px] px-1.5 flex items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-black shadow-sm ring-2 ring-background">
                         {unreadCount}
-                      </Badge>
+                      </div>
                     )}
                   </button>
                 )
               })}
+              {!isLoadingThreads && searchQuery && sortedAndFilteredChatThreads.length === 0 && (
+                  <p className="text-center text-xs text-muted-foreground py-10">Tidak ada obrolan ditemukan untuk "{searchQuery}"</p>
+              )}
             </div>
           </ScrollArea>
         </div>
@@ -391,7 +433,7 @@ export default function MessagesPage() {
                 {otherParticipant && (
                    <Link href={`/profile/${otherParticipant.username}`} className="flex items-center gap-3 group min-w-0">
                     <div className="relative">
-                      <Avatar className="h-10 w-10 border-2 border-primary/10">
+                      <Avatar className="h-10 w-10 border-2 border-primary/10 transition-colors group-hover:border-primary">
                         <AvatarImage src={otherParticipant.photoURL} alt={otherParticipant.displayName} />
                         <AvatarFallback>{otherParticipant.displayName.charAt(0)}</AvatarFallback>
                       </Avatar>
