@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -70,6 +70,9 @@ export default function EditBookPage() {
   const [isDeleteDialogOpen, setIsDeletingDialogOpen] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
+  // Refs to track previous states for clean resets
+  const prevChapterIdRef = useRef<string | null>(null);
+
   useEffect(() => {
     if (!isReviewDialogOpen && !isDeleteDialogOpen) {
         const timer = setTimeout(() => {
@@ -112,8 +115,9 @@ export default function EditBookPage() {
   const isAuthor = book?.authorId === currentUser?.uid;
   const isReviewing = book?.status === 'pending_review' && !isAdmin;
 
+  // Sync settings form when book data loads
   useEffect(() => {
-    if (book) {
+    if (book && !settingsForm.formState.isDirty) {
       settingsForm.reset({
         title: book.title,
         synopsis: book.synopsis,
@@ -124,37 +128,59 @@ export default function EditBookPage() {
     }
   }, [book, settingsForm]);
 
+  // Sync chapter form ONLY when switching chapters
   useEffect(() => {
-    if (chapters && chapters.length > 0 && !activeChapterId && activeTab === 'editor') {
+    if (!chapters) return;
+
+    if (chapters.length > 0 && !activeChapterId && activeTab === 'editor') {
       setActiveChapterId(chapters[0].id);
+      return;
     }
-     if (chapters && activeChapterId && activeTab === 'editor') {
+
+    if (activeChapterId && activeChapterId !== prevChapterIdRef.current) {
         const activeChapter = chapters.find(c => c.id === activeChapterId);
         if (activeChapter) {
             chapterForm.reset({
                 title: activeChapter.title,
                 content: activeChapter.content,
             });
+            prevChapterIdRef.current = activeChapterId;
         }
     }
-  }, [chapters, activeChapterId, activeTab]);
+  }, [chapters, activeChapterId, activeTab, chapterForm]);
 
   const saveCurrentChapter = async () => {
-    if (!firestore || !activeChapterId || !chapterForm.formState.isDirty || activeTab !== 'editor' || isReviewing) {
+    if (!firestore || !activeChapterId || !chapterForm.formState.isDirty || isReviewing) {
       return;
     }
-    const chapterRef = doc(firestore, 'books', params.id, 'chapters', activeChapterId);
-    await updateDoc(chapterRef, chapterForm.getValues());
-    chapterForm.reset(chapterForm.getValues()); 
-    setLastSaved(new Date());
+    try {
+        const chapterRef = doc(firestore, 'books', params.id, 'chapters', activeChapterId);
+        const values = chapterForm.getValues();
+        await updateDoc(chapterRef, values);
+        chapterForm.reset(values); // Mark as clean
+        setLastSaved(new Date());
+    } catch (e) {
+        console.error("Save chapter failed", e);
+    }
   };
+
+  // Autosave Chapter
+  useEffect(() => {
+    const interval = setInterval(() => {
+        if (activeTab === 'editor' && chapterForm.formState.isDirty && !isReviewing) {
+            saveCurrentChapter();
+        }
+    }, 15000); // 30 seconds
+    return () => clearInterval(interval);
+  }, [activeTab, chapterForm.formState.isDirty, isReviewing, activeChapterId]);
 
   const handleTabSwitch = async (tab: 'editor' | 'settings') => {
     if (tab === activeTab) return;
-    if (activeTab === 'editor') await saveCurrentChapter();
+    if (activeTab === 'editor' && chapterForm.formState.isDirty) await saveCurrentChapter();
     setActiveTab(tab);
     if (tab === 'settings') {
         setActiveChapterId(null);
+        prevChapterIdRef.current = null;
     }
     setIsMobileSidebarOpen(false);
   };
@@ -165,7 +191,7 @@ export default function EditBookPage() {
         return;
     };
     try {
-      await saveCurrentChapter();
+      if (chapterForm.formState.isDirty) await saveCurrentChapter();
       setActiveTab('editor');
       setActiveChapterId(chapterId);
       setIsMobileSidebarOpen(false);
@@ -216,6 +242,7 @@ export default function EditBookPage() {
         coverUrl: coverUrl,
       });
 
+      settingsForm.reset(values); // Mark as clean
       toast({
         title: "Detail Buku Diperbarui",
         description: "Informasi buku Anda telah berhasil diperbarui.",
@@ -236,10 +263,21 @@ export default function EditBookPage() {
   const handleSubmitForReview = async () => {
     if (!firestore || !bookRef) return;
     setIsSubmittingReview(true);
-    setIsReviewDialogOpen(false);
+    
     try {
-      if (activeTab === 'editor') await saveCurrentChapter();
+      // 1. Save chapter if dirty
+      if (activeTab === 'editor' && chapterForm.formState.isDirty) {
+          await saveCurrentChapter();
+      }
+
+      // 2. Save settings if dirty
+      if (settingsForm.formState.isDirty) {
+          await onSettingsSubmit(settingsForm.getValues());
+      }
+
+      // 3. Update status
       await updateDoc(bookRef, { status: 'pending_review' });
+      setIsReviewDialogOpen(false);
       toast({ title: "Buku Dikirim untuk Ditinjau", description: "Admin akan meninjau buku Anda sebelum dipublikasikan." });
     } catch (error) {
       console.error("Error submitting for review:", error);
@@ -252,7 +290,7 @@ export default function EditBookPage() {
   const handleAddChapter = async () => {
     if (!firestore || !bookRef || isReviewing) return;
     try {
-      if (activeTab === 'editor') await saveCurrentChapter();
+      if (chapterForm.formState.isDirty) await saveCurrentChapter();
 
       const newOrder = chapters ? chapters.length + 1 : 1;
       const chapterData = {
@@ -437,7 +475,7 @@ export default function EditBookPage() {
                     </h3>
                 </div>
                 
-                {lastSaved && activeTab === 'editor' && (
+                {lastSaved && (
                     <div className="hidden lg:flex items-center gap-1.5 text-[10px] font-bold text-green-600 bg-green-50 px-2.5 py-1 rounded-full border border-green-100">
                         <CheckCircle2 className="h-3 w-3" />
                         Tersimpan {lastSaved.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
@@ -476,15 +514,15 @@ export default function EditBookPage() {
                                     </AlertDialogTitle>
                                     <AlertDialogDescription className="text-base">
                                         {book.status === 'published' 
-                                            ? 'Pembaruan Anda akan ditinjau oleh tim admin kami sebelum dipublikasikan secara luas.' 
-                                            : 'Karya Anda akan dikirim ke tim admin Elitera untuk proses moderasi kualitas. Setelah disetujui, buku Anda akan dapat dinikmati oleh pembaca!'
+                                            ? 'Pembaruan Anda akan disimpan dan ditinjau oleh tim admin kami sebelum dipublikasikan secara luas.' 
+                                            : 'Karya Anda akan disimpan dan dikirim ke tim admin Elitera untuk proses moderasi kualitas. Setelah disetujui, buku Anda akan dapat dinikmati oleh pembaca!'
                                         }
                                     </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter className="mt-6 gap-2">
                                     <AlertDialogCancel onClick={() => setIsReviewDialogOpen(false)} className="rounded-full">Batal</AlertDialogCancel>
                                     <AlertDialogAction onClick={handleSubmitForReview} className="rounded-full px-8 font-bold">
-                                        Ya, Kirim Sekarang
+                                        Ya, Simpan & Kirim
                                     </AlertDialogAction>
                                 </AlertDialogFooter>
                             </AlertDialogContent>
@@ -689,7 +727,7 @@ export default function EditBookPage() {
                         className="max-w-4xl mx-auto py-8 md:py-12 px-6 lg:px-12"
                     >
                         <Form {...chapterForm}>
-                            <form className="space-y-8 pb-32">
+                            <form className="space-y-8 pb-32" onSubmit={(e) => e.preventDefault()}>
                                 {book.status === 'pending_review' && (
                                 <Alert className="bg-primary/5 border-primary/20 rounded-2xl">
                                     <Info className="h-4 w-4 text-primary" />
