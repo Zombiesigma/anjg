@@ -29,7 +29,7 @@ export default function AiPage() {
   // Total pengurangan: 42 (168px)
   return (
     <div className="h-[calc(100vh-theme(spacing.42)-2px)] md:h-[calc(100vh-theme(spacing.28)-theme(spacing.12)-2px)] -mt-6 -mx-4 md:-mx-6 border rounded-lg overflow-hidden bg-background flex flex-col">
-        <SidebarProvider>
+        <SidebarProvider className="h-full overflow-hidden">
             <Sidebar collapsible="icon" className="border-r border-border/50">
                 <SidebarHeader className="p-4 border-b">
                     <div className="flex items-center justify-between w-full">
@@ -88,13 +88,13 @@ export default function AiPage() {
                     </div>
                 </SidebarFooter>
             </Sidebar>
-            <SidebarInset className="p-0 m-0 bg-background overflow-hidden h-full flex flex-col">
-                 <div className="flex items-center gap-4 px-6 h-14 border-b bg-background/95 backdrop-blur-sm z-30 sticky top-0 shadow-sm shrink-0">
+            <SidebarInset className="p-0 m-0 bg-background overflow-hidden h-full flex flex-col min-h-0">
+                 <div className="flex items-center gap-4 px-6 h-14 border-b bg-background/95 backdrop-blur-sm z-30 shrink-0 shadow-sm">
                     <SidebarTrigger className="md:hidden"/>
                     <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
                     <h3 className="font-bold text-sm md:text-base">Percakapan Inspirasi</h3>
                 </div>
-                <div className="flex-1 overflow-hidden relative">
+                <div className="flex-1 overflow-hidden relative min-h-0">
                     <ChatClient history={initialHistory} />
                 </div>
             </SidebarInset>
