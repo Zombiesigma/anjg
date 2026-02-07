@@ -7,12 +7,13 @@ import { doc, collection, addDoc, serverTimestamp, query, orderBy, updateDoc, in
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Heart, MessageSquare, Send, Loader2 } from 'lucide-react';
+import { Heart, MessageSquare, Send, Loader2, CornerDownRight } from 'lucide-react';
 import type { Comment, BookCommentLike, User as AppUser } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { id } from 'date-fns/locale';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface BookCommentItemProps {
     bookId: string;
@@ -35,7 +36,6 @@ export function BookCommentItem({ bookId, comment, currentUserProfile }: BookCom
         setIsMounted(true);
     }, []);
 
-    // --- Like Logic ---
     const likeRef = useMemo(() => (
         (firestore && currentUser) ? doc(firestore, 'books', bookId, 'comments', comment.id, 'likes', currentUser.uid) : null
     ), [firestore, currentUser, bookId, comment.id]);
@@ -44,7 +44,7 @@ export function BookCommentItem({ bookId, comment, currentUserProfile }: BookCom
     
     const handleToggleLike = async () => {
         if (!likeRef || !firestore || !currentUser) {
-            toast({ variant: 'destructive', title: 'Anda harus masuk untuk menyukai.' });
+            toast({ variant: 'destructive', title: 'Harap Masuk', description: 'Anda harus masuk untuk menyukai komentar.' });
             return;
         }
         setIsLiking(true);
@@ -62,17 +62,15 @@ export function BookCommentItem({ bookId, comment, currentUserProfile }: BookCom
             await batch.commit();
         } catch (error) {
             console.error("Error toggling comment like:", error);
-            toast({ variant: 'destructive', title: 'Gagal', description: 'Terjadi kesalahan.' });
         } finally {
             setIsLiking(false);
         }
     };
 
-    // --- Reply Logic ---
     const repliesQuery = useMemo(() => (
         firestore ? query(collection(firestore, 'books', bookId, 'comments', comment.id, 'replies'), orderBy('createdAt', 'asc')) : null
     ), [firestore, bookId, comment.id]);
-    const { data: replies, isLoading: areRepliesLoading } = useCollection<Comment>(repliesQuery);
+    const { data: replies } = useCollection<Comment>(repliesQuery);
 
     const handleReplySubmit = async () => {
         if (!replyText.trim() || !currentUser || !firestore || !currentUserProfile) return;
@@ -89,7 +87,7 @@ export function BookCommentItem({ bookId, comment, currentUserProfile }: BookCom
             userAvatarUrl: currentUser.photoURL,
             createdAt: serverTimestamp(),
             likeCount: 0,
-            replyCount: 0, // Replies cannot be replied to in this implementation
+            replyCount: 0,
         };
 
         const batch = writeBatch(firestore);
@@ -100,102 +98,133 @@ export function BookCommentItem({ bookId, comment, currentUserProfile }: BookCom
             await batch.commit();
             setReplyText('');
             setShowReplyInput(false);
-            toast({ title: "Balasan terkirim!" });
+            toast({ title: "Balasan Terkirim" });
         } catch (error) {
             console.error("Error submitting reply:", error);
-            toast({ variant: 'destructive', title: 'Gagal', description: 'Gagal mengirim balasan.' });
+            toast({ variant: 'destructive', title: "Gagal Mengirim" });
         } finally {
             setIsSubmittingReply(false);
         }
     };
 
     return (
-        <div className="flex flex-col">
-            {/* Main Comment */}
-            <div className="flex items-start gap-3">
-                <Link href={comment.username ? `/profile/${comment.username}` : '#'} aria-disabled={!comment.username} className="cursor-pointer">
-                    <Avatar className="h-9 w-9">
+        <motion.div 
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="flex flex-col group"
+        >
+            <div className="flex items-start gap-4">
+                <Link href={comment.username ? `/profile/${comment.username}` : '#'} className="shrink-0">
+                    <Avatar className="h-10 w-10 ring-2 ring-background shadow-md">
                         <AvatarImage src={comment.userAvatarUrl} alt={comment.userName} />
                         <AvatarFallback>{comment.userName?.charAt(0)}</AvatarFallback>
                     </Avatar>
                 </Link>
-                <div className="flex-1">
-                    <div className="bg-muted p-3 rounded-lg rounded-tl-none">
-                        <div className="flex items-baseline gap-2">
-                            <Link href={comment.username ? `/profile/${comment.username}` : '#'} aria-disabled={!comment.username} className="font-semibold text-sm hover:underline cursor-pointer">
+                <div className="flex-1 space-y-1">
+                    <div className="bg-card/50 backdrop-blur-sm border border-border/50 p-4 rounded-2xl rounded-tl-none shadow-sm group-hover:shadow-md transition-all">
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                            <Link href={comment.username ? `/profile/${comment.username}` : '#'} className="font-bold text-sm hover:text-primary transition-colors">
                                 {comment.userName}
                             </Link>
-                            <span className="text-xs text-muted-foreground">
+                            <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground opacity-60">
                                 {isMounted && comment.createdAt ? formatDistanceToNow(comment.createdAt.toDate(), { locale: id, addSuffix: true }) : '...'}
                             </span>
                         </div>
-                        <p className="text-sm mt-1">{comment.text}</p>
+                        <p className="text-sm text-foreground/90 leading-relaxed">{comment.text}</p>
                     </div>
-                    <div className="flex items-center gap-4 px-2 pt-1">
-                        <Button variant="ghost" size="sm" className="text-xs text-muted-foreground" onClick={handleToggleLike} disabled={isLiking}>
-                            <Heart className={cn("h-3.5 w-3.5 mr-1.5", isLiked && "fill-red-500 text-red-500")} />
-                            {comment.likeCount > 0 && <span>{comment.likeCount}</span>}
-                            <span className="ml-1">{isLiked ? 'Batal Suka' : 'Suka'}</span>
+                    
+                    <div className="flex items-center gap-2 pl-2">
+                        <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className={cn(
+                                "h-8 px-3 rounded-full text-xs font-bold transition-all",
+                                isLiked ? "text-red-500 bg-red-500/5 hover:bg-red-500/10" : "text-muted-foreground hover:text-primary"
+                            )} 
+                            onClick={handleToggleLike} 
+                            disabled={isLiking}
+                        >
+                            <Heart className={cn("h-3.5 w-3.5 mr-1.5 transition-transform", isLiked && "fill-current scale-110")} />
+                            {comment.likeCount > 0 && <span className="mr-1.5">{comment.likeCount}</span>}
+                            {isLiked ? 'Disukai' : 'Suka'}
                         </Button>
-                        <Button variant="ghost" size="sm" className="text-xs text-muted-foreground" onClick={() => setShowReplyInput(!showReplyInput)}>
+                        <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 px-3 rounded-full text-xs font-bold text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all"
+                            onClick={() => setShowReplyInput(!showReplyInput)}
+                        >
                             <MessageSquare className="h-3.5 w-3.5 mr-1.5" />
-                            {comment.replyCount > 0 && <span>{comment.replyCount}</span>}
-                             <span className="ml-1">Balas</span>
+                            {comment.replyCount > 0 && <span className="mr-1.5">{comment.replyCount}</span>}
+                            Balas
                         </Button>
                     </div>
                 </div>
             </div>
 
-            {/* Reply Input */}
-            {showReplyInput && currentUser && (
-                <div className="flex items-start gap-3 pl-12 pt-3">
-                    <Avatar className="h-8 w-8">
-                        <AvatarImage src={currentUser.photoURL ?? ''} alt={currentUser.displayName ?? ''} />
-                        <AvatarFallback>{currentUser.displayName?.charAt(0) ?? 'U'}</AvatarFallback>
-                    </Avatar>
-                    <div className="w-full relative">
-                        <Textarea 
-                            placeholder={`Balas kepada ${comment.userName}...`}
-                            className="w-full pr-12 text-sm"
-                            value={replyText}
-                            onChange={(e) => setReplyText(e.target.value)}
-                            disabled={isSubmittingReply}
-                        />
-                        <Button size="icon" className="absolute top-1.5 right-1.5 h-7 w-7" onClick={handleReplySubmit} disabled={isSubmittingReply || !replyText.trim()}>
-                            {isSubmittingReply ? <Loader2 className="h-4 w-4 animate-spin"/> : <Send className="h-4 w-4"/>}
-                        </Button>
-                    </div>
-                </div>
-            )}
+            <AnimatePresence>
+                {showReplyInput && currentUser && (
+                    <motion.div 
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="overflow-hidden"
+                    >
+                        <div className="flex items-start gap-3 pl-14 pt-4">
+                            <CornerDownRight className="h-4 w-4 text-muted-foreground mt-2" />
+                            <Avatar className="h-8 w-8 ring-2 ring-background">
+                                <AvatarImage src={currentUser.photoURL ?? ''} alt={currentUser.displayName ?? ''} />
+                                <AvatarFallback>{currentUser.displayName?.charAt(0) ?? 'U'}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 relative">
+                                <Textarea 
+                                    placeholder={`Balas ${comment.userName}...`}
+                                    className="w-full pr-12 min-h-[80px] bg-muted/20 border-none shadow-none focus-visible:ring-primary/20 text-sm rounded-xl py-3"
+                                    value={replyText}
+                                    onChange={(e) => setReplyText(e.target.value)}
+                                    disabled={isSubmittingReply}
+                                />
+                                <Button 
+                                    size="icon" 
+                                    className="absolute bottom-2 right-2 h-8 w-8 rounded-lg shadow-lg" 
+                                    onClick={handleReplySubmit} 
+                                    disabled={isSubmittingReply || !replyText.trim()}
+                                >
+                                    {isSubmittingReply ? <Loader2 className="h-4 w-4 animate-spin"/> : <Send className="h-4 w-4"/>}
+                                </Button>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
             
-            {/* Replies List */}
             {replies && replies.length > 0 && (
-                <div className="pl-12 pt-4 space-y-4">
+                <div className="pl-14 pt-6 space-y-6 relative border-l-2 border-border/30 ml-5 mt-2">
                     {replies.map(reply => (
                         <div key={reply.id} className="flex items-start gap-3">
-                             <Link href={reply.username ? `/profile/${reply.username}` : '#'} aria-disabled={!reply.username} className="cursor-pointer">
-                                <Avatar className="h-8 w-8">
+                             <Link href={reply.username ? `/profile/${reply.username}` : '#'} className="shrink-0">
+                                <Avatar className="h-8 w-8 ring-2 ring-background shadow-sm">
                                     <AvatarImage src={reply.userAvatarUrl} alt={reply.userName} />
                                     <AvatarFallback>{reply.userName?.charAt(0)}</AvatarFallback>
                                 </Avatar>
                             </Link>
                             <div className="flex-1">
-                                <div className="bg-muted/50 p-2.5 rounded-lg rounded-tl-none">
-                                    <div className="flex items-baseline gap-2">
-                                        <Link href={reply.username ? `/profile/${reply.username}` : '#'} aria-disabled={!reply.username} className="font-semibold text-sm hover:underline cursor-pointer">
+                                <div className="bg-muted/30 p-3.5 rounded-2xl rounded-tl-none border border-border/20">
+                                    <div className="flex items-center justify-between gap-2 mb-1">
+                                        <Link href={reply.username ? `/profile/${reply.username}` : '#'} className="font-bold text-xs hover:text-primary transition-colors">
                                             {reply.userName}
                                         </Link>
-                                        <span className="text-xs text-muted-foreground">
+                                        <span className="text-[9px] uppercase font-bold tracking-widest text-muted-foreground opacity-50">
                                             {isMounted && reply.createdAt ? formatDistanceToNow(reply.createdAt.toDate(), { locale: id, addSuffix: true }) : '...'}
                                         </span>
                                     </div>
-                                    <p className="text-sm mt-1">{reply.text}</p>
+                                    <p className="text-sm text-foreground/80 leading-relaxed">{reply.text}</p>
                                 </div>
                             </div>
                         </div>
                     ))}
                 </div>
             )}
-        </div>
+        </motion.div>
     );
 }
