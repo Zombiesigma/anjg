@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -18,6 +19,7 @@ type StoryGroup = {
   authorId: string;
   authorName: string;
   authorAvatarUrl: string;
+  authorRole: string;
   stories: Story[];
 };
 
@@ -36,6 +38,7 @@ export function StoriesReel({ stories, isLoading, currentUserProfile }: StoriesR
           authorId: story.authorId,
           authorName: story.authorName,
           authorAvatarUrl: story.authorAvatarUrl,
+          authorRole: story.authorRole,
           stories: [],
         };
       }
@@ -44,7 +47,8 @@ export function StoriesReel({ stories, isLoading, currentUserProfile }: StoriesR
     return Object.values(groups);
   }, [stories]);
 
-  const canCreateStory = currentUserProfile?.role === 'penulis' || currentUserProfile?.role === 'admin';
+  // Semua pengguna yang sudah login dapat membuat cerita
+  const canCreateStory = !!currentUserProfile;
 
   const openViewer = (authorId: string) => {
     setViewerState({ isOpen: true, initialAuthorId: authorId });
@@ -82,7 +86,7 @@ export function StoriesReel({ stories, isLoading, currentUserProfile }: StoriesR
         />
       )}
 
-      <div className="flex items-center gap-4 pb-4 border-b overflow-x-auto">
+      <div className="flex items-center gap-4 pb-4 border-b overflow-x-auto no-scrollbar">
         {canCreateStory && (
           <div className="flex flex-col items-center gap-1.5 flex-shrink-0">
             <button
@@ -96,7 +100,10 @@ export function StoriesReel({ stories, isLoading, currentUserProfile }: StoriesR
         )}
         {storyGroups.map(group => (
           <div key={group.authorId} className="flex flex-col items-center gap-1.5 flex-shrink-0">
-            <button onClick={() => openViewer(group.authorId)} className="w-fit h-fit p-0.5 rounded-full bg-gradient-to-tr from-blue-500 to-primary">
+            <button 
+                onClick={() => openViewer(group.authorId)} 
+                className={`w-fit h-fit p-0.5 rounded-full ${group.authorRole === 'penulis' || group.authorRole === 'admin' ? 'bg-gradient-to-tr from-blue-500 to-primary' : 'bg-muted border border-border'}`}
+            >
               <Avatar className="w-16 h-16 border-2 border-background">
                 <AvatarImage src={group.authorAvatarUrl} alt={group.authorName} />
                 <AvatarFallback>{group.authorName.charAt(0)}</AvatarFallback>

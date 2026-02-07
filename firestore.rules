@@ -129,7 +129,8 @@ service cloud.firestore {
       }
 
       allow read: if isSignedIn();
-      allow create: if isSignedIn() && (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['penulis', 'admin']);
+      // All users can create stories now
+      allow create: if isSignedIn();
       allow update: if isStoryAuthor() || isAdmin() || (isSignedIn() && request.writeFields.size() == 1 && ('likes' in request.writeFields || 'commentCount' in request.writeFields || 'viewCount' in request.writeFields));
       allow delete: if isStoryAuthor() || isAdmin();
 

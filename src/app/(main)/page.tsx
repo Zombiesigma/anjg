@@ -4,7 +4,7 @@
 import { useFirestore, useCollection, useUser, useDoc } from '@/firebase';
 import { collection, query, where, orderBy, doc, type Query, type DocumentData } from 'firebase/firestore';
 import { useMemo, useState, useEffect } from 'react';
-import type { Book, Story, User as AppUser } from '@/lib/types';
+import type { Book, Story, User as AppUser, Follow } from '@/lib/types';
 import { BookCarousel } from '@/components/BookCarousel';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -76,13 +76,37 @@ export default function HomePage() {
     return [...rawBooks].sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis()).slice(0, 12);
   }, [rawBooks]);
 
-  const { data: stories, isLoading: areStoriesLoading } = useCollection<Story>(storiesQuery);
+  const { data: allStories, isLoading: areStoriesLoading } = useCollection<Story>(storiesQuery);
+
+  // Fetch following list to filter stories
+  const followingQuery = useMemo(() => (
+    (firestore && currentUser) ? collection(firestore, 'users', currentUser.uid, 'following') : null
+  ), [firestore, currentUser]);
+  const { data: followingList } = useCollection<Follow>(followingQuery);
+  const followingIds = useMemo(() => new Set(followingList?.map(f => f.id) || []), [followingList]);
+
+  // Logic: Penulis/Admin show to everyone. Readers show only to followers.
+  const filteredStories = useMemo(() => {
+    if (!allStories) return [];
+    if (!currentUser) return allStories.filter(s => s.authorRole === 'penulis' || s.authorRole === 'admin');
+    
+    return allStories.filter(story => {
+      // 1. Author is Penulis or Admin -> Show to all
+      if (story.authorRole === 'penulis' || story.authorRole === 'admin') return true;
+      // 2. Author is the user themselves -> Show
+      if (story.authorId === currentUser.uid) return true;
+      // 3. User follows the author -> Show
+      if (followingIds.has(story.authorId)) return true;
+      
+      return false;
+    });
+  }, [allStories, followingIds, currentUser]);
 
 
   return (
     <div className="space-y-12">
        <StoriesReel 
-            stories={stories || []} 
+            stories={filteredStories} 
             isLoading={areStoriesLoading || isProfileLoading}
             currentUserProfile={userProfile}
         />

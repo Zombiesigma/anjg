@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -64,8 +65,9 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
     try {
       const storyData = {
         authorId: currentUser.uid,
-        authorName: currentUser.displayName,
-        authorAvatarUrl: currentUser.photoURL,
+        authorName: currentUser.displayName || currentUserProfile.displayName,
+        authorAvatarUrl: currentUser.photoURL || currentUserProfile.photoURL,
+        authorRole: currentUserProfile.role,
         content: values.content,
         likes: 0,
         commentCount: 0,

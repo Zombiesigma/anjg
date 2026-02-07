@@ -159,6 +159,7 @@ export type Story = {
   authorId: string;
   authorName: string;
   authorAvatarUrl: string;
+  authorRole: 'penulis' | 'pembaca' | 'admin';
   content: string;
   createdAt: Timestamp;
   likes: number;
