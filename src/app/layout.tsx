@@ -5,6 +5,7 @@ import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 
 const productionUrl = 'https://www.litera.my.id/';
+const brandIcon = 'https://files.catbox.moe/arh8ho.jpg';
 
 export const metadata: Metadata = {
   metadataBase: new URL(productionUrl),
@@ -16,6 +17,10 @@ export const metadata: Metadata = {
   keywords: ['buku', 'novel', 'cerita', 'membaca', 'menulis', 'literasi', 'komunitas', 'platform sosial'],
   authors: [{ name: 'Guntur P.', url: 'https://www.gunturpadilah.web.id/' }],
   creator: 'Guntur P.',
+  icons: {
+    icon: brandIcon,
+    apple: brandIcon,
+  },
   openGraph: {
     title: {
       default: 'Elitera - Platform Sosial Literasi Digital',
@@ -26,6 +31,14 @@ export const metadata: Metadata = {
     url: productionUrl,
     locale: 'id_ID',
     type: 'website',
+    images: [
+      {
+        url: brandIcon,
+        width: 800,
+        height: 800,
+        alt: 'Elitera Logo',
+      },
+    ],
   },
   robots: {
     index: true,
@@ -38,6 +51,7 @@ export const metadata: Metadata = {
       template: '%s | Elitera',
     },
     description: 'Temukan, baca, dan tulis cerita. Terhubung dengan komunitas pembaca dan penulis.',
+    images: [brandIcon],
   },
 };
 
