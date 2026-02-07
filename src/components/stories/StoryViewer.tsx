@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, useDoc } from '@/firebase';
 import { doc, collection, query, orderBy, serverTimestamp, writeBatch, increment, addDoc, getDoc } from 'firebase/firestore';
 import type { Story, User as AppUser, StoryLike } from '@/lib/types';
-import { X, Heart, MessageCircle, Send, ChevronLeft, ChevronRight, Loader2, Eye, MoreHorizontal } from 'lucide-react';
+import { X, Heart, MessageSquare, Send, ChevronLeft, ChevronRight, Loader2, Eye, MoreHorizontal } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatDistanceToNow } from 'date-fns';
 import { id } from 'date-fns/locale';
@@ -93,7 +93,6 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
     }
   }, [storyIndex, authorIndex, storyGroups]);
 
-  // Handle Tap Navigation
   const handleContainerClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
@@ -235,7 +234,6 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
         <DialogDescription className="sr-only">Menampilkan cerita dari {currentGroup.authorName}.</DialogDescription>
         
         <div className="relative w-full h-full flex items-center justify-center bg-black">
-            {/* Desktop Navigation Hints */}
             <div className="absolute inset-0 hidden md:flex items-center justify-between px-10 pointer-events-none z-[70]">
                 <Button variant="ghost" size="icon" onClick={prevStory} disabled={authorIndex === 0 && storyIndex === 0} className="h-14 w-14 rounded-full bg-white/5 hover:bg-white/10 text-white pointer-events-auto shadow-2xl backdrop-blur-md transition-all active:scale-90">
                     <ChevronLeft className="h-8 w-8" />
@@ -245,12 +243,10 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
                 </Button>
             </div>
 
-            {/* Close Button */}
             <Button variant="ghost" size="icon" onClick={onClose} className="absolute top-6 right-6 z-[80] text-white/60 hover:text-white hover:bg-white/10 rounded-full">
                 <X className="h-6 w-6" />
             </Button>
             
-            {/* Main Interactive Story Box */}
             <div 
                 className="relative w-full md:w-[450px] h-full md:h-[90vh] md:max-h-[850px] md:rounded-3xl overflow-hidden flex flex-col shadow-[0_0_100px_rgba(0,0,0,0.5)] md:ring-1 md:ring-white/10"
                 onClick={handleContainerClick}
@@ -259,7 +255,6 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
                 onTouchStart={() => setIsPaused(true)}
                 onTouchEnd={() => setIsPaused(false)}
             >
-                {/* Progress Bars */}
                 <div className="absolute top-4 left-4 right-4 flex items-center gap-1.5 z-50">
                     {currentGroup.stories.map((_, i) => (
                         <div key={i} className="h-1 flex-1 bg-white/20 rounded-full overflow-hidden backdrop-blur-sm">
@@ -276,7 +271,6 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
                     ))}
                 </div>
                 
-                {/* Header Overlay */}
                 <div className="absolute top-8 left-0 right-0 px-4 z-50 flex items-center justify-between pointer-events-none">
                     <div className="flex items-center gap-3 bg-black/20 backdrop-blur-md p-1.5 pr-4 rounded-full border border-white/5 pointer-events-auto transition-all hover:bg-black/40">
                         <Avatar className="h-10 w-10 ring-2 ring-primary/20">
@@ -295,7 +289,6 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
                     </Button>
                 </div>
 
-                {/* Content Area */}
                 <div className="flex-1 relative flex items-center justify-center overflow-hidden bg-zinc-900 pointer-events-none">
                   <AnimatePresence mode="wait">
                     <motion.div
@@ -327,7 +320,6 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
                   </AnimatePresence>
                 </div>
 
-                {/* Footer Interaction */}
                 <div className="absolute bottom-0 left-0 right-0 p-6 z-50 bg-gradient-to-t from-black/95 via-black/60 to-transparent" onClick={(e) => e.stopPropagation()}>
                    <div className='flex items-center gap-6 mb-6 px-2'>
                      <button onClick={handleToggleLike} disabled={isLikeLoading} className={cn("flex flex-col items-center gap-1 transition-all active:scale-125", isLiked ? "text-rose-500" : "text-white/80 hover:text-white")}>
@@ -335,14 +327,14 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
                         <span className="text-[10px] font-black uppercase tracking-tighter">{currentStory.likes}</span>
                      </button>
                      <button className="flex flex-col items-center gap-1 text-white/80 hover:text-white transition-all">
-                        <MessageCircle className="h-7 w-7"/> 
+                        <MessageSquare className="h-7 w-7"/> 
                         <span className="text-[10px] font-black uppercase tracking-tighter">{currentStory.commentCount}</span>
                      </button>
                      {isAuthor && (
-                        <button onClick={() => setShowViews(true)} className="flex flex-col items-center gap-1 text-white/80 hover:text-white ml-auto transition-all">
-                            <div className="flex items-center gap-1.5 bg-white/10 px-3 py-1.5 rounded-full border border-white/10 hover:bg-white/20">
+                        <button onClick={() => setShowViews(true)} className="flex flex-col items-center gap-1 text-white/80 hover:text-white ml-auto transition-all group">
+                            <div className="flex items-center gap-1.5 bg-white/10 px-4 py-2 rounded-full border border-white/10 hover:bg-primary hover:border-primary transition-all active:scale-95">
                                 <Eye className="h-4 w-4"/>
-                                <span className="text-xs font-bold">{currentStory.viewCount}</span>
+                                <span className="text-xs font-black">{currentStory.viewCount}</span>
                             </div>
                         </button>
                       )}
