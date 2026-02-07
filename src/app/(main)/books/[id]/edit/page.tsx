@@ -552,7 +552,7 @@ export default function EditBookPage() {
                     </AlertDialog>
                 </div>
             </div>
-        </header>
+         </header>
 
         {/* Writing/Settings Body */}
         <div className="flex-1 overflow-y-auto custom-scrollbar relative">
@@ -779,7 +779,7 @@ export default function EditBookPage() {
                     </motion.div>
                 ) : (
                     <div className="flex flex-col items-center justify-center h-full text-center p-12">
-                        <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-6 animate-bounce duration-[3000ms]">
+                        <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-6 animate-bounce [animation-duration:3000ms]">
                             <PlusCircle className="h-12 w-12 text-muted-foreground/40" />
                         </div>
                         <div className="space-y-2 mb-8">
