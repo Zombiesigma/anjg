@@ -12,6 +12,8 @@ import type { AiChatMessage } from '@/lib/types';
 import { useUser } from '@/firebase';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 const SUGGESTIONS = [
     { label: "Bantu ide plot fantasi", icon: Sparkles },
@@ -155,13 +157,20 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
                 
                 <div
                   className={cn(
-                    "max-w-[85%] md:max-w-[70%] p-4 rounded-2xl shadow-sm leading-relaxed text-sm md:text-base",
+                    "max-w-[85%] md:max-w-[70%] p-4 rounded-2xl shadow-sm leading-relaxed",
                     m.role === "user"
                       ? "bg-primary text-primary-foreground rounded-tr-none"
                       : "bg-card border border-border/50 rounded-tl-none font-medium text-foreground/90"
                   )}
                 >
-                  <p className="whitespace-pre-wrap">{m.content}</p>
+                  <div className={cn(
+                    "prose prose-sm max-w-none break-words dark:prose-invert prose-p:leading-relaxed prose-headings:font-headline prose-headings:mb-2 prose-headings:mt-4 first:prose-headings:mt-0 prose-pre:bg-muted prose-pre:text-muted-foreground",
+                    m.role === "user" ? "prose-invert text-primary-foreground" : "text-foreground/90"
+                  )}>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {m.content}
+                    </ReactMarkdown>
+                  </div>
                 </div>
               </motion.div>
             ))}
