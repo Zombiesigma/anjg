@@ -196,8 +196,8 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
         </div>
       </ScrollArea>
 
-      {/* Area Input - Menggunakan z-40 dan bg solid untuk mencegah navbar tumpang tindih */}
-      <div className="p-4 md:p-6 border-t bg-background shrink-0 z-40 shadow-up relative">
+      {/* Area Input - Menggunakan padding ekstra di bawah untuk safe-area */}
+      <div className="p-4 md:p-6 border-t bg-background shrink-0 z-40 shadow-up relative pb-[max(1rem,env(safe-area-inset-bottom))]">
         <div className="max-w-3xl mx-auto">
             <form onSubmit={handleSubmit} className="relative flex items-end gap-3">
                 <div className="relative flex-1 group">

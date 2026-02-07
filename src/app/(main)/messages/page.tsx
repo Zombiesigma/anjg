@@ -286,7 +286,7 @@ export default function MessagesPage() {
   }
   
   return (
-    <div className="h-[calc(100vh-theme(spacing.14)-2px-theme(spacing.16))] md:h-[calc(100vh-theme(spacing.14)-theme(spacing.12)-2px)] -mt-6 -mx-4 md:-mx-6 border rounded-lg overflow-hidden flex flex-col bg-background">
+    <div className="h-[calc(100dvh-theme(spacing.14)-theme(spacing.16)-4px)] md:h-[calc(100dvh-theme(spacing.14)-theme(spacing.12)-4px)] -mt-6 -mx-4 md:-mx-6 border rounded-lg overflow-hidden flex flex-col bg-background">
       <div className="grid grid-cols-12 flex-1 h-full overflow-hidden">
         
         {/* Sidebar: Chat List */}
@@ -598,7 +598,7 @@ export default function MessagesPage() {
               </div>
 
               {/* Message Input Bar */}
-              <div className="p-4 border-t bg-background/95 backdrop-blur-md shrink-0 z-20 shadow-up">
+              <div className="p-4 md:p-6 border-t bg-background/95 backdrop-blur-md shrink-0 z-20 shadow-up pb-[max(1rem,env(safe-area-inset-bottom))]">
                   <form onSubmit={handleSendMessage} className="relative flex items-end gap-3 max-w-5xl mx-auto">
                       <div className="relative flex-1 group">
                         <Textarea 

@@ -115,13 +115,14 @@ export function ShareBookDialog({ book, open, onOpenChange }: ShareBookDialogPro
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent 
-                className="max-w-md rounded-[2rem] border-none shadow-2xl p-0 overflow-hidden"
+                className="max-w-md w-[95vw] rounded-[2.5rem] border-none shadow-2xl p-0 overflow-hidden flex flex-col max-h-[85dvh]"
                 onCloseAutoFocus={(e) => {
                     e.preventDefault();
                     document.body.style.pointerEvents = '';
                 }}
             >
-                <div className="p-6 bg-primary/5 border-b border-primary/10">
+                {/* Header: Fixed */}
+                <div className="p-6 bg-primary/5 border-b border-primary/10 shrink-0">
                     <DialogHeader>
                         <div className="flex items-center gap-3 mb-2">
                             <div className="p-2.5 rounded-2xl bg-white shadow-sm text-primary">
@@ -135,8 +136,9 @@ export function ShareBookDialog({ book, open, onOpenChange }: ShareBookDialogPro
                     </DialogHeader>
                 </div>
 
-                <div className="p-6 space-y-4">
-                    <div className="relative group">
+                {/* Search & List: Flexible/Scrollable */}
+                <div className="flex-1 flex flex-col min-h-0 overflow-hidden p-6 space-y-4">
+                    <div className="relative group shrink-0">
                          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors z-10" />
                          <Input 
                             placeholder="Cari obrolan atau pengguna..." 
@@ -146,7 +148,7 @@ export function ShareBookDialog({ book, open, onOpenChange }: ShareBookDialogPro
                          />
                     </div>
 
-                    <ScrollArea className="h-72 px-1">
+                    <ScrollArea className="flex-1 px-1">
                         {isLoadingThreads && (
                             <div className="flex flex-col items-center justify-center p-12 gap-3 opacity-50">
                                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -207,7 +209,8 @@ export function ShareBookDialog({ book, open, onOpenChange }: ShareBookDialogPro
                     </ScrollArea>
                 </div>
 
-                <DialogFooter className="p-6 bg-muted/20 border-t border-border/50">
+                {/* Footer: Fixed at bottom */}
+                <DialogFooter className="p-6 bg-muted/20 border-t border-border/50 shrink-0 mt-auto">
                     <Button variant="ghost" onClick={() => onOpenChange(false)} className="rounded-full font-bold">Batal</Button>
                     <Button 
                         onClick={handleSend} 
