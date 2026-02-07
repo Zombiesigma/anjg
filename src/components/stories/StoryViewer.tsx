@@ -14,6 +14,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { formatDistanceToNow } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { StoryViewersSheet } from './StoryViewersSheet';
+import { StoryCommentsSheet } from './StoryCommentsSheet';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 
@@ -33,6 +34,7 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
   const [storyIndex, setStoryIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [showViews, setShowViews] = useState(false);
+  const [showComments, setShowComments] = useState(false);
   const viewedStoriesInSession = useRef(new Set<string>());
 
   useEffect(() => {
@@ -94,6 +96,10 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
   }, [storyIndex, authorIndex, storyGroups]);
 
   const handleContainerClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Prevent click through if clicking on action buttons
+    const target = e.target as HTMLElement;
+    if (target.closest('button') || target.closest('form') || target.closest('input')) return;
+
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const width = rect.width;
@@ -106,14 +112,14 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
   };
   
   useEffect(() => {
-    if (!isOpen || isPaused) return;
+    if (!isOpen || isPaused || showViews || showComments) return;
 
     const timer = setTimeout(() => {
       nextStory();
     }, 7000); 
 
     return () => clearTimeout(timer);
-  }, [storyIndex, authorIndex, isOpen, isPaused, nextStory]);
+  }, [storyIndex, authorIndex, isOpen, isPaused, showViews, showComments, nextStory]);
   
   useEffect(() => {
     if (!currentStory || !currentUser || !firestore) return;
@@ -263,7 +269,7 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
                                 <motion.div 
                                     className="h-full bg-white shadow-[0_0_10px_white]"
                                     initial={{ width: '0%' }}
-                                    animate={isPaused ? { width: 'auto' } : { width: '100%' }}
+                                    animate={isPaused || showViews || showComments ? { width: 'auto' } : { width: '100%' }}
                                     transition={{ duration: 7, ease: 'linear' }}
                                 />
                             )}
@@ -326,8 +332,8 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
                         <Heart className={cn("h-7 w-7 transition-all", isLiked && "fill-current drop-shadow-[0_0_10px_rgba(244,63,94,0.5)]")}/> 
                         <span className="text-[10px] font-black uppercase tracking-tighter">{currentStory.likes}</span>
                      </button>
-                     <button className="flex flex-col items-center gap-1 text-white/80 hover:text-white transition-all">
-                        <MessageSquare className="h-7 w-7"/> 
+                     <button onClick={() => setShowComments(true)} className="flex flex-col items-center gap-1 text-white/80 hover:text-white transition-all group">
+                        <MessageSquare className="h-7 w-7 group-hover:scale-110 transition-transform"/> 
                         <span className="text-[10px] font-black uppercase tracking-tighter">{currentStory.commentCount}</span>
                      </button>
                      {isAuthor && (
@@ -350,6 +356,7 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
             </div>
 
             {isAuthor && <StoryViewersSheet storyId={currentStory.id} isOpen={showViews} onOpenChange={setShowViews} />}
+            <StoryCommentsSheet storyId={currentStory.id} isOpen={showComments} onOpenChange={setShowComments} />
         </div>
       </DialogContent>
     </Dialog>
