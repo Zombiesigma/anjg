@@ -7,11 +7,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Loader2, Search } from 'lucide-react';
+import { Loader2, Search, Check, Send, MessageSquare } from 'lucide-react';
 import { useMemo, useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface ShareBookDialogProps {
     book: Book;
@@ -27,10 +28,11 @@ export function ShareBookDialog({ book, open, onOpenChange }: ShareBookDialogPro
     const [isSending, setIsSending] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
 
-    // Safety net: Pastikan pointer-events kembali normal saat dialog ditutup
     useEffect(() => {
         if (!open) {
             const timer = setTimeout(() => {
+                setSelectedChatId(null);
+                setSearchTerm("");
                 document.body.style.pointerEvents = '';
             }, 300);
             return () => clearTimeout(timer);
@@ -83,7 +85,7 @@ export function ShareBookDialog({ book, open, onOpenChange }: ShareBookDialogPro
             const chatDocRef = doc(firestore, 'chats', selectedChatId);
             batch.update(chatDocRef, {
                 lastMessage: {
-                    text: `Membagikan buku: ${book.title}`,
+                    text: `📖 Membagikan buku: ${book.title}`,
                     senderId: currentUser.uid,
                     timestamp: serverTimestamp(),
                 },
@@ -92,16 +94,14 @@ export function ShareBookDialog({ book, open, onOpenChange }: ShareBookDialogPro
 
             await batch.commit();
             
-            // Bersihkan state
-            setSelectedChatId(null);
-            setSearchTerm('');
-            
-            // Tutup dialog
             onOpenChange(false);
 
-            // Beri jeda sedikit sebelum toast agar tidak bentrok dengan penutupan modal
             setTimeout(() => {
-                toast({ title: "Buku Dibagikan!", description: `"${book.title}" telah dikirim ke obrolan.` });
+                toast({ 
+                    variant: 'success',
+                    title: "Buku Berhasil Dikirim", 
+                    description: `"${book.title}" telah dibagikan ke ${otherParticipant.displayName}.` 
+                });
             }, 100);
 
         } catch (error) {
@@ -115,51 +115,110 @@ export function ShareBookDialog({ book, open, onOpenChange }: ShareBookDialogPro
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent 
-                className="max-w-md"
+                className="max-w-md rounded-[2rem] border-none shadow-2xl p-0 overflow-hidden"
                 onCloseAutoFocus={(e) => {
                     e.preventDefault();
-                    // Paksa body agar bisa diinteraksi kembali
                     document.body.style.pointerEvents = '';
                 }}
             >
-                <DialogHeader>
-                    <DialogTitle>Kirim Buku ke Obrolan</DialogTitle>
-                    <DialogDescription>Pilih percakapan untuk membagikan buku "{book.title}".</DialogDescription>
-                </DialogHeader>
-                <div className="relative my-2">
-                     <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10" />
-                     <Input placeholder="Cari pengguna..." className="pl-8" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                <div className="p-6 bg-primary/5 border-b border-primary/10">
+                    <DialogHeader>
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="p-2.5 rounded-2xl bg-white shadow-sm text-primary">
+                                <Send className="h-5 w-5" />
+                            </div>
+                            <DialogTitle className="font-headline text-2xl font-black">Kirim Karya</DialogTitle>
+                        </div>
+                        <DialogDescription className="text-sm font-medium">
+                            Bagikan <span className="font-black text-foreground">"{book.title}"</span> kepada teman atau penulis lainnya.
+                        </DialogDescription>
+                    </DialogHeader>
                 </div>
-                <ScrollArea className="h-64 border rounded-md">
-                    {isLoadingThreads && <div className="flex items-center justify-center p-4"><Loader2 className="animate-spin" /></div>}
-                    <div className="flex flex-col gap-1 p-1">
-                        {filteredChats.map(chat => {
-                            const otherP = chat.participants.find(p => p.uid !== currentUser?.uid);
-                            if (!otherP) return null;
-                            return (
-                                <button 
-                                    key={chat.id} 
-                                    onClick={() => setSelectedChatId(chat.id)} 
-                                    className={cn("flex items-center gap-3 p-2 text-left hover:bg-accent w-full transition-colors rounded-md", selectedChatId === chat.id && "bg-accent")}
-                                >
-                                    <Avatar>
-                                        <AvatarImage src={otherP.photoURL} alt={otherP.displayName} />
-                                        <AvatarFallback>{otherP.displayName.charAt(0)}</AvatarFallback>
-                                    </Avatar>
-                                    <span className="font-medium">{otherP.displayName}</span>
-                                </button>
-                            )
-                        })}
-                         {!isLoadingThreads && filteredChats.length === 0 && (
-                            <p className="text-sm text-muted-foreground text-center py-8">Tidak ada obrolan ditemukan.</p>
-                         )}
+
+                <div className="p-6 space-y-4">
+                    <div className="relative group">
+                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors z-10" />
+                         <Input 
+                            placeholder="Cari obrolan atau pengguna..." 
+                            className="h-12 pl-10 rounded-2xl bg-muted/30 border-none focus-visible:ring-primary/20 transition-all" 
+                            value={searchTerm} 
+                            onChange={(e) => setSearchTerm(e.target.value)} 
+                         />
                     </div>
-                </ScrollArea>
-                <DialogFooter>
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>Batal</Button>
-                    <Button onClick={handleSend} disabled={!selectedChatId || isSending}>
-                        {isSending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Kirim
+
+                    <ScrollArea className="h-72 px-1">
+                        {isLoadingThreads && (
+                            <div className="flex flex-col items-center justify-center p-12 gap-3 opacity-50">
+                                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                <p className="text-xs font-bold uppercase tracking-widest">Sinkronisasi Kontak...</p>
+                            </div>
+                        )}
+                        <div className="flex flex-col gap-2">
+                            <AnimatePresence mode="popLayout">
+                                {filteredChats.map(chat => {
+                                    const otherP = chat.participants.find(p => p.uid !== currentUser?.uid);
+                                    if (!otherP) return null;
+                                    const isSelected = selectedChatId === chat.id;
+
+                                    return (
+                                        <motion.button 
+                                            key={chat.id}
+                                            layout
+                                            initial={{ opacity: 0, x: -10 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{ opacity: 0, scale: 0.95 }}
+                                            onClick={() => setSelectedChatId(isSelected ? null : chat.id)} 
+                                            className={cn(
+                                                "flex items-center gap-4 p-3 text-left rounded-2xl transition-all group relative",
+                                                isSelected 
+                                                    ? "bg-primary text-white shadow-lg shadow-primary/20" 
+                                                    : "hover:bg-muted/50"
+                                            )}
+                                        >
+                                            <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
+                                                <AvatarImage src={otherP.photoURL} alt={otherP.displayName} />
+                                                <AvatarFallback className="bg-primary/5 text-primary font-black">
+                                                    {otherP.displayName.charAt(0)}
+                                                </AvatarFallback>
+                                            </Avatar>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="font-bold text-sm truncate">{otherP.displayName}</p>
+                                                <p className={cn(
+                                                    "text-[10px] font-bold uppercase tracking-widest",
+                                                    isSelected ? "text-white/60" : "text-muted-foreground"
+                                                )}>@{otherP.username}</p>
+                                            </div>
+                                            {isSelected && (
+                                                <div className="bg-white text-primary p-1 rounded-full shadow-md">
+                                                    <Check className="h-3 w-3" />
+                                                </div>
+                                            )}
+                                        </motion.button>
+                                    )
+                                })}
+                            </AnimatePresence>
+                            {!isLoadingThreads && filteredChats.length === 0 && (
+                                <div className="text-center py-12 opacity-40">
+                                    <MessageSquare className="h-10 w-10 mx-auto mb-3" />
+                                    <p className="text-sm font-medium">Tidak ada obrolan ditemukan.</p>
+                                </div>
+                            )}
+                        </div>
+                    </ScrollArea>
+                </div>
+
+                <DialogFooter className="p-6 bg-muted/20 border-t border-border/50">
+                    <Button variant="ghost" onClick={() => onOpenChange(false)} className="rounded-full font-bold">Batal</Button>
+                    <Button 
+                        onClick={handleSend} 
+                        disabled={!selectedChatId || isSending}
+                        className="rounded-full px-8 font-black shadow-xl shadow-primary/20 h-11"
+                    >
+                        {isSending ? (
+                            <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Mengirim...</>
+                        ) : (
+                            <><Send className="mr-2 h-4 w-4" /> Kirim Sekarang</>
+                        )}
                     </Button>
                 </DialogFooter>
             </DialogContent>

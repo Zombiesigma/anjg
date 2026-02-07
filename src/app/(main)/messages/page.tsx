@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
-import { MoreVertical, MessageSquare, Loader2, Send, Search, ArrowLeft, User, Trash2 } from 'lucide-react';
+import { MoreVertical, MessageSquare, Loader2, Send, Search, ArrowLeft, User, Trash2, BookOpen, ChevronRight, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Chat, ChatMessage, TextMessage, User as AppUser } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
@@ -67,7 +67,6 @@ export default function MessagesPage() {
   // 3. Fetch all user profiles in one go for status & metadata
   const usersQuery = useMemo(() => {
       if (!firestore || otherParticipantUids.length === 0) return null;
-      // Note: Limited to 30 for Firestore 'in' query
       return query(collection(firestore, 'users'), where(documentId(), 'in', otherParticipantUids.slice(0, 30)));
   }, [firestore, otherParticipantUids]);
   const { data: participantProfiles } = useCollection<AppUser>(usersQuery);
@@ -193,12 +192,11 @@ export default function MessagesPage() {
     scrollToBottom();
   }, [messageGroups]);
 
-  // Auto-resize textarea logic
   useEffect(() => {
       if (textareaRef.current) {
           textareaRef.current.style.height = 'auto';
           const scrollHeight = textareaRef.current.scrollHeight;
-          textareaRef.current.style.height = `${Math.min(scrollHeight, 128)}px`; // Max 128px
+          textareaRef.current.style.height = `${Math.min(scrollHeight, 128)}px`; 
       }
   }, [newMessage]);
   
@@ -217,7 +215,7 @@ export default function MessagesPage() {
     if (!newMessage.trim() || !currentUser || !selectedChatId || !firestore || !otherParticipant) return;
     
     const textToSend = newMessage.trim();
-    setNewMessage(""); // Clear early for better UX
+    setNewMessage(""); 
     setIsSending(true);
 
     const messageData = {
@@ -247,7 +245,7 @@ export default function MessagesPage() {
       await batch.commit();
     } catch (error) {
       console.error("Error sending message:", error);
-      setNewMessage(textToSend); // Restore if failed
+      setNewMessage(textToSend);
     } finally {
       setIsSending(false);
     }
@@ -262,14 +260,12 @@ export default function MessagesPage() {
   const sortedAndFilteredChatThreads = useMemo(() => {
     if (!chatThreads) return [];
     
-    // Filter by search query
     let threads = chatThreads.filter(chat => {
         if (!searchQuery.trim()) return true;
         const otherP = chat.participants.find(p => p.uid !== currentUser?.uid);
         return otherP?.displayName.toLowerCase().includes(searchQuery.toLowerCase());
     });
 
-    // Sort by last message timestamp (newest first)
     return [...threads].sort((a, b) => {
         const timeA = (a.lastMessage?.timestamp && typeof (a.lastMessage.timestamp as any).toMillis === 'function') 
             ? (a.lastMessage.timestamp as any).toMillis() 
@@ -336,7 +332,7 @@ export default function MessagesPage() {
                     </div>
                 </div>
                 )}
-                <div className="flex flex-col p-2 gap-1 pb-20"> {/* Tambahkan padding bottom ekstra untuk memastikan item terakhir bisa di-scroll */}
+                <div className="flex flex-col p-2 gap-1 pb-20">
                 {sortedAndFilteredChatThreads.map(chat => {
                     const otherP = chat.participants.find(p => p.uid !== currentUser?.uid);
                     if (!otherP) return null;
@@ -459,19 +455,19 @@ export default function MessagesPage() {
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="rounded-full"><MoreVertical className="h-5 w-5" /></Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48">
+                        <DropdownMenuContent align="end" className="w-48 rounded-xl p-2">
                             {otherParticipant?.username && (
-                                <DropdownMenuItem asChild>
+                                <DropdownMenuItem asChild className="rounded-lg py-2.5">
                                     <Link href={`/profile/${otherParticipant.username}`} className="flex items-center gap-2">
-                                        <User className="h-4 w-4" />
-                                        <span>Lihat Profil</span>
+                                        <User className="h-4 w-4 text-primary" />
+                                        <span className="font-bold">Lihat Profil</span>
                                     </Link>
                                 </DropdownMenuItem>
                             )}
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem className="text-destructive flex items-center gap-2" disabled>
+                            <DropdownMenuItem className="text-destructive flex items-center gap-2 rounded-lg py-2.5" disabled>
                                 <Trash2 className="h-4 w-4" />
-                                <span>Hapus Obrolan</span>
+                                <span className="font-bold">Hapus Obrolan</span>
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
@@ -518,27 +514,57 @@ export default function MessagesPage() {
                             
                             {msg.type === 'book_share' && msg.book ? (
                                     <div className={cn(
-                                        "max-w-[280px] rounded-2xl overflow-hidden shadow-xl border-2 transition-transform hover:scale-[1.02]",
+                                        "max-w-[280px] w-full rounded-3xl overflow-hidden shadow-2xl border-none transition-all hover:scale-[1.02] group",
                                         isSender
-                                        ? "bg-primary border-primary rounded-br-none"
-                                        : "bg-background border-muted rounded-bl-none"
+                                        ? "bg-primary text-white rounded-br-none"
+                                        : "bg-card text-foreground rounded-bl-none border border-border/50"
                                     )}>
-                                    <Link href={`/books/${msg.book.id}`} className="block group">
-                                        <div className="p-3 border-b border-white/10 flex items-center justify-between">
-                                            <p className={cn("text-[10px] uppercase font-black tracking-widest", isSender ? "text-white/60" : "text-muted-foreground")}>Bagikan Buku</p>
-                                            <Search className={cn("h-3 w-3", isSender ? "text-white/40" : "text-muted-foreground/40")} />
-                                        </div>
-                                        <div className={cn("p-4 flex gap-4 items-start", isSender ? "bg-black/5" : "bg-muted/30")}>
-                                            <div className="relative h-24 w-16 flex-shrink-0 shadow-lg rounded overflow-hidden">
-                                                <Image src={msg.book.coverUrl} alt={msg.book.title} fill className="object-cover bg-muted"/>
+                                    <Link href={`/books/${msg.book.id}`} className="block">
+                                        <div className={cn(
+                                            "p-3.5 flex items-center justify-between border-b",
+                                            isSender ? "border-white/10 bg-white/5" : "border-border/50 bg-muted/30"
+                                        )}>
+                                            <div className="flex items-center gap-2">
+                                                <div className={cn("p-1.5 rounded-lg", isSender ? "bg-white/20" : "bg-primary/10 text-primary")}>
+                                                    <BookOpen className="h-3 w-3" />
+                                                </div>
+                                                <p className={cn("text-[10px] uppercase font-black tracking-widest", isSender ? "text-white/80" : "text-muted-foreground")}>Rekomendasi Buku</p>
                                             </div>
-                                            <div className="min-w-0 pt-1">
-                                                <p className={cn("font-bold text-sm truncate leading-tight", isSender ? "text-white" : "text-foreground")}>{msg.book.title}</p>
-                                                <p className={cn("text-xs mt-1 font-medium", isSender ? "text-primary-foreground/70" : "text-muted-foreground")}>
+                                            <Sparkles className={cn("h-3 w-3", isSender ? "text-white/40" : "text-primary/40 animate-pulse")} />
+                                        </div>
+                                        
+                                        <div className="p-4 flex gap-4 items-start relative overflow-hidden">
+                                            {/* Subtle Decorative Background */}
+                                            <div className={cn(
+                                                "absolute -right-4 -bottom-4 w-32 h-32 blur-3xl opacity-20 pointer-events-none",
+                                                isSender ? "bg-white" : "bg-primary"
+                                            )} />
+
+                                            <div className="relative h-28 w-20 flex-shrink-0 shadow-[0_8px_20px_-4px_rgba(0,0,0,0.3)] rounded-lg overflow-hidden ring-1 ring-white/10">
+                                                <Image 
+                                                    src={msg.book.coverUrl} 
+                                                    alt={msg.book.title} 
+                                                    fill 
+                                                    className="object-cover bg-muted transition-transform group-hover:scale-110 duration-500"
+                                                />
+                                            </div>
+                                            <div className="min-w-0 pt-1 flex flex-col h-28">
+                                                <p className="font-headline font-bold text-sm line-clamp-2 leading-tight mb-1">{msg.book.title}</p>
+                                                <p className={cn(
+                                                    "text-[10px] font-black uppercase tracking-wider",
+                                                    isSender ? "text-white/60" : "text-muted-foreground"
+                                                )}>
                                                     @{msg.book.authorName}
                                                 </p>
-                                                <div className="mt-3">
-                                                    <Button size="sm" variant={isSender ? "secondary" : "default"} className="h-7 text-[10px] px-3 font-bold rounded-full">Baca Sekarang</Button>
+                                                
+                                                <div className="mt-auto pt-2">
+                                                    <Button 
+                                                        size="sm" 
+                                                        variant={isSender ? "secondary" : "default"} 
+                                                        className="h-8 w-full text-[10px] px-4 font-black uppercase tracking-widest rounded-full shadow-lg group-hover:translate-y-[-2px] transition-all"
+                                                    >
+                                                        Baca <ChevronRight className="ml-1 h-3 w-3" />
+                                                    </Button>
                                                 </div>
                                             </div>
                                         </div>
