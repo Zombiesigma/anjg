@@ -138,6 +138,7 @@ export default function JoinAuthorPage() {
             await batch.commit();
 
             toast({
+                variant: 'success',
                 title: "Lamaran Terkirim",
                 description: "Terima kasih! Kami akan meninjau lamaran Anda segera.",
             });
@@ -156,17 +157,19 @@ export default function JoinAuthorPage() {
     
     if (applicationStatus === 'loading') {
         return (
-             <div className="max-w-4xl mx-auto space-y-8">
+             <div className="max-w-4xl mx-auto space-y-8 py-12">
                 <div className="text-center space-y-4">
-                    <Skeleton className="h-12 w-64 mx-auto" />
-                    <Skeleton className="h-4 w-96 mx-auto" />
+                    <Skeleton className="h-12 w-64 mx-auto rounded-full" />
+                    <Skeleton className="h-4 w-96 mx-auto rounded-full" />
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {Array.from({ length: 6 }).map((_, i) => (
-                        <Card key={i} className="h-64 flex flex-col items-center justify-center space-y-4">
-                            <Skeleton className="h-20 w-20 rounded-full" />
-                            <Skeleton className="h-4 w-32" />
-                            <Skeleton className="h-3 w-48" />
+                        <Card key={i} className="h-80 flex flex-col items-center justify-center space-y-6 rounded-[2.5rem] border-none shadow-xl">
+                            <Skeleton className="h-24 w-24 rounded-full" />
+                            <div className="space-y-2 w-full px-10">
+                                <Skeleton className="h-4 w-full rounded-full" />
+                                <Skeleton className="h-3 w-2/3 mx-auto rounded-full" />
+                            </div>
                         </Card>
                     ))}
                 </div>
@@ -184,13 +187,13 @@ export default function JoinAuthorPage() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5 }}
                     >
-                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-black uppercase tracking-widest mb-4">
+                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-[10px] font-black uppercase tracking-[0.2em] mb-4">
                             <Sparkles className="h-3.5 w-3.5" /> Komunitas Elitera
                         </div>
-                        <h1 className="text-4xl md:text-6xl font-headline font-black text-foreground tracking-tight">
-                            Temui Para <span className="text-primary">Pujangga</span> Modern
+                        <h1 className="text-4xl md:text-6xl font-headline font-black text-foreground tracking-tight leading-tight">
+                            Temui Para <span className="text-primary italic">Pujangga</span> Modern
                         </h1>
-                        <p className="mt-4 text-lg text-muted-foreground leading-relaxed">
+                        <p className="mt-4 text-lg text-muted-foreground leading-relaxed font-medium">
                             Jelajahi profil para penulis berbakat yang membentuk semesta literasi digital kami. Ikuti mereka untuk mendapatkan pembaruan karya terbaru.
                         </p>
                     </motion.div>
@@ -199,13 +202,13 @@ export default function JoinAuthorPage() {
                 {areUsersLoading ? (
                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                         {Array.from({length: 6}).map((_, i) => (
-                             <Card key={i} className="overflow-hidden rounded-3xl border-none shadow-xl">
+                             <Card key={i} className="overflow-hidden rounded-[2.5rem] border-none shadow-xl">
                                 <Skeleton className="h-24 w-full bg-muted" />
-                                <div className="p-6 pt-0 -mt-12 text-center flex flex-col items-center">
-                                    <Skeleton className="w-24 h-24 rounded-full border-4 border-background mb-4"/>
-                                    <Skeleton className="h-6 w-3/4 mb-2"/>
-                                    <Skeleton className="h-4 w-1/2"/>
-                                    <Skeleton className="h-20 w-full mt-6 rounded-xl"/>
+                                <div className="p-8 pt-0 -mt-12 text-center flex flex-col items-center">
+                                    <Skeleton className="w-28 h-28 rounded-full border-4 border-background mb-4 shadow-xl"/>
+                                    <Skeleton className="h-6 w-3/4 mb-2 rounded-full"/>
+                                    <Skeleton className="h-4 w-1/2 rounded-full"/>
+                                    <Skeleton className="h-20 w-full mt-8 rounded-2xl"/>
                                 </div>
                             </Card>
                         ))}
@@ -221,23 +224,23 @@ export default function JoinAuthorPage() {
                                 key={author.id}
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: index * 0.1 }}
+                                transition={{ delay: index * 0.05 }}
                             >
                                 <Link href={`/profile/${author.username}`} className="block group h-full">
-                                    <Card className="relative overflow-hidden rounded-[2.5rem] border-2 border-transparent transition-all duration-500 h-full group-hover:border-primary/30 group-hover:shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15)] group-hover:-translate-y-2 bg-card/50 backdrop-blur-sm">
+                                    <Card className="relative overflow-hidden rounded-[2.5rem] border-2 border-transparent transition-all duration-500 h-full group-hover:border-primary/30 group-hover:shadow-[0_30px_60px_-12px_rgba(0,0,0,0.15)] group-hover:-translate-y-2 bg-card/50 backdrop-blur-sm">
                                         {/* Background Decoration */}
-                                        <div className="absolute top-0 left-0 w-full h-24 bg-gradient-to-br from-primary/20 via-accent/10 to-transparent group-hover:h-32 transition-all duration-500" />
+                                        <div className="absolute top-0 left-0 w-full h-28 bg-gradient-to-br from-primary/20 via-accent/10 to-transparent group-hover:h-36 transition-all duration-500" />
                                         
                                         <CardContent className="relative z-10 p-8 text-center flex flex-col items-center h-full">
                                             <div className="relative mb-6">
-                                                <Avatar className="w-28 h-28 border-4 border-background shadow-2xl transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 ring-1 ring-border/50">
+                                                <Avatar className="w-28 h-28 md:w-32 md:h-32 border-4 border-background shadow-2xl transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 ring-1 ring-border/50">
                                                     <AvatarImage src={author.photoURL} alt={author.displayName} className="object-cover" />
                                                     <AvatarFallback className="text-3xl font-black bg-primary/5 text-primary">
                                                         {author.displayName.charAt(0)}
                                                     </AvatarFallback>
                                                 </Avatar>
-                                                {author.role === 'admin' && (
-                                                    <div className="absolute -bottom-1 -right-1 bg-primary text-white p-1.5 rounded-full shadow-lg ring-2 ring-background">
+                                                {(author.role === 'admin' || author.role === 'penulis') && (
+                                                    <div className="absolute -bottom-1 -right-1 bg-primary text-white p-2 rounded-full shadow-lg ring-4 ring-background">
                                                         <CheckCircle2 className="h-4 w-4" />
                                                     </div>
                                                 )}
@@ -245,32 +248,32 @@ export default function JoinAuthorPage() {
 
                                             <div className="space-y-1">
                                                 <h3 className="font-headline text-2xl font-black text-foreground group-hover:text-primary transition-colors duration-300">{author.displayName}</h3>
-                                                <p className="text-xs font-bold text-muted-foreground tracking-widest uppercase">@{author.username}</p>
+                                                <p className="text-[10px] font-black text-muted-foreground tracking-[0.2em] uppercase">@{author.username}</p>
                                             </div>
                                             
-                                            <div className="my-6 w-12 h-1 bg-primary/10 rounded-full group-hover:w-20 transition-all duration-500" />
+                                            <div className="my-6 w-12 h-1 bg-primary/10 rounded-full group-hover:w-24 transition-all duration-500" />
 
-                                            <p className="text-sm text-muted-foreground/80 leading-relaxed italic line-clamp-3 mb-8 px-2">
+                                            <p className="text-sm text-muted-foreground/80 leading-relaxed italic line-clamp-3 mb-8 px-2 font-medium">
                                                 {author.bio || `Pujangga inspiratif di komunitas Elitera yang berbagi cerita lewat kata.`}
                                             </p>
                                             
                                             <div className="mt-auto pt-6 border-t border-border/50 grid grid-cols-2 gap-8 w-full">
                                                 <div className="text-center space-y-1">
                                                     <p className="font-black text-xl text-primary">{new Intl.NumberFormat('id-ID', { notation: 'compact' }).format(author.followers)}</p>
-                                                    <div className="flex items-center justify-center gap-1.5 text-[10px] uppercase font-black tracking-tighter text-muted-foreground">
+                                                    <div className="flex items-center justify-center gap-1.5 text-[10px] uppercase font-black tracking-tighter text-muted-foreground opacity-60">
                                                         <Users className="h-2.5 w-2.5" /> Pengikut
                                                     </div>
                                                 </div>
                                                 <div className="text-center space-y-1">
                                                     <p className="font-black text-xl text-accent">{author.following}</p>
-                                                    <div className="flex items-center justify-center gap-1.5 text-[10px] uppercase font-black tracking-tighter text-muted-foreground">
+                                                    <div className="flex items-center justify-center gap-1.5 text-[10px] uppercase font-black tracking-tighter text-muted-foreground opacity-60">
                                                         <BookOpen className="h-2.5 w-2.5" /> Mengikuti
                                                     </div>
                                                 </div>
                                             </div>
                                         </CardContent>
                                         
-                                        <div className="absolute bottom-4 right-8 opacity-0 group-hover:opacity-100 transition-opacity duration-500 translate-x-4 group-hover:translate-x-0">
+                                        <div className="absolute bottom-4 right-8 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-x-4 group-hover:translate-x-0">
                                             <ChevronRight className="h-6 w-6 text-primary/40" />
                                         </div>
                                     </Card>
@@ -288,20 +291,22 @@ export default function JoinAuthorPage() {
             <div className="max-w-2xl mx-auto py-20">
                 <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
                     <Card className="text-center rounded-[3rem] border-none shadow-2xl p-10 bg-card/50 backdrop-blur-md overflow-hidden relative">
-                        <div className="absolute top-0 right-0 p-10 opacity-5">
-                            <PenTool className="h-64 w-64 rotate-12" />
+                        {/* Decorative background element */}
+                        <div className="absolute top-[-10%] right-[-10%] p-10 opacity-5 pointer-events-none">
+                            <PenTool className="h-64 w-64 rotate-12 text-primary" />
                         </div>
+                        
                         <CardHeader className="relative z-10">
-                            <div className="mx-auto bg-accent/10 p-6 rounded-full w-fit mb-8 animate-pulse">
+                            <div className="mx-auto bg-accent/10 p-6 rounded-full w-fit mb-8 animate-pulse shadow-[0_0_40px_rgba(var(--accent),0.2)]">
                                 <Info className="h-12 w-12 text-accent" />
                             </div>
-                            <CardTitle className="font-headline text-4xl font-black mb-4">Lamaran Anda Sedang <span className="text-accent">Ditinjau</span></CardTitle>
-                            <CardDescription className="text-lg leading-relaxed text-muted-foreground">
-                                Terima kasih atas antusiasme Anda! Tim kurasi kami sedang meninjau portofolio dan motivasi Anda. Kami akan segera menghubungi Anda melalui notifikasi aplikasi.
+                            <CardTitle className="font-headline text-4xl font-black mb-4 leading-tight">Lamaran Anda Sedang <span className="text-accent italic">Ditinjau</span></CardTitle>
+                            <CardDescription className="text-lg leading-relaxed text-muted-foreground font-medium max-w-md mx-auto">
+                                Terima kasih atas antusiasme Anda! Tim kurasi kami sedang meninjau profil dan motivasi Anda. Kami akan segera menghubungi Anda melalui notifikasi aplikasi.
                             </CardDescription>
                         </CardHeader>
                         <CardFooter className="flex justify-center relative z-10 mt-8">
-                            <Button asChild variant="outline" className="rounded-full px-10 h-14 font-bold border-2">
+                            <Button asChild variant="outline" className="rounded-full px-10 h-14 font-black border-2 transition-all hover:bg-muted/50 active:scale-95">
                                 <Link href="/">Kembali Menjelajah</Link>
                             </Button>
                         </CardFooter>
@@ -312,36 +317,46 @@ export default function JoinAuthorPage() {
     }
 
   return (
-    <div className="max-w-4xl mx-auto py-12">
-      <div className="grid lg:grid-cols-12 gap-12 items-start">
+    <div className="max-w-5xl mx-auto py-12">
+      <div className="grid lg:grid-cols-12 gap-16 items-start">
         {/* Left Side: Info */}
-        <div className="lg:col-span-5 space-y-8">
-            <div className="space-y-4">
-                <h1 className="text-4xl md:text-5xl font-headline font-black leading-tight">Mulai Karir <span className="text-primary underline decoration-primary/20">Menulis</span> Anda</h1>
-                <p className="text-muted-foreground text-lg leading-relaxed">
-                    Bergabunglah dengan ribuan penulis inspiratif lainnya dan mulai bagikan dunia imajinasi Anda kepada pembaca global di Elitera.
-                </p>
+        <div className="lg:col-span-5 space-y-10">
+            <div className="space-y-6">
+                <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                >
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-black uppercase tracking-widest mb-4">
+                        <PenTool className="h-3 w-3" /> Karir Penulis
+                    </div>
+                    <h1 className="text-4xl md:text-5xl font-headline font-black leading-[1.1] tracking-tight text-foreground">
+                        Mulai Perjalanan <br/> <span className="text-primary italic underline decoration-primary/20">Sastramu</span> Anda
+                    </h1>
+                    <p className="mt-6 text-lg text-muted-foreground leading-relaxed font-medium">
+                        Bergabunglah dengan komunitas pujangga modern dan mulai bagikan dunia imajinasi Anda kepada pembaca global di Elitera.
+                    </p>
+                </motion.div>
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-8">
                 {[
-                    { icon: BookOpen, title: "Publikasi Gratis", desc: "Unggah karya Anda tanpa biaya sepeser pun." },
-                    { icon: Users, title: "Bangun Komunitas", desc: "Terhubung langsung dengan pembaca setia Anda." },
-                    { icon: Star, title: "Reputasi Penulis", desc: "Dapatkan lencana penulis dan verifikasi profil." }
+                    { icon: BookOpen, title: "Publikasi Tanpa Batas", desc: "Unggah karya Anda tanpa biaya sepeser pun dan jangkau audiens yang tepat.", color: "text-blue-500" },
+                    { icon: Users, title: "Bangun Komunitas", desc: "Terhubung langsung dengan pembaca setia melalui pesan dan cerita singkat.", color: "text-green-500" },
+                    { icon: Star, title: "Reputasi & Verifikasi", desc: "Dapatkan lencana penulis resmi dan tingkatkan otoritas Anda di dunia literasi.", color: "text-orange-500" }
                 ].map((item, i) => (
                     <motion.div 
                         key={i}
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: i * 0.1 }}
-                        className="flex gap-4 items-start"
+                        transition={{ delay: 0.1 + (i * 0.1) }}
+                        className="flex gap-5 items-start group"
                     >
-                        <div className="bg-primary/10 p-3 rounded-2xl shrink-0">
-                            <item.icon className="h-6 w-6 text-primary" />
+                        <div className={cn("p-3.5 rounded-2xl shrink-0 bg-white shadow-xl shadow-primary/5 transition-transform group-hover:scale-110 duration-300", item.color)}>
+                            <item.icon className="h-6 w-6" />
                         </div>
-                        <div>
-                            <h4 className="font-bold text-base">{item.title}</h4>
-                            <p className="text-sm text-muted-foreground">{item.desc}</p>
+                        <div className="space-y-1">
+                            <h4 className="font-black text-lg group-hover:text-primary transition-colors">{item.title}</h4>
+                            <p className="text-sm text-muted-foreground leading-relaxed font-medium">{item.desc}</p>
                         </div>
                     </motion.div>
                 ))}
@@ -351,33 +366,34 @@ export default function JoinAuthorPage() {
         {/* Right Side: Form */}
         <div className="lg:col-span-7">
             <motion.div 
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, type: 'spring' }}
             >
-                <Card className="rounded-[2.5rem] border-none shadow-2xl bg-card overflow-hidden">
-                    <CardHeader className="bg-primary/5 p-8 border-b border-primary/10">
-                        <div className="flex items-center gap-4">
-                            <div className="bg-white p-3 rounded-2xl shadow-sm">
-                                <BookUser className="h-8 w-8 text-primary" />
+                <Card className="rounded-[3rem] border-none shadow-[0_40px_80px_-15px_rgba(0,0,0,0.1)] bg-card overflow-hidden">
+                    <CardHeader className="bg-primary/5 p-8 md:p-10 border-b border-primary/10">
+                        <div className="flex items-center gap-5">
+                            <div className="bg-white p-4 rounded-[1.5rem] shadow-xl text-primary">
+                                <BookUser className="h-8 w-8" />
                             </div>
                             <div>
                                 <CardTitle className="text-2xl font-headline font-black">Formulir Pujangga</CardTitle>
-                                <CardDescription className="font-bold uppercase tracking-widest text-[10px] text-primary/60">Lengkapi data diri Anda</CardDescription>
+                                <CardDescription className="font-bold uppercase tracking-[0.2em] text-[10px] text-primary/60 mt-1">Lengkapi data diri untuk kurasi</CardDescription>
                             </div>
                         </div>
                     </CardHeader>
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)}>
-                            <CardContent className="p-8 space-y-6">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <CardContent className="p-8 md:p-10 space-y-8">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     <FormField
                                         control={form.control}
                                         name="name"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel className="font-bold">Nama Lengkap</FormLabel>
+                                                <FormLabel className="font-black text-xs uppercase tracking-widest ml-1">Nama Lengkap</FormLabel>
                                                 <FormControl>
-                                                    <Input placeholder="Guntur Padilah" {...field} className="h-12 rounded-xl bg-muted/30 border-none focus-visible:ring-primary/20" />
+                                                    <Input placeholder="Guntur Padilah" {...field} className="h-14 rounded-2xl bg-muted/30 border-none focus-visible:ring-primary/20 font-bold px-5" />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -388,9 +404,9 @@ export default function JoinAuthorPage() {
                                         name="email"
                                         render={({ field }) => (
                                             <FormItem>
-                                                <FormLabel className="font-bold">Email</FormLabel>
+                                                <FormLabel className="font-black text-xs uppercase tracking-widest ml-1">Email Resmi</FormLabel>
                                                 <FormControl>
-                                                    <Input type="email" {...field} readOnly className="h-12 rounded-xl bg-muted/50 border-none cursor-not-allowed opacity-70" />
+                                                    <Input type="email" {...field} readOnly className="h-14 rounded-2xl bg-muted/50 border-none cursor-not-allowed opacity-70 px-5 font-bold" />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -403,11 +419,13 @@ export default function JoinAuthorPage() {
                                     name="portfolio"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="font-bold">Portofolio / Blog (Opsional)</FormLabel>
+                                            <FormLabel className="font-black text-xs uppercase tracking-widest ml-1">Portofolio / Tautan Karya (Opsional)</FormLabel>
                                             <FormControl>
-                                                <Input placeholder="https://karyasaya.com" {...field} className="h-12 rounded-xl bg-muted/30 border-none focus-visible:ring-primary/20" />
+                                                <div className="relative group">
+                                                    <Input placeholder="https://karyasaya.com" {...field} className="h-14 rounded-2xl bg-muted/30 border-none focus-visible:ring-primary/20 px-5 font-bold" />
+                                                </div>
                                             </FormControl>
-                                            <FormDescription className="text-[10px]">Tautkan tulisan yang pernah Anda publikasikan sebelumnya.</FormDescription>
+                                            <FormDescription className="text-[10px] font-bold text-muted-foreground/60 ml-1 uppercase tracking-tighter">Tautkan tulisan atau blog yang pernah Anda publikasikan.</FormDescription>
                                             <FormMessage />
                                         </FormItem>
                                     )}
@@ -418,13 +436,13 @@ export default function JoinAuthorPage() {
                                     name="motivation"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="font-bold">Mengapa Anda ingin menulis di Elitera?</FormLabel>
+                                            <FormLabel className="font-black text-xs uppercase tracking-widest ml-1">Apa visi Anda bergabung di Elitera?</FormLabel>
                                             <FormControl>
                                                 <Textarea 
-                                                    placeholder="Ceritakan gairah menulis Anda..." 
-                                                    rows={5} 
+                                                    placeholder="Ceritakan gairah menulis Anda dan apa yang ingin Anda capai..." 
+                                                    rows={6} 
                                                     {...field} 
-                                                    className="rounded-2xl bg-muted/30 border-none focus-visible:ring-primary/20 resize-none py-4"
+                                                    className="rounded-[2rem] bg-muted/30 border-none focus-visible:ring-primary/20 resize-none py-5 px-6 font-medium text-base leading-relaxed"
                                                 />
                                             </FormControl>
                                             <FormMessage />
@@ -432,12 +450,13 @@ export default function JoinAuthorPage() {
                                     )}
                                 />
                             </CardContent>
-                            <CardFooter className="p-8 pt-0">
-                                <Button type="submit" className="w-full h-14 rounded-2xl font-black text-base shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95" disabled={isSubmitting}>
+                            <CardFooter className="p-8 md:p-10 pt-0">
+                                <Button type="submit" className="w-full h-16 rounded-[1.5rem] font-black text-base shadow-2xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95 group overflow-hidden relative" disabled={isSubmitting}>
+                                    <div className="absolute inset-0 bg-gradient-to-r from-primary via-accent to-primary opacity-0 group-hover:opacity-10 transition-opacity" />
                                     {isSubmitting ? (
-                                        <><Loader2 className="mr-2 h-5 w-5 animate-spin"/> Mengirim...</>
+                                        <><Loader2 className="mr-3 h-6 w-6 animate-spin"/> Sedang Mengirim...</>
                                     ) : (
-                                        <><Send className="mr-2 h-5 w-5"/> Ajukan Lamaran Penulis</>
+                                        <><Send className="mr-3 h-5 w-5 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1"/> Ajukan Lamaran Penulis</>
                                     )}
                                 </Button>
                             </CardFooter>
