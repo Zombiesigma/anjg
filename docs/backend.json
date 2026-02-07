@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "UserProfile": {
@@ -95,9 +96,10 @@
         "authorName": { "type": "string" },
         "authorAvatarUrl": { "type": "string", "format": "uri" },
         "status": { "type": "string", "enum": ["draft", "pending_review", "published", "rejected"] },
+        "visibility": { "type": "string", "enum": ["public", "followers_only"], "description": "The visibility of the book." },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["title", "authorId", "authorName", "status", "createdAt"]
+      "required": ["title", "authorId", "authorName", "status", "visibility", "createdAt"]
     },
     "Chapter": {
         "title": "Chapter",

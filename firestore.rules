@@ -1,3 +1,4 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -44,8 +45,17 @@ service cloud.firestore {
 
     // --- Books & Chapters ---
     match /books/{bookId} {
-      // Anyone can GET published books. Author/Admin can GET their own non-published books.
-      allow get: if resource.data.status == 'published' || (isSignedIn() && (request.auth.uid == resource.data.authorId || isAdmin()));
+      function canViewBook() {
+        let isAuthor = isSignedIn() && request.auth.uid == resource.data.authorId;
+        let isPublished = resource.data.status == 'published';
+        let isPublic = resource.data.visibility == 'public';
+        let isFollower = isSignedIn() && exists(/databases/$(database)/documents/users/$(resource.data.authorId)/followers/$(request.auth.uid));
+        
+        return (isPublished && (isPublic || isFollower || isAuthor)) || isAuthor || isAdmin();
+      }
+
+      // Anyone can GET books based on visibility. Author/Admin can always GET.
+      allow get: if canViewBook();
       // Allow LIST operations. Firestore will still enforce GET rules on each document returned.
       allow list: if true;
       
@@ -53,7 +63,7 @@ service cloud.firestore {
       allow update: if isSignedIn() && (
                       (get(/databases/$(database)/documents/books/$(bookId)).data.authorId == request.auth.uid) ||
                       isAdmin() ||
-                      (request.writeFields.size() == 1 && 'favoriteCount' in request.writeFields)
+                      (request.writeFields.size() == 1 && ('favoriteCount' in request.writeFields || 'viewCount' in request.writeFields))
                     );
                     
       // Signed in users with 'penulis' or 'admin' role can create books.

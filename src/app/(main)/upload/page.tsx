@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -13,8 +14,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Sparkles, AlertTriangle, BookUser, Upload, FileImage } from "lucide-react";
+import { Loader2, Sparkles, AlertTriangle, BookUser, Upload, FileImage, Globe, Users } from "lucide-react";
 import type { User as AppUser } from '@/lib/types';
 import Link from 'next/link';
 import { uploadFile } from '@/lib/uploader';
@@ -24,6 +27,7 @@ const formSchema = z.object({
   title: z.string().min(3, { message: "Judul minimal 3 karakter." }).max(100, { message: "Judul maksimal 100 karakter."}),
   genre: z.string({ required_error: "Genre harus dipilih."}),
   synopsis: z.string().min(10, { message: "Sinopsis minimal 10 karakter." }).max(1000, { message: "Sinopsis maksimal 1000 karakter."}),
+  visibility: z.enum(['public', 'followers_only'], { required_error: "Pilih siapa yang dapat melihat buku ini." }),
 });
 
 export default function CreateBookPage() {
@@ -43,6 +47,7 @@ export default function CreateBookPage() {
     defaultValues: {
       title: "",
       synopsis: "",
+      visibility: "public",
     },
   });
 
@@ -240,6 +245,49 @@ export default function CreateBookPage() {
                   <input id="cover-upload" type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
                 </div>
               </div>
+
+              <FormField
+                control={form.control}
+                name="visibility"
+                render={({ field }) => (
+                  <FormItem className="space-y-3">
+                    <FormLabel>Visibilitas</FormLabel>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        className="flex flex-col space-y-1"
+                      >
+                        <FormItem className="flex items-center space-x-3 space-y-0 p-3 rounded-md border border-input bg-background hover:bg-accent transition-colors">
+                          <FormControl>
+                            <RadioGroupItem value="public" />
+                          </FormControl>
+                          <Label className="flex items-center gap-2 cursor-pointer w-full font-normal">
+                            <Globe className="h-4 w-4 text-primary" />
+                            <div className="flex flex-col">
+                                <span className="font-semibold">Publik</span>
+                                <span className="text-xs text-muted-foreground">Semua orang dapat melihat dan membaca buku ini.</span>
+                            </div>
+                          </Label>
+                        </FormItem>
+                        <FormItem className="flex items-center space-x-3 space-y-0 p-3 rounded-md border border-input bg-background hover:bg-accent transition-colors">
+                          <FormControl>
+                            <RadioGroupItem value="followers_only" />
+                          </FormControl>
+                          <Label className="flex items-center gap-2 cursor-pointer w-full font-normal">
+                            <Users className="h-4 w-4 text-primary" />
+                            <div className="flex flex-col">
+                                <span className="font-semibold">Hanya Pengikut</span>
+                                <span className="text-xs text-muted-foreground">Hanya pengikut Anda yang dapat melihat dan membaca buku ini.</span>
+                            </div>
+                          </Label>
+                        </FormItem>
+                      </RadioGroup>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
               <FormField
                 control={form.control}

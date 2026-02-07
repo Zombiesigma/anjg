@@ -1,3 +1,4 @@
+
 'use client';
 
 import { notFound, useParams, useRouter } from 'next/navigation';
@@ -89,11 +90,22 @@ export default function ProfilePage() {
     setFollowsBack(!!isFollowerDoc);
   }, [isFollowerDoc]);
   
-  const publishedBooksQuery = useMemo(() => (
-    (firestore && user) 
-      ? query(collection(firestore, 'books'), where('authorId', '==', user.uid), where('status', '==', 'published')) 
-      : null
-  ), [firestore, user]);
+  const publishedBooksQuery = useMemo(() => {
+    if (!firestore || !user) return null;
+    
+    const baseQuery = query(collection(firestore, 'books'), where('authorId', '==', user.uid), where('status', '==', 'published'));
+    
+    // If it's my own profile, I see all my published books
+    if (isOwnProfile) return baseQuery;
+    
+    // If I'm following this author, I can see public and followers_only books
+    if (isFollowing) {
+        return query(baseQuery, where('visibility', 'in', ['public', 'followers_only']));
+    }
+    
+    // Default: only show public books
+    return query(baseQuery, where('visibility', '==', 'public'));
+  }, [firestore, user, isOwnProfile, isFollowing]);
   const { data: publishedBooks, isLoading: arePublishedBooksLoading } = useCollection<Book>(publishedBooksQuery);
 
   const otherBooksQuery = useMemo(() => (

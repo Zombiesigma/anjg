@@ -1,3 +1,4 @@
+
 import type { Timestamp } from 'firebase/firestore';
 
 export type User = {
@@ -34,6 +35,7 @@ export type Book = {
   authorName: string;
   authorAvatarUrl: string;
   status: 'draft' | 'pending_review' | 'published' | 'rejected';
+  visibility: 'public' | 'followers_only';
   createdAt: Timestamp;
 };
 

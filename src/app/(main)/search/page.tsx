@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useSearchParams } from 'next/navigation';
@@ -27,6 +28,7 @@ function SearchPageContent() {
     return query(
       collection(firestore, 'books'),
       where('status', '==', 'published'),
+      where('visibility', '==', 'public'), // Only show public books in search
       where('title', '>=', capitalizedQuery),
       where('title', '<=', capitalizedQuery + '\uf8ff'),
       limit(20)

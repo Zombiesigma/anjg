@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useFirestore, useCollection, useUser, useDoc } from '@/firebase';
@@ -51,10 +52,14 @@ export default function HomePage() {
   }, [firestore]);
 
 
-  // A single query to get all published books to avoid composite indexes.
+  // Only query for public books on the home page to keep it simple and avoid permission errors.
   const booksQuery = useMemo(() => (
     firestore
-    ? query(collection(firestore, 'books'), where('status', '==', 'published'))
+    ? query(
+        collection(firestore, 'books'), 
+        where('status', '==', 'published'),
+        where('visibility', '==', 'public')
+      )
     : null
   ), [firestore]);
   
