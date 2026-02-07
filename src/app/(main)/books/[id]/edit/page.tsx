@@ -17,7 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, PlusCircle, BookUp, GripVertical, FileEdit, Info, Trash2, Settings, FileImage, Upload, Sparkles, Globe, Users, CheckCircle2, ChevronLeft } from "lucide-react";
+import { Loader2, PlusCircle, BookUp, GripVertical, FileEdit, Info, Trash2, Settings, FileImage, Upload, Sparkles, Globe, Users, CheckCircle2, ChevronLeft, Menu, X } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,6 +36,7 @@ import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 
 const chapterSchema = z.object({
   title: z.string().min(3, "Judul bab minimal 3 karakter."),
@@ -67,6 +68,7 @@ export default function EditBookPage() {
   
   const [isReviewDialogOpen, setIsReviewDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeletingDialogOpen] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (!isReviewDialogOpen && !isDeleteDialogOpen) {
@@ -154,14 +156,19 @@ export default function EditBookPage() {
     if (tab === 'settings') {
         setActiveChapterId(null);
     }
+    setIsMobileSidebarOpen(false);
   };
 
   const handleChapterSelection = async (chapterId: string) => {
-    if (chapterId === activeChapterId) return;
+    if (chapterId === activeChapterId) {
+        setIsMobileSidebarOpen(false);
+        return;
+    };
     try {
       await saveCurrentChapter();
       setActiveTab('editor');
       setActiveChapterId(chapterId);
+      setIsMobileSidebarOpen(false);
     } catch (e) {
       console.error("Error switching chapters:", e);
       toast({ variant: 'destructive', title: 'Gagal Pindah Bab', description: 'Gagal menyimpan perubahan pada bab saat ini.' });
@@ -265,9 +272,12 @@ export default function EditBookPage() {
 
       setActiveTab('editor');
       setActiveChapterId(newChapterDoc.id);
+      setIsMobileSidebarOpen(false);
+      
+      toast({ title: "Bab Baru Dibuat", description: "Silakan mulai menulis konten untuk bab ini." });
     } catch (e) {
         console.error("Error adding chapter:", e);
-        toast({ variant: 'destructive', title: 'Gagal Menambah Bab', description: 'Gagal menyimpan perubahan pada bab saat ini.' });
+        toast({ variant: 'destructive', title: 'Gagal Menambah Bab', description: 'Terjadi kesalahan teknis.' });
     }
   }
 
@@ -318,10 +328,8 @@ export default function EditBookPage() {
 
   const activeChapter = chapters?.find(c => c.id === activeChapterId);
 
-  return (
-    <div className="flex h-[calc(100vh-theme(spacing.14))] -m-6 overflow-hidden bg-background">
-      {/* Sidebar Editor */}
-      <aside className="hidden md:flex flex-col w-72 lg:w-80 border-r bg-muted/20 shrink-0">
+  const SidebarContent = () => (
+    <div className="flex flex-col h-full">
         <div className="p-6 border-b bg-background/50 backdrop-blur">
             <Link href={`/books/${book.id}`} className="flex items-center gap-2 text-xs text-muted-foreground hover:text-primary transition-colors mb-4 group">
                 <ChevronLeft className="h-3 w-3 transition-transform group-hover:-translate-x-1" /> Kembali ke Detail
@@ -336,7 +344,7 @@ export default function EditBookPage() {
                     variant={activeTab === 'settings' ? "secondary" : "ghost"}
                     className={cn(
                         "w-full justify-start gap-3 h-11 px-4 rounded-xl transition-all",
-                        activeTab === 'settings' ? "shadow-sm border-primary/10" : "hover:bg-primary/5 hover:text-primary"
+                        activeTab === 'settings' ? "shadow-sm border-primary/10 bg-primary/5 text-primary" : "hover:bg-primary/5 hover:text-primary"
                     )}
                     onClick={() => handleTabSwitch('settings')}
                 >
@@ -375,32 +383,62 @@ export default function EditBookPage() {
         <div className="p-4 border-t bg-background/50">
             <Button 
                 variant="outline" 
-                className="w-full h-11 rounded-xl border-dashed border-2 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all" 
+                className="w-full h-11 rounded-xl border-dashed border-2 hover:border-primary hover:bg-primary/5 hover:text-primary transition-all font-bold" 
                 onClick={handleAddChapter} 
                 disabled={isReviewing}
             >
-                <PlusCircle className="mr-2 h-4 w-4" /> Bab Baru
+                <PlusCircle className="mr-2 h-4 w-4" /> Tambah Bab Baru
             </Button>
         </div>
+    </div>
+  );
+
+  return (
+    <div className="flex h-[calc(100vh-theme(spacing.14))] -m-6 overflow-hidden bg-background">
+      {/* Sidebar Desktop */}
+      <aside className="hidden md:flex flex-col w-72 lg:w-80 border-r bg-muted/20 shrink-0">
+        <SidebarContent />
       </aside>
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col min-w-0 bg-background relative overflow-hidden">
          {/* Top Toolbar */}
-         <header className="h-16 border-b flex items-center justify-between px-6 bg-background/95 backdrop-blur-md z-30 sticky top-0 shadow-sm">
-            <div className="flex items-center gap-4 min-w-0">
+         <header className="h-16 border-b flex items-center justify-between px-4 md:px-6 bg-background/95 backdrop-blur-md z-30 sticky top-0 shadow-sm">
+            <div className="flex items-center gap-2 md:gap-4 min-w-0">
+                {/* Mobile Menu Trigger */}
+                <div className="md:hidden">
+                    <Sheet open={isMobileSidebarOpen} onOpenChange={setIsMobileSidebarOpen}>
+                        <SheetTrigger asChild>
+                            <Button variant="ghost" size="icon" className="rounded-full">
+                                <Menu className="h-5 w-5" />
+                            </Button>
+                        </SheetTrigger>
+                        <SheetContent 
+                            side="left" 
+                            className="p-0 w-80"
+                            onCloseAutoFocus={(e) => {
+                                e.preventDefault();
+                                document.body.style.pointerEvents = '';
+                            }}
+                        >
+                            <SheetHeader className="sr-only"><SheetTitle>Navigasi Editor</SheetTitle></SheetHeader>
+                            <SidebarContent />
+                        </SheetContent>
+                    </Sheet>
+                </div>
+
                 <div className={cn(
                     "flex items-center gap-2",
                     activeTab === 'settings' ? "text-primary" : "text-foreground"
                 )}>
-                    {activeTab === 'settings' ? <Settings className="h-5 w-5"/> : <FileEdit className="h-5 w-5"/>}
-                    <h3 className="font-bold text-base truncate">
-                        {activeTab === 'settings' ? 'Pengaturan Detail Buku' : (activeChapter?.title || "Pilih Bab")}
+                    {activeTab === 'settings' ? <Settings className="h-5 w-5 hidden sm:block"/> : <FileEdit className="h-5 w-5 hidden sm:block"/>}
+                    <h3 className="font-bold text-sm md:text-base truncate">
+                        {activeTab === 'settings' ? 'Pengaturan Buku' : (activeChapter?.title || "Pilih Bab")}
                     </h3>
                 </div>
                 
                 {lastSaved && activeTab === 'editor' && (
-                    <div className="hidden sm:flex items-center gap-1.5 text-[10px] font-bold text-green-600 bg-green-50 px-2.5 py-1 rounded-full border border-green-100">
+                    <div className="hidden lg:flex items-center gap-1.5 text-[10px] font-bold text-green-600 bg-green-50 px-2.5 py-1 rounded-full border border-green-100">
                         <CheckCircle2 className="h-3 w-3" />
                         Tersimpan {lastSaved.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
                     </div>
@@ -420,15 +458,15 @@ export default function EditBookPage() {
                     )}
                 </div>
 
-                <div className="h-6 w-px bg-border mx-2 hidden sm:block" />
+                <div className="h-6 w-px bg-border mx-1 hidden sm:block" />
 
                 <div className="flex items-center gap-1">
                     {book.status !== 'pending_review' || isAdmin ? (
                         <AlertDialog open={isReviewDialogOpen} onOpenChange={setIsReviewDialogOpen}>
                             <AlertDialogTrigger asChild>
-                                <Button size="sm" className="rounded-full px-5 font-bold shadow-lg shadow-primary/20" disabled={isSubmittingReview}>
+                                <Button size="sm" className="rounded-full px-3 md:px-5 font-bold shadow-lg shadow-primary/20 text-xs md:text-sm" disabled={isSubmittingReview}>
                                     {isSubmittingReview ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BookUp className="mr-2 h-4 w-4" />}
-                                    {book.status === 'published' ? 'Kirim Pembaruan' : 'Terbitkan'}
+                                    {book.status === 'published' ? 'Update' : 'Terbitkan'}
                                 </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent onCloseAutoFocus={(e) => { e.preventDefault(); document.body.style.pointerEvents = ''; }}>
@@ -438,7 +476,7 @@ export default function EditBookPage() {
                                     </AlertDialogTitle>
                                     <AlertDialogDescription className="text-base">
                                         {book.status === 'published' 
-                                            ? 'Pembaruan Anda akan ditinjau oleh tim admin kami. Versi buku yang saat ini tayang tidak akan berubah sampai tim menyetujui versi terbaru ini.' 
+                                            ? 'Pembaruan Anda akan ditinjau oleh tim admin kami sebelum dipublikasikan secara luas.' 
                                             : 'Karya Anda akan dikirim ke tim admin Elitera untuk proses moderasi kualitas. Setelah disetujui, buku Anda akan dapat dinikmati oleh pembaca!'
                                         }
                                     </AlertDialogDescription>
@@ -446,7 +484,7 @@ export default function EditBookPage() {
                                 <AlertDialogFooter className="mt-6 gap-2">
                                     <AlertDialogCancel onClick={() => setIsReviewDialogOpen(false)} className="rounded-full">Batal</AlertDialogCancel>
                                     <AlertDialogAction onClick={handleSubmitForReview} className="rounded-full px-8 font-bold">
-                                        {book.status === 'published' ? 'Ya, Kirim Pembaruan' : 'Kirim Sekarang'}
+                                        Ya, Kirim Sekarang
                                     </AlertDialogAction>
                                 </AlertDialogFooter>
                             </AlertDialogContent>
@@ -463,13 +501,13 @@ export default function EditBookPage() {
                             <AlertDialogHeader>
                                 <AlertDialogTitle className="text-destructive font-headline text-2xl">Hapus Permanen?</AlertDialogTitle>
                                 <AlertDialogDescription className="text-base">
-                                    Tindakan ini akan menghapus buku <strong>"{book.title}"</strong> beserta seluruh bab dan komentarnya secara permanen. Anda tidak dapat membatalkan ini.
+                                    Tindakan ini akan menghapus buku <strong>"{book.title}"</strong> beserta seluruh kontennya secara permanen.
                                 </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter className="mt-6">
                                 <AlertDialogCancel onClick={() => setIsDeletingDialogOpen(false)} className="rounded-full">Batal</AlertDialogCancel>
                                 <AlertDialogAction onClick={handleDeleteBook} className="bg-destructive hover:bg-destructive/90 rounded-full px-8 font-bold text-white">
-                                    {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Ya, Hapus Karya Ini'}
+                                    {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Hapus Selamanya'}
                                 </AlertDialogAction>
                             </AlertDialogFooter>
                         </AlertDialogContent>
@@ -487,11 +525,11 @@ export default function EditBookPage() {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
-                        className="max-w-3xl mx-auto py-12 px-6"
+                        className="max-w-3xl mx-auto py-8 md:py-12 px-6"
                     >
                         <div className="mb-10">
-                            <h2 className="text-3xl font-headline font-bold mb-2">Detail & Identitas Buku</h2>
-                            <p className="text-muted-foreground">Informasi di bawah ini adalah wajah pertama yang akan dilihat oleh pembaca Anda.</p>
+                            <h2 className="text-2xl md:text-3xl font-headline font-bold mb-2">Identitas Karya</h2>
+                            <p className="text-muted-foreground text-sm">Informasi ini akan membantu pembaca menemukan dan memahami cerita Anda.</p>
                         </div>
 
                         <Form {...settingsForm}>
@@ -517,7 +555,6 @@ export default function EditBookPage() {
                                                 <span className="text-xs font-bold text-white uppercase tracking-wider">Unggah Baru</span>
                                             </div>
                                         </div>
-                                        <p className="text-[10px] text-center text-muted-foreground italic">Gunakan gambar rasio 2:3 dengan resolusi tinggi.</p>
                                         <input id="edit-cover-upload" type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
                                     </div>
 
@@ -528,7 +565,7 @@ export default function EditBookPage() {
                                             name="title"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel className="font-bold">Judul Karya</FormLabel>
+                                                    <FormLabel className="font-bold">Judul</FormLabel>
                                                     <FormControl><Input {...field} className="h-12 text-lg rounded-xl focus-visible:ring-primary/20 font-medium" /></FormControl>
                                                     <FormMessage />
                                                 </FormItem>
@@ -540,11 +577,11 @@ export default function EditBookPage() {
                                             name="genre"
                                             render={({ field }) => (
                                                 <FormItem>
-                                                    <FormLabel className="font-bold">Kategori/Genre</FormLabel>
+                                                    <FormLabel className="font-bold">Genre</FormLabel>
                                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                                                         <FormControl>
                                                             <SelectTrigger className="h-12 rounded-xl focus:ring-primary/20">
-                                                                <SelectValue placeholder="Pilih genre yang tepat" />
+                                                                <SelectValue placeholder="Pilih genre" />
                                                             </SelectTrigger>
                                                         </FormControl>
                                                         <SelectContent className="rounded-xl">
@@ -568,7 +605,7 @@ export default function EditBookPage() {
                                             name="visibility"
                                             render={({ field }) => (
                                             <FormItem className="space-y-3">
-                                                <FormLabel className="font-bold">Visibilitas</FormLabel>
+                                                <FormLabel className="font-bold">Privasi & Visibilitas</FormLabel>
                                                 <FormControl>
                                                 <RadioGroup
                                                     onValueChange={field.onChange}
@@ -586,7 +623,7 @@ export default function EditBookPage() {
                                                             </div>
                                                             <div className="flex flex-col">
                                                                 <span className="font-bold text-sm">Publik</span>
-                                                                <span className="text-[10px] text-muted-foreground">Terbuka untuk semua</span>
+                                                                <span className="text-[10px] text-muted-foreground">Untuk semua</span>
                                                             </div>
                                                         </Label>
                                                     </FormItem>
@@ -601,8 +638,8 @@ export default function EditBookPage() {
                                                                 <Users className="h-4 w-4" />
                                                             </div>
                                                             <div className="flex flex-col">
-                                                                <span className="font-bold text-sm">Privat</span>
-                                                                <span className="text-[10px] text-muted-foreground">Hanya pengikut setia</span>
+                                                                <span className="font-bold text-sm">Pengikut</span>
+                                                                <span className="text-[10px] text-muted-foreground">Khusus pembaca setia</span>
                                                             </div>
                                                         </Label>
                                                     </FormItem>
@@ -620,13 +657,13 @@ export default function EditBookPage() {
                                     name="synopsis"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="font-bold">Sinopsis Cerita</FormLabel>
+                                            <FormLabel className="font-bold">Sinopsis</FormLabel>
                                             <FormControl>
                                                 <Textarea 
                                                     rows={8} 
                                                     {...field} 
                                                     className="rounded-2xl text-base leading-relaxed focus-visible:ring-primary/20 font-serif" 
-                                                    placeholder="Tulis ringkasan menarik yang membuat pembaca penasaran..."
+                                                    placeholder="Tulis ringkasan cerita Anda..."
                                                 />
                                             </FormControl>
                                             <FormMessage />
@@ -637,7 +674,7 @@ export default function EditBookPage() {
                                 <div className="flex justify-end pt-4">
                                     <Button type="submit" size="lg" className="rounded-full px-10 h-14 font-bold shadow-xl shadow-primary/20" disabled={isSavingSettings}>
                                         {isSavingSettings ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Sparkles className="mr-2 h-5 w-5" />}
-                                        Simpan Perubahan Identitas
+                                        Simpan Pengaturan
                                     </Button>
                                 </div>
                             </form>
@@ -649,7 +686,7 @@ export default function EditBookPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="max-w-4xl mx-auto py-12 px-6 lg:px-12"
+                        className="max-w-4xl mx-auto py-8 md:py-12 px-6 lg:px-12"
                     >
                         <Form {...chapterForm}>
                             <form className="space-y-8 pb-32">
@@ -657,14 +694,7 @@ export default function EditBookPage() {
                                 <Alert className="bg-primary/5 border-primary/20 rounded-2xl">
                                     <Info className="h-4 w-4 text-primary" />
                                     <AlertTitle className="font-bold">Sedang Ditinjau</AlertTitle>
-                                    <AlertDescription className="text-muted-foreground">Buku ini sedang dalam peninjauan admin. {isAdmin ? 'Sebagai admin, Anda masih dapat mengubahnya.' : 'Akses edit ditutup sementara untuk penulis.'}</AlertDescription>
-                                </Alert>
-                                )}
-                                {book.status === 'rejected' && (
-                                <Alert variant="destructive" className="rounded-2xl bg-destructive/5 border-destructive/20">
-                                    <Info className="h-4 w-4" />
-                                    <AlertTitle className="font-bold">Ditolak</AlertTitle>
-                                    <AlertDescription>Buku ini ditolak oleh tim moderasi. Silakan perbaiki berdasarkan umpan balik (jika ada) dan ajukan kembali.</AlertDescription>
+                                    <AlertDescription className="text-muted-foreground">Konten dikunci selama peninjauan admin. {isAdmin && 'Anda dapat mengeditnya sebagai admin.'}</AlertDescription>
                                 </Alert>
                                 )}
 
@@ -678,7 +708,7 @@ export default function EditBookPage() {
                                                 placeholder="Judul Bab..." 
                                                 {...field} 
                                                 disabled={isReviewing} 
-                                                className="border-none shadow-none text-4xl md:text-5xl font-headline font-black px-0 h-auto focus-visible:ring-0 placeholder:text-muted-foreground/30 mb-2"
+                                                className="border-none shadow-none text-3xl md:text-5xl font-headline font-black px-0 h-auto focus-visible:ring-0 placeholder:text-muted-foreground/30 mb-2"
                                             />
                                         </FormControl>
                                         <FormMessage />
@@ -696,9 +726,9 @@ export default function EditBookPage() {
                                         <FormLabel className="sr-only">Konten Bab</FormLabel>
                                         <FormControl>
                                             <Textarea 
-                                                placeholder="Mulai tulis petualangan Anda di sini..." 
+                                                placeholder="Mulai tulis cerita Anda di sini..." 
                                                 {...field} 
-                                                className="min-h-[70vh] border-none shadow-none px-0 focus-visible:ring-0 text-xl md:text-2xl leading-[1.8] font-serif resize-none bg-transparent placeholder:text-muted-foreground/20 scroll-smooth" 
+                                                className="min-h-[70vh] border-none shadow-none px-0 focus-visible:ring-0 text-lg md:text-2xl leading-[1.8] font-serif resize-none bg-transparent placeholder:text-muted-foreground/20 scroll-smooth" 
                                                 disabled={isReviewing} 
                                             />
                                         </FormControl>
@@ -716,7 +746,7 @@ export default function EditBookPage() {
                         </div>
                         <div className="space-y-2 mb-8">
                             <h4 className="text-2xl font-headline font-bold">Mulai Tuangkan Ide</h4>
-                            <p className="text-muted-foreground max-w-sm mx-auto">Pilih bab dari bilah sisi atau buat bab baru untuk mulai berbagi cerita Anda kepada dunia.</p>
+                            <p className="text-muted-foreground max-w-sm mx-auto">Anda belum memilih bab. Gunakan menu di bilah sisi atau klik tombol di bawah untuk memulai bab pertama.</p>
                         </div>
                         <Button onClick={handleAddChapter} size="lg" className="rounded-full px-8 font-bold shadow-lg shadow-primary/10">
                             <PlusCircle className="mr-2 h-5 w-5" /> Buat Bab Pertama
