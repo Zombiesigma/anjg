@@ -141,6 +141,10 @@ export function UserNav() {
                 document.body.style.pointerEvents = '';
             }}
         >
+          <SheetHeader className="sr-only">
+            <SheetTitle>Menu Navigasi Profil</SheetTitle>
+          </SheetHeader>
+
           {/* Header Profile Section */}
           <div className="p-6 pb-8 bg-gradient-to-b from-primary/10 via-primary/5 to-transparent border-b border-primary/5">
             <div className="flex flex-col items-center text-center space-y-4">
