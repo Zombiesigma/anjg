@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { signUpWithEmail, signInWithGoogle } from '@/firebase/auth/service';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { Loader2, Upload, User as UserIcon, Mail, Lock, Sparkles, Chrome, PenTool } from 'lucide-react';
+import { Loader2, Upload, User as UserIcon, Mail, Lock, Sparkles, Chrome, PenTool, Eye, EyeOff } from 'lucide-react';
 import { useAuthRedirect } from '@/hooks/use-auth-redirect';
 import { uploadFile } from '@/lib/uploader';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -33,6 +33,7 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -211,7 +212,19 @@ export default function RegisterPage() {
                       <FormControl>
                         <div className="relative group">
                           <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                          <Input type="password" placeholder="Min. 6 Karakter" {...field} className="h-12 pl-11 rounded-xl bg-muted/30 border-none focus-visible:ring-primary/20 font-medium" />
+                          <Input 
+                            type={showPassword ? 'text' : 'password'} 
+                            placeholder="Min. 6 Karakter" 
+                            {...field} 
+                            className="h-12 pl-11 pr-11 rounded-xl bg-muted/30 border-none focus-visible:ring-primary/20 font-medium" 
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors"
+                          >
+                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </button>
                         </div>
                       </FormControl>
                       <FormMessage />
