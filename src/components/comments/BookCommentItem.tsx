@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useFirestore, useUser, useDoc, useCollection } from '@/firebase';
-import { doc, collection, addDoc, serverTimestamp, query, orderBy, updateDoc, increment, writeBatch, deleteDoc } from 'firebase/firestore';
+import { doc, collection, serverTimestamp, query, orderBy, increment, writeBatch } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -14,6 +14,8 @@ import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'framer-motion';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface BookCommentItemProps {
     bookId: string;
@@ -130,7 +132,11 @@ export function BookCommentItem({ bookId, comment, currentUserProfile }: BookCom
                                 {isMounted && comment.createdAt ? formatDistanceToNow(comment.createdAt.toDate(), { locale: id, addSuffix: true }) : '...'}
                             </span>
                         </div>
-                        <p className="text-sm text-foreground/90 leading-relaxed">{comment.text}</p>
+                        <div className="prose prose-sm dark:prose-invert prose-p:leading-relaxed prose-blockquote:border-l-2 prose-blockquote:pl-3 prose-p:m-0 max-w-none">
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                {comment.text}
+                            </ReactMarkdown>
+                        </div>
                     </div>
                     
                     <div className="flex items-center gap-2 pl-2">
@@ -178,7 +184,7 @@ export function BookCommentItem({ bookId, comment, currentUserProfile }: BookCom
                             </Avatar>
                             <div className="flex-1 relative">
                                 <Textarea 
-                                    placeholder={`Balas ${comment.userName}...`}
+                                    placeholder={`Balas ${comment.userName}... (Gunakan Markdown jika perlu)`}
                                     className="w-full pr-12 min-h-[80px] bg-muted/20 border-none shadow-none focus-visible:ring-primary/20 text-sm rounded-xl py-3"
                                     value={replyText}
                                     onChange={(e) => setReplyText(e.target.value)}
@@ -218,7 +224,11 @@ export function BookCommentItem({ bookId, comment, currentUserProfile }: BookCom
                                             {isMounted && reply.createdAt ? formatDistanceToNow(reply.createdAt.toDate(), { locale: id, addSuffix: true }) : '...'}
                                         </span>
                                     </div>
-                                    <p className="text-sm text-foreground/80 leading-relaxed">{reply.text}</p>
+                                    <div className="prose prose-sm dark:prose-invert prose-p:leading-relaxed prose-blockquote:border-l-2 prose-blockquote:pl-3 prose-p:m-0 max-w-none">
+                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                            {reply.text}
+                                        </ReactMarkdown>
+                                    </div>
                                 </div>
                             </div>
                         </div>

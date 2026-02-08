@@ -17,6 +17,8 @@ import { Label } from '@/components/ui/label';
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 export default function ReadPage() {
   const params = useParams<{ id: string }>();
@@ -30,7 +32,6 @@ export default function ReadPage() {
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Safety net: Pastikan pointer-events kembali normal saat sheet ditutup
   useEffect(() => {
     if (!isSheetOpen) {
         const timer = setTimeout(() => {
@@ -186,7 +187,6 @@ export default function ReadPage() {
 
   return (
     <div className="flex h-screen -mt-14 -mx-4 md:-mx-6 bg-background selection:bg-primary/20">
-      {/* Desktop Sidebar */}
       <aside className="hidden md:block md:w-72 lg:w-80 border-r flex-shrink-0 shadow-sm z-20">
           <ChapterList />
       </aside>
@@ -289,8 +289,8 @@ export default function ReadPage() {
             </header>
 
             <article 
-                className="prose prose-zinc dark:prose-invert max-w-none transition-all duration-300"
-                style={{ fontSize: `${fontSize}px`, lineHeight: 1.8 }}
+                className="prose prose-zinc dark:prose-invert max-w-none transition-all duration-300 prose-headings:font-headline prose-p:leading-relaxed prose-blockquote:border-primary/20 prose-blockquote:bg-muted/20 prose-blockquote:py-1 prose-blockquote:px-6 prose-blockquote:rounded-r-lg"
+                style={{ fontSize: `${fontSize}px` }}
             >
                 {areChaptersLoading ? (
                     <div className="space-y-12">
@@ -317,12 +317,11 @@ export default function ReadPage() {
                                     </span>
                                     <h2 className="font-headline text-3xl md:text-4xl font-bold m-0 border-none">{chapter.title}</h2>
                                 </div>
-                                <div className="space-y-6 md:space-y-8 font-body">
-                                    {chapter.content.split('\n').filter(p => p.trim() !== '').map((paragraph, pIndex) => (
-                                        <p key={pIndex} className="text-foreground/90 first-letter:text-4xl first-letter:font-headline first-letter:mr-2 first-letter:float-left first-letter:leading-none">
-                                            {paragraph}
-                                        </p>
-                                    ))}
+                                
+                                <div className="markdown-content">
+                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                        {chapter.content}
+                                    </ReactMarkdown>
                                 </div>
                                 
                                 {chapterIndex < chapters.length - 1 ? (
@@ -403,8 +402,14 @@ export default function ReadPage() {
         .dark .custom-scrollbar::-webkit-scrollbar-thumb {
           background: rgba(255, 255, 255, 0.1);
         }
-        article p:first-of-type {
-            margin-top: 0;
+        .markdown-content p:first-of-type::first-letter {
+            font-size: 3rem;
+            line-height: 1;
+            font-family: 'Playfair Display', serif;
+            font-weight: 900;
+            float: left;
+            margin-right: 0.5rem;
+            color: hsl(var(--primary));
         }
       `}</style>
     </div>
@@ -414,7 +419,6 @@ export default function ReadPage() {
 function ReadPageSkeleton() {
   return (
      <div className="flex h-screen -mt-14 -mx-4 md:-mx-6 bg-background animate-pulse">
-        {/* Desktop Sidebar Skeleton */}
         <aside className="hidden md:block w-72 lg:w-80 border-r flex-shrink-0 p-6 space-y-8">
             <div className="space-y-2">
               <Skeleton className="h-8 w-3/4" />

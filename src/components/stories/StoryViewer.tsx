@@ -16,6 +16,8 @@ import { id } from 'date-fns/locale';
 import { StoryViewersSheet } from './StoryViewersSheet';
 import { StoryCommentsSheet } from './StoryCommentsSheet';
 import { cn } from '@/lib/utils';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface StoryViewerProps {
   stories: Story[];
@@ -111,7 +113,6 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
     return () => clearTimeout(timer);
   }, [storyIndex, authorIndex, isOpen, isPaused, showViews, showComments, nextStory]);
   
-  // Logic View Count Sempurna
   useEffect(() => {
     if (!currentStory || !currentUser || !firestore) return;
 
@@ -196,7 +197,6 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
     }
   }
 
-  // Safety net: Pastikan pointer-events kembali normal saat viewer ditutup
   useEffect(() => {
     if (!isOpen) {
         const timer = setTimeout(() => {
@@ -220,21 +220,21 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
         }}
       >
         <DialogTitle className="sr-only">Cerita {currentGroup.authorName}</DialogTitle>
-        <DialogDescription className="sr-only">Melihat momen cerita teks.</DialogDescription>
+        <DialogDescription className="sr-only">Melihat momen cerita teks dengan Markdown.</DialogDescription>
         
         <div className="relative w-full h-full flex items-center justify-center">
             <div className="absolute inset-0 hidden md:flex items-center justify-between px-10 pointer-events-none z-[270]">
-                <Button variant="ghost" size="icon" onClick={prevStory} className="h-14 w-14 rounded-full bg-white/10 text-white pointer-events-auto backdrop-blur-md">
+                <button onClick={prevStory} className="h-14 w-14 rounded-full bg-white/10 text-white pointer-events-auto backdrop-blur-md flex items-center justify-center hover:bg-white/20 transition-all">
                     <ChevronLeft className="h-8 w-8" />
-                </Button>
-                <Button variant="ghost" size="icon" onClick={nextStory} className="h-14 w-14 rounded-full bg-white/10 text-white pointer-events-auto backdrop-blur-md">
+                </button>
+                <button onClick={nextStory} className="h-14 w-14 rounded-full bg-white/10 text-white pointer-events-auto backdrop-blur-md flex items-center justify-center hover:bg-white/20 transition-all">
                     <ChevronRight className="h-8 w-8" />
-                </Button>
+                </button>
             </div>
 
-            <Button variant="ghost" size="icon" onClick={onClose} className="absolute top-6 right-6 z-[280] text-white/60 hover:text-white rounded-full h-12 w-12">
+            <button onClick={onClose} className="absolute top-6 right-6 z-[280] text-white/60 hover:text-white rounded-full h-12 w-12 flex items-center justify-center transition-colors">
                 <X className="h-7 w-7" />
-            </Button>
+            </button>
             
             <div 
                 className="relative w-full md:w-[450px] h-full md:h-[90vh] md:max-h-[800px] md:rounded-3xl overflow-hidden flex flex-col shadow-2xl"
@@ -284,11 +284,13 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 1.1 }}
-                        className="w-full h-full flex items-center justify-center p-12 text-center"
+                        className="w-full h-full flex items-center justify-center p-12 text-center overflow-y-auto"
                     >
-                        <p className="text-2xl md:text-3xl font-headline font-black text-white whitespace-pre-wrap leading-tight drop-shadow-lg">
-                            "{currentStory.content}"
-                        </p>
+                        <div className="prose prose-invert prose-p:text-2xl md:prose-p:text-3xl prose-p:font-headline prose-p:font-black prose-p:leading-tight prose-p:drop-shadow-lg prose-blockquote:border-l-4 prose-blockquote:border-white/40 prose-blockquote:pl-4 prose-blockquote:italic prose-p:m-0 max-w-none">
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                {currentStory.content}
+                            </ReactMarkdown>
+                        </div>
                     </motion.div>
                   </AnimatePresence>
                 </div>
