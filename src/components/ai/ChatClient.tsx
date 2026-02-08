@@ -196,8 +196,8 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
         </div>
       </ScrollArea>
 
-      {/* Area Input - Menggunakan padding ekstra di bawah untuk safe-area */}
-      <div className="p-4 md:p-6 border-t bg-background shrink-0 z-40 shadow-up relative pb-[max(1rem,env(safe-area-inset-bottom))]">
+      {/* Area Input - Menggunakan padding lebih rendah untuk kenyamanan mobile */}
+      <div className="p-4 md:p-6 border-t bg-background shrink-0 z-40 shadow-up relative pb-[max(0.5rem,env(safe-area-inset-bottom))]">
         <div className="max-w-3xl mx-auto">
             <form onSubmit={handleSubmit} className="relative flex items-end gap-3">
                 <div className="relative flex-1 group">
@@ -228,9 +228,9 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
                     </div>
                 </div>
             </form>
-            <div className="flex items-center justify-center gap-4 mt-3 opacity-40 select-none">
+            <div className="flex items-center justify-center gap-4 mt-2 opacity-30 select-none">
                 <div className="h-px bg-border flex-1" />
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground whitespace-nowrap">
+                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground whitespace-nowrap">
                     Elitera Intelligence
                 </p>
                 <div className="h-px bg-border flex-1" />

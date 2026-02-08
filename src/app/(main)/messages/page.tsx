@@ -457,8 +457,8 @@ export default function MessagesPage() {
                 </ScrollArea>
               </div>
 
-              {/* Input Area */}
-              <div className="p-6 border-t bg-background/95 backdrop-blur-md shrink-0 z-30 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.05)]">
+              {/* Input Area - Geser sedikit ke bawah dengan padding yang lebih subtil */}
+              <div className="p-4 md:p-6 border-t bg-background/95 backdrop-blur-md shrink-0 z-30 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.05)]">
                   <form onSubmit={handleSendMessage} className="relative flex items-end gap-4 max-w-5xl mx-auto">
                       <div className="relative flex-1 group">
                         <div className="absolute -inset-1 bg-gradient-to-r from-primary/10 to-accent/10 rounded-[2rem] blur opacity-0 group-focus-within:opacity-100 transition-opacity" />
@@ -484,8 +484,8 @@ export default function MessagesPage() {
                         </div>
                       </div>
                   </form>
-                  <div className="mt-3 flex justify-center opacity-30 pointer-events-none select-none">
-                      <p className="text-[8px] font-black uppercase tracking-[0.4em]">Elitera Secure Chat</p>
+                  <div className="mt-2 flex justify-center opacity-20 pointer-events-none select-none">
+                      <p className="text-[7px] font-black uppercase tracking-[0.4em]">Elitera Secure Chat</p>
                   </div>
               </div>
             </div>
