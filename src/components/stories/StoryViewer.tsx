@@ -6,10 +6,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useUser } from '@/firebase';
-import { doc, collection, serverTimestamp, writeBatch, increment, addDoc, getDoc } from 'firebase/firestore';
-import type { Story, User as AppUser, StoryLike } from '@/lib/types';
-import { X, Heart, MessageSquare, Send as SendIcon, ChevronLeft, ChevronRight, Loader2, Eye, Sparkles } from 'lucide-react';
+import { useFirestore, useUser, useDoc } from '@/firebase';
+import { doc, collection, serverTimestamp, writeBatch, increment, addDoc } from 'firebase/firestore';
+import type { Story, StoryLike } from '@/lib/types';
+import { X, Heart, MessageSquare, Send as SendIcon, ChevronLeft, ChevronRight, Loader2, Eye } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatDistanceToNow } from 'date-fns';
 import { id } from 'date-fns/locale';
@@ -35,17 +35,6 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
   const [showViews, setShowViews] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const viewedStoriesInSession = useRef(new Set<string>());
-
-  useEffect(() => {
-    if (!isOpen) {
-        const timer = setTimeout(() => {
-            document.body.style.pointerEvents = 'auto';
-        }, 300);
-        return () => clearTimeout(timer);
-    } else {
-        document.body.style.pointerEvents = 'auto';
-    }
-  }, [isOpen]);
 
   const storyGroups = useMemo(() => {
     const groups: { [key: string]: { authorId: string; authorName: string; authorAvatarUrl: string; authorRole: string; stories: Story[] } } = {};
@@ -208,10 +197,6 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
         className="bg-black text-white border-0 p-0 m-0 w-screen h-screen max-w-none rounded-none overflow-hidden flex flex-col items-center justify-center z-[250]"
         onInteractOutside={(e) => e.preventDefault()}
         onPointerDownOutside={(e) => e.preventDefault()}
-        onCloseAutoFocus={(e) => {
-            e.preventDefault();
-            document.body.style.pointerEvents = 'auto';
-        }}
       >
         <DialogTitle className="sr-only">Cerita {currentGroup.authorName}</DialogTitle>
         <DialogDescription className="sr-only">Melihat momen cerita teks.</DialogDescription>

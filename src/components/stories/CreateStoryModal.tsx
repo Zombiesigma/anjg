@@ -53,17 +53,10 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
     defaultValues: { content: "" },
   });
 
-  // Safety net to ensure pointer events are restored and form is reset
   useEffect(() => {
     if (!isOpen) {
-      const timer = setTimeout(() => {
-        form.reset();
-        setBgIndex(0);
-        document.body.style.pointerEvents = 'auto';
-      }, 300);
-      return () => clearTimeout(timer);
-    } else {
-        document.body.style.pointerEvents = 'auto';
+      form.reset();
+      setBgIndex(0);
     }
   }, [isOpen, form]);
 
@@ -104,10 +97,6 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
         className="max-w-none w-screen h-screen p-0 border-0 m-0 bg-black overflow-hidden flex flex-col rounded-none z-[200]"
         onPointerDownOutside={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}
-        onCloseAutoFocus={(e) => {
-            e.preventDefault();
-            document.body.style.pointerEvents = 'auto';
-        }}
       >
         <DialogHeader className="sr-only">
           <DialogTitle>Tulis Momen</DialogTitle>
@@ -154,7 +143,6 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
                                     className="bg-transparent border-none shadow-none text-3xl md:text-5xl font-headline font-black text-white text-center min-h-[300px] resize-none focus-visible:ring-0 placeholder:text-white/30 leading-tight" 
                                     {...field} 
                                     autoFocus 
-                                    onPointerDown={(e) => e.stopPropagation()}
                                 />
                             </FormControl>
                             <FormMessage className="text-white bg-black/20 backdrop-blur-md rounded-full px-4 py-1 w-fit mx-auto mt-4" />
