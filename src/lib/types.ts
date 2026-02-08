@@ -156,17 +156,17 @@ export type Follow = {
 
 export type Story = {
   id: string;
-  type: 'text' | 'image';
+  type: 'text';
   authorId: string;
   authorName: string;
   authorAvatarUrl: string;
   authorRole: 'penulis' | 'pembaca' | 'admin';
-  content: string; // For text stories or caption
-  imageUrl?: string; // For image stories
+  content: string;
   createdAt: Timestamp;
   likes: number;
   commentCount: number;
   viewCount: number;
+  background?: string; // Hex color or gradient name
 };
 
 export type StoryComment = {

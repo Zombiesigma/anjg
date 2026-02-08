@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -6,8 +7,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useUser, useDoc } from '@/firebase';
-import { doc, collection, query, orderBy, serverTimestamp, writeBatch, increment, addDoc, getDoc } from 'firebase/firestore';
+import { useFirestore, useUser } from '@/firebase';
+import { doc, collection, orderBy, serverTimestamp, writeBatch, increment, addDoc, getDoc } from 'firebase/firestore';
+import { useDoc, useCollection } from '@/firebase';
 import type { Story, User as AppUser, StoryLike } from '@/lib/types';
 import { X, Heart, MessageSquare, Send, ChevronLeft, ChevronRight, Loader2, Eye, MoreHorizontal } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -15,7 +17,6 @@ import { formatDistanceToNow } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { StoryViewersSheet } from './StoryViewersSheet';
 import { StoryCommentsSheet } from './StoryCommentsSheet';
-import Image from 'next/image';
 import { cn } from '@/lib/utils';
 
 interface StoryViewerProps {
@@ -96,7 +97,6 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
   }, [storyIndex, authorIndex, storyGroups]);
 
   const handleContainerClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    // Prevent click through if clicking on action buttons
     const target = e.target as HTMLElement;
     if (target.closest('button') || target.closest('form') || target.closest('input')) return;
 
@@ -295,33 +295,23 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
                     </Button>
                 </div>
 
-                <div className="flex-1 relative flex items-center justify-center overflow-hidden bg-zinc-900 pointer-events-none">
+                <div className={cn(
+                    "flex-1 relative flex items-center justify-center overflow-hidden transition-all duration-700 bg-gradient-to-br",
+                    currentStory.background || "from-indigo-600 to-rose-500"
+                )}>
+                  <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
                   <AnimatePresence mode="wait">
                     <motion.div
                         key={`${currentStory.id}`}
-                        initial={{ opacity: 0, scale: 1.1 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0 }}
+                        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 1.1 }}
                         transition={{ duration: 0.4 }}
-                        className="w-full h-full relative flex items-center justify-center"
+                        className="w-full h-full relative flex items-center justify-center p-10 text-center"
                     >
-                        {currentStory.type === 'image' && currentStory.imageUrl ? (
-                            <>
-                                <Image src={currentStory.imageUrl} alt="" fill className="object-cover" priority unoptimized />
-                                {currentStory.content && (
-                                    <div className="absolute bottom-32 left-0 right-0 px-6 py-10 bg-gradient-to-t from-black/90 via-black/40 to-transparent">
-                                        <p className="text-white text-center text-lg font-bold leading-snug drop-shadow-2xl">{currentStory.content}</p>
-                                    </div>
-                                )}
-                            </>
-                        ) : (
-                            <div className="w-full h-full flex items-center justify-center p-10 text-center bg-gradient-to-br from-indigo-600 via-primary to-rose-500">
-                                <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
-                                <p className="text-3xl md:text-4xl font-black text-white whitespace-pre-wrap leading-[1.3] drop-shadow-[0_4px_12px_rgba(0,0,0,0.3)] relative z-10 font-headline">
-                                    "{currentStory.content}"
-                                </p>
-                            </div>
-                        )}
+                        <p className="text-3xl md:text-4xl font-headline font-black text-white whitespace-pre-wrap leading-[1.3] drop-shadow-[0_4px_12px_rgba(0,0,0,0.3)] relative z-10">
+                            "{currentStory.content}"
+                        </p>
                     </motion.div>
                   </AnimatePresence>
                 </div>

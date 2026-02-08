@@ -1,3 +1,4 @@
+
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 
@@ -16,6 +17,7 @@ export function Logo({ className, style }: LogoProps) {
         src="https://files.catbox.moe/arh8ho.jpg"
         alt="Elitera Logo"
         fill
+        sizes="(max-width: 768px) 40px, 60px"
         className="object-cover"
         priority
       />
