@@ -18,7 +18,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, X, Palette, Camera, Image as ImageIcon, Type, ArrowLeft } from 'lucide-react';
+import { Loader2, X, Palette, Camera, Image as ImageIcon, Type, ArrowLeft, Send as SendIcon } from 'lucide-react';
 import type { User as AppUser } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { uploadFile } from '@/lib/uploader';
@@ -54,8 +54,10 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
+  const [isCameraLoading, setIsCameraLoading] = useState(false);
   
   const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<z.infer<typeof storySchema>>({
@@ -63,56 +65,93 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
     defaultValues: { content: "" },
   });
 
-  useEffect(() => {
-    if (!isOpen) {
-      resetState();
-      const timer = setTimeout(() => { document.body.style.pointerEvents = ''; }, 300);
-      return () => clearTimeout(timer);
-    }
-  }, [isOpen]);
-
-  const resetState = () => {
-    setMode('choice');
-    setBgIndex(0);
-    setCapturedImage(null);
-    setImageFile(null);
-    stopCamera();
-    form.reset();
-  };
-
-  const startCamera = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'user' },
-        audio: false 
-      });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        setMode('camera');
-      }
-    } catch (err) {
-      console.error("Camera access denied", err);
-      toast({ variant: 'destructive', title: "Akses Kamera Ditolak", description: "Pastikan izin kamera diaktifkan di browser Anda." });
-    }
-  };
-
   const stopCamera = () => {
-    if (videoRef.current && videoRef.current.srcObject) {
-      const stream = videoRef.current.srcObject as MediaStream;
-      stream.getTracks().forEach(track => track.stop());
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
   };
 
+  const resetState = () => {
+    stopCamera();
+    setMode('choice');
+    setBgIndex(0);
+    setCapturedImage(null);
+    setImageFile(null);
+    setIsCameraLoading(false);
+    form.reset();
+  };
+
+  useEffect(() => {
+    if (!isOpen) {
+      resetState();
+      // Reset pointer events to fix UI locking issues
+      const timer = setTimeout(() => { 
+        document.body.style.pointerEvents = ''; 
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
+
+  // Handle stream attachment when entering camera mode
+  useEffect(() => {
+    let active = true;
+
+    const initCamera = async () => {
+      if (mode === 'camera') {
+        setIsCameraLoading(true);
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
+            audio: false 
+          });
+          
+          if (active && videoRef.current) {
+            streamRef.current = stream;
+            videoRef.current.srcObject = stream;
+            setIsCameraLoading(false);
+          } else {
+            stream.getTracks().forEach(t => t.stop());
+          }
+        } catch (err) {
+          if (active) {
+            console.error("Camera access error:", err);
+            toast({ 
+              variant: 'destructive', 
+              title: "Kamera Tidak Terdeteksi", 
+              description: "Gagal mengakses kamera. Silakan pilih dari galeri." 
+            });
+            setMode('choice');
+            setIsCameraLoading(false);
+          }
+        }
+      }
+    };
+
+    initCamera();
+
+    return () => {
+      active = false;
+      if (mode !== 'camera') {
+        stopCamera();
+      }
+    };
+  }, [mode, toast]);
+
   const takePhoto = () => {
     if (videoRef.current) {
+      const video = videoRef.current;
       const canvas = document.createElement('canvas');
-      canvas.width = videoRef.current.videoWidth;
-      canvas.height = videoRef.current.videoHeight;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
       const ctx = canvas.getContext('2d');
+      
       if (ctx) {
-        ctx.drawImage(videoRef.current, 0, 0);
-        const dataUrl = canvas.toDataURL('image/jpeg');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
         setCapturedImage(dataUrl);
         
         canvas.toBlob((blob) => {
@@ -120,7 +159,7 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
             const file = new File([blob], `story-${Date.now()}.jpg`, { type: 'image/jpeg' });
             setImageFile(file);
           }
-        }, 'image/jpeg', 0.8);
+        }, 'image/jpeg', 0.9);
         
         setMode('preview');
         stopCamera();
@@ -175,7 +214,7 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
       toast({ variant: 'success', title: "Terbit!", description: "Momen Anda berhasil dibagikan." });
     } catch (error) {
       console.error(error);
-      toast({ variant: 'destructive', title: 'Gagal', description: 'Terjadi gangguan sistem.' });
+      toast({ variant: 'destructive', title: 'Gagal', description: 'Terjadi gangguan saat menerbitkan cerita.' });
     } finally {
       setIsSubmitting(false);
     }
@@ -191,9 +230,10 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
       >
         <DialogHeader className="sr-only">
           <DialogTitle>Cerita Baru</DialogTitle>
-          <DialogDescription>Bagikan momen Anda.</DialogDescription>
+          <DialogDescription>Bagikan momen spesial Anda ke komunitas Elitera.</DialogDescription>
         </DialogHeader>
 
+        {/* Toolbar Atas */}
         <div className="absolute top-0 left-0 right-0 p-4 flex items-center justify-between z-[210] bg-gradient-to-b from-black/60 to-transparent pt-[max(1rem,env(safe-area-inset-top))]">
           <Button variant="ghost" size="icon" className="text-white rounded-full h-12 w-12" onClick={mode === 'choice' ? onClose : () => setMode('choice')}>
             {mode === 'choice' ? <X className="h-6 w-6" /> : <ArrowLeft className="h-6 w-6" />}
@@ -218,6 +258,7 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
           </div>
         </div>
 
+        {/* Konten Utama */}
         <div className="flex-1 relative overflow-hidden flex flex-col items-center justify-center">
             {mode === 'choice' && (
                 <div className="flex flex-col gap-6 w-full max-w-xs px-6">
@@ -234,7 +275,7 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
                         variant="outline" 
                         size="lg" 
                         className="h-20 rounded-3xl border-2 border-white/20 bg-white/10 text-white font-bold text-lg gap-4 hover:bg-white/20 transition-all"
-                        onClick={startCamera}
+                        onClick={() => setMode('camera')}
                     >
                         <Camera className="h-6 w-6" /> Ambil Foto
                     </Button>
@@ -280,13 +321,26 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
 
             {mode === 'camera' && (
                 <div className="w-full h-full bg-black flex flex-col items-center justify-center relative">
-                    <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
-                    <div className="absolute bottom-12 left-0 right-0 flex items-center justify-center pb-[max(0rem,env(safe-area-inset-bottom))]">
+                    {isCameraLoading && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 z-10 bg-black">
+                        <Loader2 className="h-10 w-10 text-white animate-spin" />
+                        <p className="text-white/60 text-xs font-bold uppercase tracking-widest">Menyiapkan Kamera...</p>
+                      </div>
+                    )}
+                    <video 
+                      ref={videoRef} 
+                      autoPlay 
+                      playsInline 
+                      muted 
+                      className="w-full h-full object-cover" 
+                    />
+                    <div className="absolute bottom-12 left-0 right-0 flex items-center justify-center pb-[max(0rem,env(safe-area-inset-bottom))] z-20">
                         <button 
                             onClick={takePhoto}
-                            className="w-20 h-20 rounded-full border-4 border-white flex items-center justify-center active:scale-90 transition-transform"
+                            disabled={isCameraLoading}
+                            className="w-20 h-20 rounded-full border-4 border-white flex items-center justify-center active:scale-90 transition-transform bg-white/10 backdrop-blur-sm"
                         >
-                            <div className="w-16 h-16 rounded-full bg-white" />
+                            <div className="w-16 h-16 rounded-full bg-white shadow-xl" />
                         </button>
                     </div>
                 </div>
@@ -294,7 +348,7 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
 
             {mode === 'preview' && capturedImage && (
                 <div className="w-full h-full bg-black relative flex flex-col">
-                    <div className="flex-1 relative">
+                    <div className="flex-1 relative flex items-center justify-center">
                         <img src={capturedImage} alt="Preview" className="w-full h-full object-contain" />
                     </div>
                     
