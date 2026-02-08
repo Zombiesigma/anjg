@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, useDoc } from '@/firebase';
-import { doc, collection, serverTimestamp, writeBatch, increment, addDoc } from 'firebase/firestore';
+import { doc, collection, serverTimestamp, writeBatch, increment } from 'firebase/firestore';
 import type { Story, StoryLike } from '@/lib/types';
 import { X, Heart, MessageSquare, Send as SendIcon, ChevronLeft, ChevronRight, Loader2, Eye } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -139,6 +139,7 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
   const likeRef = useMemo(() => (
     firestore && currentUser && currentStory ? doc(firestore, 'stories', currentStory.id, 'likes', currentUser.uid) : null
   ), [firestore, currentUser, currentStory]);
+  
   const { data: likeDoc, isLoading: isLikeLoading } = useDoc<StoryLike>(likeRef);
   const isLiked = !!likeDoc;
   
@@ -197,6 +198,10 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
         className="bg-black text-white border-0 p-0 m-0 w-screen h-screen max-w-none rounded-none overflow-hidden flex flex-col items-center justify-center z-[250]"
         onInteractOutside={(e) => e.preventDefault()}
         onPointerDownOutside={(e) => e.preventDefault()}
+        onCloseAutoFocus={(e) => {
+            e.preventDefault();
+            document.body.style.pointerEvents = '';
+        }}
       >
         <DialogTitle className="sr-only">Cerita {currentGroup.authorName}</DialogTitle>
         <DialogDescription className="sr-only">Melihat momen cerita teks.</DialogDescription>

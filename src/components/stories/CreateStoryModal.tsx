@@ -53,10 +53,16 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
     defaultValues: { content: "" },
   });
 
+  // Memastikan scroll/pointer-events kembali normal saat modal ditutup
   useEffect(() => {
     if (!isOpen) {
       form.reset();
       setBgIndex(0);
+      // Safety reset untuk pointer events
+      const timer = setTimeout(() => {
+        document.body.style.pointerEvents = '';
+      }, 300);
+      return () => clearTimeout(timer);
     }
   }, [isOpen, form]);
 
@@ -97,6 +103,10 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
         className="max-w-none w-screen h-screen p-0 border-0 m-0 bg-black overflow-hidden flex flex-col rounded-none z-[200]"
         onPointerDownOutside={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}
+        onCloseAutoFocus={(e) => {
+            e.preventDefault();
+            document.body.style.pointerEvents = '';
+        }}
       >
         <DialogHeader className="sr-only">
           <DialogTitle>Tulis Momen</DialogTitle>
