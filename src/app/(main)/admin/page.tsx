@@ -369,7 +369,6 @@ export default function AdminPage() {
                                         <TableCell className="px-8 py-6">
                                             <div className="flex items-center gap-4">
                                                 <div className="h-12 w-8 bg-muted rounded shadow-sm overflow-hidden shrink-0 relative">
-                                                    {/* MEMPERBAIKI AVATAR CONTEXT: Menggunakan img tag untuk cover buku berbentuk persegi panjang */}
                                                     <img src={book.coverUrl} alt={book.title} className="object-cover h-full w-full" />
                                                 </div>
                                                 <div className="min-w-0">

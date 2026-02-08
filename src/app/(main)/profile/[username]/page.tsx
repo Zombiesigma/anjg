@@ -387,7 +387,7 @@ export default function ProfilePage() {
                                       <Loader2 className="h-4 w-4 animate-spin"/>
                                   ) : (
                                       <>
-                                        <MessageCircle className="md:mr-2 h-4 w-4"/>
+                                        <MessageSquare className="md:mr-2 h-4 w-4"/>
                                         <span className="hidden md:inline">Pesan</span>
                                       </>
                                   )}

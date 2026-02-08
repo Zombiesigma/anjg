@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useFirestore, useUser, useDoc, useCollection } from '@/firebase';
 import { collection, serverTimestamp, doc, writeBatch, getDocs, query, where, orderBy } from 'firebase/firestore';
-import type { AuthorRequest, User as AppUser, Book } from '@/lib/types';
+import type { AuthorRequest, User as AppUser } from '@/lib/types';
 import {
   Card,
   CardContent,
@@ -21,7 +21,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { BookUser, Loader2, Send, Info, Users, BookOpen, Star, Sparkles, ChevronRight, PenTool, CheckCircle2 } from "lucide-react";
+import { BookUser, Loader2, Send, Info, Users, BookOpen, Star, Sparkles, ChevronRight, PenTool, CheckCircle2, Clock, ShieldCheck, ClipboardCheck } from "lucide-react";
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -288,26 +288,68 @@ export default function JoinAuthorPage() {
 
      if (applicationStatus === 'pending') {
         return (
-            <div className="max-w-2xl mx-auto py-20">
-                <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
-                    <Card className="text-center rounded-[3rem] border-none shadow-2xl p-10 bg-card/50 backdrop-blur-md overflow-hidden relative">
-                        {/* Decorative background element */}
-                        <div className="absolute top-[-10%] right-[-10%] p-10 opacity-5 pointer-events-none">
-                            <PenTool className="h-64 w-64 rotate-12 text-primary" />
-                        </div>
-                        
-                        <CardHeader className="relative z-10">
-                            <div className="mx-auto bg-accent/10 p-6 rounded-full w-fit mb-8 animate-pulse shadow-[0_0_40px_rgba(var(--accent),0.2)]">
-                                <Info className="h-12 w-12 text-accent" />
+            <div className="max-w-4xl mx-auto py-12 md:py-20 relative">
+                {/* Decorative Background */}
+                <div className="absolute top-0 right-0 w-96 h-96 bg-accent/5 rounded-full blur-[120px] -z-10 pointer-events-none" />
+                <div className="absolute bottom-0 left-0 w-72 h-72 bg-primary/5 rounded-full blur-[100px] -z-10 pointer-events-none" />
+
+                <motion.div 
+                    initial={{ opacity: 0, y: 30 }} 
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6 }}
+                >
+                    <Card className="text-center rounded-[3rem] border-none shadow-[0_40px_100px_-15px_rgba(0,0,0,0.1)] bg-card/50 backdrop-blur-xl overflow-hidden relative border border-white/20">
+                        <CardHeader className="pt-16 pb-10 px-10 relative z-10">
+                            <div className="mx-auto relative mb-10">
+                                <div className="absolute inset-0 bg-accent/20 blur-3xl rounded-full scale-150 animate-pulse" />
+                                <div className="relative bg-white dark:bg-zinc-900 p-8 rounded-[2.5rem] shadow-2xl text-accent w-fit mx-auto border border-accent/10">
+                                    <Clock className="h-16 w-16 animate-[spin_10s_linear_infinite]" />
+                                </div>
                             </div>
-                            <CardTitle className="font-headline text-4xl font-black mb-4 leading-tight">Lamaran Anda Sedang <span className="text-accent italic">Ditinjau</span></CardTitle>
-                            <CardDescription className="text-lg leading-relaxed text-muted-foreground font-medium max-w-md mx-auto">
-                                Terima kasih atas antusiasme Anda! Tim kurasi kami sedang meninjau profil dan motivasi Anda. Kami akan segera menghubungi Anda melalui notifikasi aplikasi.
+                            <CardTitle className="font-headline text-4xl md:text-5xl font-black mb-4 leading-tight tracking-tight">
+                                Permohonan Sedang <br/> <span className="text-accent italic underline decoration-accent/20">Ditinjau.</span>
+                            </CardTitle>
+                            <CardDescription className="text-lg md:text-xl leading-relaxed text-muted-foreground font-medium max-w-2xl mx-auto italic">
+                                "Sabar adalah kunci dari setiap karya agung. Tim kurasi kami sedang menelaah gairah sastra yang Anda kirimkan."
                             </CardDescription>
                         </CardHeader>
-                        <CardFooter className="flex justify-center relative z-10 mt-8">
-                            <Button asChild variant="outline" className="rounded-full px-10 h-14 font-black border-2 transition-all hover:bg-muted/50 active:scale-95">
-                                <Link href="/">Kembali Menjelajah</Link>
+
+                        <CardContent className="px-10 pb-16 relative z-10">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto mt-4">
+                                {[
+                                    { icon: ShieldCheck, label: "Verifikasi Profil", status: "Selesai", color: "text-emerald-500", bg: "bg-emerald-500/10" },
+                                    { icon: ClipboardCheck, label: "Kurasi Portofolio", status: "Berlangsung", color: "text-accent", bg: "bg-accent/10", active: true },
+                                    { icon: Star, label: "Keputusan Akhir", status: "Menunggu", color: "text-muted-foreground", bg: "bg-muted" },
+                                ].map((step, i) => (
+                                    <div key={i} className={cn(
+                                        "p-6 rounded-3xl border border-border/50 flex flex-col items-center gap-3 transition-all duration-500",
+                                        step.active ? "bg-white dark:bg-zinc-800 shadow-xl scale-105 border-accent/20" : "bg-muted/30 opacity-60"
+                                    )}>
+                                        <div className={cn("p-3 rounded-2xl", step.bg, step.color)}>
+                                            <step.icon className="h-6 w-6" />
+                                        </div>
+                                        <div className="text-center">
+                                            <p className="font-black text-xs uppercase tracking-widest mb-1">{step.label}</p>
+                                            <p className={cn("text-[10px] font-bold uppercase", step.color)}>{step.status}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="mt-12 p-6 rounded-3xl bg-primary/5 border border-primary/10 max-w-2xl mx-auto flex items-start gap-4 text-left">
+                                <Info className="h-5 w-5 text-primary shrink-0 mt-1" />
+                                <p className="text-sm text-muted-foreground leading-relaxed">
+                                    Kami biasanya membutuhkan waktu <strong>1-3 hari kerja</strong> untuk memberikan keputusan. Anda akan menerima notifikasi instan segera setelah tim kami memberikan persetujuan.
+                                </p>
+                            </div>
+                        </CardContent>
+
+                        <CardFooter className="flex flex-col sm:flex-row justify-center items-center gap-4 relative z-10 px-10 pb-16">
+                            <Button asChild size="lg" className="rounded-full px-10 h-14 font-black shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95 w-full sm:w-auto">
+                                <Link href="/"><BookOpen className="mr-2 h-5 w-5" /> Jelajahi Buku Lain</Link>
+                            </Button>
+                            <Button asChild variant="outline" size="lg" className="rounded-full px-10 h-14 font-black border-2 transition-all hover:bg-muted/50 w-full sm:w-auto">
+                                <Link href="/ai"><Sparkles className="mr-2 h-5 w-5 text-primary" /> Tanya Elitera AI</Link>
                             </Button>
                         </CardFooter>
                     </Card>
