@@ -3,26 +3,18 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useFirestore, useUser, useCollection } from '@/firebase';
-import { collection, query, where, orderBy, addDoc, serverTimestamp, doc, updateDoc, increment, documentId, writeBatch } from 'firebase/firestore';
+import { collection, query, where, orderBy, doc, updateDoc, increment, documentId, writeBatch } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
-import { MoreVertical, MessageSquare, Loader2, Send, Search, ArrowLeft, User, Trash2, BookOpen, ChevronRight, Sparkles } from 'lucide-react';
+import { MessageSquare, Loader2, Send, Search, ArrowLeft, ChevronRight, Sparkles, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Chat, ChatMessage, User as AppUser } from '@/lib/types';
-import { formatDistanceToNow, isSameDay, format, isToday, isYesterday } from 'date-fns';
+import { isSameDay, format, isToday, isYesterday } from 'date-fns';
 import { id } from 'date-fns/locale';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function MessagesPage() {
@@ -131,7 +123,6 @@ export default function MessagesPage() {
 
   const selectedChat = useMemo(() => chatThreads?.find(chat => chat.id === selectedChatId), [chatThreads, selectedChatId]);
   const otherParticipant = useMemo(() => selectedChat?.participants.find(p => p.uid !== currentUser?.uid), [selectedChat, currentUser]);
-  const otherParticipantProfile = useMemo(() => otherParticipant ? profilesMap.get(otherParticipant.uid) : null, [otherParticipant, profilesMap]);
   const isOtherParticipantOnline = otherParticipant ? onlineStatus[otherParticipant.uid] : false;
 
   const scrollToBottom = () => {
@@ -193,72 +184,109 @@ export default function MessagesPage() {
   }, [chatThreads, searchQuery, currentUser?.uid]);
 
   return (
-    <div className="h-[calc(100dvh-theme(spacing.16)-4px)] md:h-[calc(100dvh-theme(spacing.20)-4px)] -mt-6 -mx-4 md:-mx-6 border rounded-lg overflow-hidden flex flex-col bg-background relative">
+    <div className="h-[calc(100dvh-theme(spacing.16)-4px)] md:h-[calc(100dvh-theme(spacing.20)-4px)] -mt-6 -mx-4 md:-mx-6 border rounded-lg overflow-hidden flex flex-col bg-background relative shadow-inner">
       <div className="grid grid-cols-12 flex-1 h-full overflow-hidden">
         
         {/* Sidebar: Chat List */}
         <div className={cn(
-          "col-span-12 md:col-span-4 lg:col-span-3 border-r h-full flex flex-col bg-card/30 overflow-hidden",
+          "col-span-12 md:col-span-4 lg:col-span-3 border-r h-full flex flex-col bg-card/30 overflow-hidden relative",
           selectedChatId ? "hidden md:flex" : "flex"
         )}>
-          <div className="p-4 border-b shrink-0 bg-background/50 backdrop-blur-sm">
-            <h1 className="text-2xl font-headline font-black text-primary uppercase tracking-tighter">Pesan</h1>
-            <div className="relative mt-3">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          {/* Header Sidebar */}
+          <div className="p-6 border-b shrink-0 bg-background/50 backdrop-blur-md z-20">
+            <div className="flex items-center gap-3 mb-6">
+                <div className="p-2.5 rounded-2xl bg-primary/10 text-primary">
+                    <MessageSquare className="h-5 w-5" />
+                </div>
+                <h1 className="text-2xl font-headline font-black tracking-tight uppercase">Pesan</h1>
+            </div>
+            
+            <div className="relative group">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                 <Input 
-                    placeholder="Cari obrolan..." 
-                    className="pl-9 h-10 bg-muted/50 border-none rounded-xl" 
+                    placeholder="Cari pujangga..." 
+                    className="pl-11 h-12 bg-muted/30 border-none rounded-2xl focus-visible:ring-primary/20 transition-all shadow-inner" 
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                 />
             </div>
           </div>
-          <div className="flex-1 overflow-hidden relative">
+
+          {/* List Obrolan */}
+          <div className="flex-1 overflow-hidden relative bg-muted/5">
             <ScrollArea className="h-full">
-                <div className="flex flex-col p-2 gap-1 pb-20">
-                {sortedAndFilteredChatThreads.map(chat => {
+                <div className="flex flex-col p-3 gap-2 pb-24">
+                {isLoadingThreads ? (
+                    <div className="flex flex-col items-center justify-center py-20 gap-4 opacity-40">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        <p className="text-[10px] font-black uppercase tracking-widest">Menyambungkan Sinyal...</p>
+                    </div>
+                ) : sortedAndFilteredChatThreads.length === 0 ? (
+                    <div className="text-center py-20 px-6 opacity-30 flex flex-col items-center gap-4">
+                        <Zap className="h-12 w-12" />
+                        <p className="text-sm font-bold leading-relaxed">Belum ada jejak percakapan.</p>
+                    </div>
+                ) : sortedAndFilteredChatThreads.map((chat, idx) => {
                     const otherP = chat.participants.find(p => p.uid !== currentUser?.uid);
                     if (!otherP) return null;
                     const unreadCount = chat.unreadCounts?.[currentUser?.uid ?? ''] ?? 0;
                     const isOnline = onlineStatus[otherP.uid];
+                    const isActive = selectedChatId === chat.id;
                     
                     return (
-                    <button
+                    <motion.button
                         key={chat.id}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: idx * 0.03 }}
                         onClick={() => handleSelectChat(chat.id)}
                         className={cn(
-                        "flex items-start gap-3 p-3 text-left rounded-2xl transition-all duration-200 group relative w-full",
-                        selectedChatId === chat.id 
-                            ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-[1.02] z-10" 
-                            : "hover:bg-accent/50"
+                        "flex items-start gap-4 p-4 text-left rounded-[1.75rem] transition-all duration-300 group relative w-full",
+                        isActive 
+                            ? "bg-primary text-white shadow-xl shadow-primary/20 scale-[1.02] z-10" 
+                            : "hover:bg-card hover:shadow-md"
                         )}
                     >
                         <div className="relative shrink-0">
-                        <Avatar className={cn("h-12 w-12 border-2", selectedChatId === chat.id ? "border-white/20" : "border-background")}>
-                            <AvatarImage src={otherP.photoURL} alt={otherP.displayName} />
-                            <AvatarFallback>{otherP.displayName.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        {isOnline && <span className="absolute bottom-0.5 right-0.5 block h-3 w-3 rounded-full bg-green-500 ring-2 ring-background animate-pulse" />}
+                            <Avatar className={cn(
+                                "h-14 w-14 border-2 transition-transform duration-500 group-hover:scale-105", 
+                                isActive ? "border-white/20" : "border-background"
+                            )}>
+                                <AvatarImage src={otherP.photoURL} alt={otherP.displayName} className="object-cover" />
+                                <AvatarFallback className="bg-primary/5 text-primary font-black">{otherP.displayName.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            {isOnline && (
+                                <span className="absolute bottom-0 right-0 block h-4 w-4 rounded-full bg-green-500 border-2 border-background shadow-sm ring-1 ring-green-400 animate-pulse" />
+                            )}
                         </div>
-                        <div className="flex-1 min-w-0 py-0.5">
+                        
+                        <div className="flex-1 min-w-0 py-1">
                             <div className="flex items-center justify-between gap-2">
-                                <p className="font-bold truncate text-sm">{otherP.displayName}</p>
+                                <p className="font-black truncate text-sm tracking-tight">{otherP.displayName}</p>
                                 {chat.lastMessage?.timestamp && (
-                                    <p className="text-[9px] font-black uppercase opacity-60">
+                                    <p className={cn("text-[9px] font-bold uppercase", isActive ? "text-white/60" : "text-muted-foreground/60")}>
                                         {format(chat.lastMessage.timestamp.toDate(), 'HH:mm')}
                                     </p>
                                 )}
                             </div>
-                        <p className={cn("text-xs truncate mt-0.5", selectedChatId === chat.id ? "text-primary-foreground/80" : "text-muted-foreground")}>
-                            {chat.lastMessage?.text || "Mulai obrolan..."}
-                        </p>
+                            <p className={cn(
+                                "text-xs truncate mt-1 leading-relaxed", 
+                                isActive ? "text-white/80" : "text-muted-foreground"
+                            )}>
+                                {chat.lastMessage?.text || "Kirim pesan inspirasi..."}
+                            </p>
                         </div>
-                        {unreadCount > 0 && selectedChatId !== chat.id && (
-                        <div className="absolute right-3 bottom-3 h-5 min-w-[20px] px-1.5 flex items-center justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-black ring-2 ring-background">
-                            {unreadCount}
-                        </div>
+
+                        {unreadCount > 0 && !isActive && (
+                            <div className="absolute right-4 bottom-4 h-6 min-w-[24px] px-2 flex items-center justify-center rounded-full bg-primary text-white text-[10px] font-black shadow-lg shadow-primary/30 ring-2 ring-background animate-bounce">
+                                {unreadCount}
+                            </div>
                         )}
-                    </button>
+                        
+                        {!isActive && (
+                            <ChevronRight className="h-4 w-4 absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-20 transition-all group-hover:translate-x-1" />
+                        )}
+                    </motion.button>
                     )
                 })}
                 </div>
@@ -268,88 +296,125 @@ export default function MessagesPage() {
 
         {/* Chat Box: Messages Area */}
         <div className={cn(
-            "col-span-12 md:col-span-8 lg:col-span-9 h-full flex flex-col overflow-hidden relative",
+            "col-span-12 md:col-span-8 lg:col-span-9 h-full flex flex-col overflow-hidden relative bg-background",
             selectedChatId ? 'flex' : 'hidden md:flex'
         )}>
           {!selectedChatId ? (
-            <div className="flex flex-col items-center justify-center h-full text-center p-8 bg-muted/5">
-                <MessageSquare className="h-16 w-16 text-primary/10 mb-4" />
-                <h2 className="text-xl font-headline font-black uppercase tracking-tighter">Obrolan Elitera</h2>
-                <p className="text-xs text-muted-foreground mt-2 max-w-[200px]">Pilih percakapan untuk memulai inspirasi.</p>
+            <div className="flex flex-col items-center justify-center h-full text-center p-12 bg-muted/5">
+                <motion.div 
+                    initial={{ scale: 0.9, opacity: 0 }} 
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="p-10 rounded-[3rem] bg-card shadow-2xl shadow-primary/5 flex flex-col items-center gap-6"
+                >
+                    <div className="p-6 rounded-[2rem] bg-primary/5 text-primary">
+                        <MessageSquare className="h-16 w-16" />
+                    </div>
+                    <div className="space-y-2">
+                        <h2 className="text-3xl font-headline font-black tracking-tight uppercase">Ruang Inspirasi</h2>
+                        <p className="text-sm text-muted-foreground max-w-xs mx-auto leading-relaxed">
+                            Pilih salah satu obrolan untuk mulai berbagi imajinasi dan kritik sastra.
+                        </p>
+                    </div>
+                </motion.div>
             </div>
           ) : (
-            <div className="flex flex-col h-full bg-background overflow-hidden">
-              <div className="flex items-center px-4 py-3 border-b bg-background/95 backdrop-blur-md shrink-0 z-20 shadow-sm">
-                <Button variant="ghost" size="icon" className="md:hidden mr-3 rounded-full" onClick={handleGoBack}>
+            <div className="flex flex-col h-full overflow-hidden">
+              {/* Header Chat Box */}
+              <div className="flex items-center px-6 py-4 border-b bg-background/95 backdrop-blur-md shrink-0 z-20 shadow-sm">
+                <Button variant="ghost" size="icon" className="md:hidden mr-4 rounded-full hover:bg-muted" onClick={handleGoBack}>
                     <ArrowLeft className="h-5 w-5" />
                 </Button>
                 {otherParticipant && (
-                   <Link href={`/profile/${otherParticipant.username}`} className="flex items-center gap-3 group min-w-0">
+                   <Link href={`/profile/${otherParticipant.username}`} className="flex items-center gap-4 group min-w-0">
                     <div className="relative">
-                      <Avatar className="h-10 w-10 border-2 border-primary/10">
-                        <AvatarImage src={otherParticipant.photoURL} />
-                        <AvatarFallback>{otherParticipant.displayName.charAt(0)}</AvatarFallback>
+                      <Avatar className="h-11 w-11 border-2 border-primary/10 transition-transform group-hover:scale-105">
+                        <AvatarImage src={otherParticipant.photoURL} className="object-cover" />
+                        <AvatarFallback className="font-black bg-primary/5 text-primary">{otherParticipant.displayName.charAt(0)}</AvatarFallback>
                       </Avatar>
-                       {isOtherParticipantOnline && <span className="absolute bottom-0 right-0 block h-3 w-3 rounded-full bg-green-500 ring-2 ring-background" />}
+                       {isOtherParticipantOnline && (
+                           <span className="absolute bottom-0 right-0 block h-3.5 w-3.5 rounded-full bg-green-500 border-2 border-background shadow-sm" />
+                       )}
                     </div>
                     <div className="min-w-0">
-                      <h2 className="font-bold text-sm group-hover:text-primary transition-colors truncate leading-tight">{otherParticipant.displayName}</h2>
-                      <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">@{otherParticipant.username}</p>
+                      <h2 className="font-black text-base group-hover:text-primary transition-colors truncate leading-none">{otherParticipant.displayName}</h2>
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mt-1.5 flex items-center gap-2">
+                          @{otherParticipant.username}
+                          {isOtherParticipantOnline && <span className="text-green-500 lowercase tracking-normal">sedang aktif</span>}
+                      </p>
                     </div>
                    </Link>
                 )}
               </div>
               
+              {/* Pesan-pesan */}
               <div className="flex-1 overflow-hidden relative">
-                <ScrollArea className="h-full px-4 md:px-6">
-                    <div className="py-6 space-y-6">
-                    <AnimatePresence initial={false}>
-                        {messageGroups.map((item) => {
-                        if ('type' in item && item.type === 'date_marker') {
-                            return (
-                            <div key={item.id} className="flex items-center justify-center my-8">
-                                <div className="h-[1px] bg-border flex-1" />
-                                <span className="text-[9px] uppercase tracking-[0.2em] font-black text-muted-foreground/60 px-4">
-                                    {isToday(item.date) ? 'Hari Ini' : isYesterday(item.date) ? 'Kemarin' : format(item.date, 'd MMM yyyy', { locale: id })}
-                                </span>
-                                <div className="h-[1px] bg-border flex-1" />
-                            </div>
-                            );
-                        }
-                        const msg = item as ChatMessage;
-                        const isSender = msg.senderId === currentUser?.uid;
-                        return (
-                            <motion.div key={msg.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={cn("flex items-end gap-2.5", isSender ? "justify-end" : "justify-start")}>
-                            {!isSender && (
-                                <Avatar className="h-8 w-8 mb-1 shrink-0">
-                                    <AvatarImage src={otherParticipant?.photoURL} />
-                                    <AvatarFallback>{otherParticipant?.displayName.charAt(0)}</AvatarFallback>
-                                </Avatar>
-                            )}
-                            <div className="flex flex-col gap-1 max-w-[80%] md:max-w-[65%]">
-                                <div className={cn("px-4 py-2.5 rounded-2xl shadow-sm text-sm leading-relaxed", isSender ? "bg-primary text-primary-foreground rounded-br-none" : "bg-muted/50 border rounded-bl-none")}>
-                                    <p className="whitespace-pre-wrap">{msg.text}</p>
+                <ScrollArea className="h-full">
+                    <div className="py-8 px-6 space-y-8">
+                    {isLoadingMessages ? (
+                        <div className="flex flex-col items-center justify-center py-20 gap-3 opacity-40">
+                            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                            <p className="text-[10px] font-black uppercase tracking-widest">Membuka Gulungan Surat...</p>
+                        </div>
+                    ) : messageGroups.length === 0 ? (
+                        <div className="text-center py-32 opacity-20 flex flex-col items-center gap-4">
+                            <Sparkles className="h-12 w-12" />
+                            <p className="font-headline text-xl font-bold">Mulai Percakapan Puitis</p>
+                        </div>
+                    ) : (
+                        <AnimatePresence initial={false}>
+                            {messageGroups.map((item) => {
+                            if ('type' in item && item.type === 'date_marker') {
+                                return (
+                                <div key={item.id} className="flex items-center justify-center my-10 select-none">
+                                    <div className="h-[1px] bg-gradient-to-r from-transparent via-border to-transparent flex-1" />
+                                    <span className="text-[10px] uppercase tracking-[0.3em] font-black text-muted-foreground/50 px-6">
+                                        {isToday(item.date) ? 'Hari Ini' : isYesterday(item.date) ? 'Kemarin' : format(item.date, 'd MMM yyyy', { locale: id })}
+                                    </span>
+                                    <div className="h-[1px] bg-gradient-to-r from-transparent via-border to-transparent flex-1" />
                                 </div>
-                                <p className={cn("text-[8px] font-black uppercase opacity-40 px-1", isSender ? "text-right" : "text-left")}>
-                                    {format(msg.createdAt.toDate(), 'HH:mm')}
-                                </p>
-                            </div>
-                            </motion.div>
-                        );
-                        })}
-                    </AnimatePresence>
+                                );
+                            }
+                            const msg = item as ChatMessage;
+                            const isSender = msg.senderId === currentUser?.uid;
+                            return (
+                                <motion.div key={msg.id} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className={cn("flex items-end gap-3", isSender ? "justify-end" : "justify-start")}>
+                                {!isSender && (
+                                    <Avatar className="h-8 w-8 mb-1 shrink-0 border border-border/50">
+                                        <AvatarImage src={otherParticipant?.photoURL} className="object-cover" />
+                                        <AvatarFallback className="bg-primary/5 text-primary text-[10px] font-bold">{otherParticipant?.displayName.charAt(0)}</AvatarFallback>
+                                    </Avatar>
+                                )}
+                                <div className="flex flex-col gap-1.5 max-w-[80%] md:max-w-[60%]">
+                                    <div className={cn(
+                                        "px-5 py-3 rounded-2xl shadow-sm text-sm leading-relaxed", 
+                                        isSender 
+                                            ? "bg-primary text-white rounded-br-none shadow-primary/10" 
+                                            : "bg-card border border-border/50 rounded-bl-none"
+                                    )}>
+                                        <p className="whitespace-pre-wrap">{msg.text}</p>
+                                    </div>
+                                    <p className={cn("text-[8px] font-black uppercase opacity-40 px-1 tracking-tighter", isSender ? "text-right" : "text-left")}>
+                                        {format(msg.createdAt.toDate(), 'HH:mm')}
+                                    </p>
+                                </div>
+                                </motion.div>
+                            );
+                            })}
+                        </AnimatePresence>
+                    )}
                     <div ref={messagesEndRef} className="h-4" />
                     </div>
                 </ScrollArea>
               </div>
 
-              <div className="p-4 border-t bg-background/95 backdrop-blur-md shrink-0 z-20 pb-[max(1rem,env(safe-area-inset-bottom))]">
-                  <form onSubmit={handleSendMessage} className="relative flex items-end gap-3 max-w-5xl mx-auto">
+              {/* Input Area */}
+              <div className="p-6 border-t bg-background/95 backdrop-blur-md shrink-0 z-20 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+                  <form onSubmit={handleSendMessage} className="relative flex items-end gap-4 max-w-5xl mx-auto">
                       <div className="relative flex-1 group">
                         <Textarea 
                             ref={textareaRef}
-                            placeholder="Tulis inspirasi..." 
-                            className="w-full resize-none rounded-2xl border-none bg-muted/50 px-4 py-3 pr-12 min-h-[48px] max-h-32 focus-visible:ring-primary/20 shadow-inner"
+                            placeholder="Tulis inspirasi Anda di sini..." 
+                            className="w-full resize-none rounded-2xl border-none bg-muted/50 px-6 py-4 pr-14 min-h-[56px] max-h-40 focus-visible:ring-primary/20 shadow-inner text-sm leading-relaxed"
                             rows={1}
                             value={newMessage}
                             onChange={(e) => setNewMessage(e.target.value)}
@@ -357,8 +422,8 @@ export default function MessagesPage() {
                             disabled={isSending}
                         />
                         <div className="absolute right-2 bottom-2">
-                            <Button type="submit" size="icon" className="h-9 w-9 rounded-full shadow-lg" disabled={isSending || !newMessage.trim()}>
-                                {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4 ml-0.5"/>}
+                            <Button type="submit" size="icon" className="h-10 w-10 rounded-xl shadow-xl shadow-primary/20 transition-all active:scale-90" disabled={isSending || !newMessage.trim()}>
+                                {isSending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5 ml-0.5"/>}
                             </Button>
                         </div>
                       </div>

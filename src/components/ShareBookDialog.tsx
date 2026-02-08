@@ -1,7 +1,7 @@
 'use client';
 
 import { useFirestore, useUser, useCollection } from '@/firebase';
-import { collection, query, where, addDoc, serverTimestamp, doc, updateDoc, writeBatch, increment } from 'firebase/firestore';
+import { collection, query, where, serverTimestamp, doc, writeBatch, increment } from 'firebase/firestore';
 import type { Book, Chat, BookShareMessage } from '@/lib/types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -121,106 +121,104 @@ export function ShareBookDialog({ book, open, onOpenChange }: ShareBookDialogPro
                     document.body.style.pointerEvents = '';
                 }}
             >
-                {/* Header: Fixed */}
-                <div className="p-6 bg-primary/5 border-b border-primary/10 shrink-0">
+                <div className="p-8 bg-primary/5 border-b border-primary/10 shrink-0">
                     <DialogHeader>
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2.5 rounded-2xl bg-white shadow-sm text-primary">
-                                <Send className="h-5 w-5" />
+                        <div className="flex items-center gap-4 mb-3">
+                            <div className="p-3 rounded-2xl bg-white shadow-sm text-primary">
+                                <Send className="h-6 w-6" />
                             </div>
-                            <DialogTitle className="font-headline text-2xl font-black">Kirim Karya</DialogTitle>
+                            <DialogTitle className="font-headline text-2xl font-black tracking-tight uppercase">Kirim Karya</DialogTitle>
                         </div>
-                        <DialogDescription className="text-sm font-medium">
-                            Bagikan <span className="font-black text-foreground">"{book.title}"</span> kepada teman atau penulis lainnya.
+                        <DialogDescription className="text-sm font-medium leading-relaxed">
+                            Bagikan <span className="font-black text-foreground">"{book.title}"</span> kepada teman atau penulis pilihan Anda.
                         </DialogDescription>
                     </DialogHeader>
                 </div>
 
-                {/* Search & List: Flexible/Scrollable */}
-                <div className="flex-1 flex flex-col min-h-0 overflow-hidden p-6 space-y-4">
+                <div className="flex-1 flex flex-col min-h-0 overflow-hidden p-6 space-y-6">
                     <div className="relative group shrink-0">
                          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors z-10" />
                          <Input 
-                            placeholder="Cari obrolan atau pengguna..." 
-                            className="h-12 pl-10 rounded-2xl bg-muted/30 border-none focus-visible:ring-primary/20 transition-all" 
+                            placeholder="Cari obrolan..." 
+                            className="h-12 pl-11 rounded-2xl bg-muted/30 border-none focus-visible:ring-primary/20 transition-all shadow-inner" 
                             value={searchTerm} 
                             onChange={(e) => setSearchTerm(e.target.value)} 
                          />
                     </div>
 
                     <ScrollArea className="flex-1 px-1">
-                        {isLoadingThreads && (
-                            <div className="flex flex-col items-center justify-center p-12 gap-3 opacity-50">
+                        {isLoadingThreads ? (
+                            <div className="flex flex-col items-center justify-center py-16 gap-4 opacity-40">
                                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                                <p className="text-xs font-bold uppercase tracking-widest">Sinkronisasi Kontak...</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest">Sinkronisasi Kontak...</p>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col gap-2">
+                                <AnimatePresence mode="popLayout">
+                                    {filteredChats.map((chat, idx) => {
+                                        const otherP = chat.participants.find(p => p.uid !== currentUser?.uid);
+                                        if (!otherP) return null;
+                                        const isSelected = selectedChatId === chat.id;
+
+                                        return (
+                                            <motion.button 
+                                                key={chat.id}
+                                                layout
+                                                initial={{ opacity: 0, y: 10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                transition={{ delay: idx * 0.02 }}
+                                                onClick={() => setSelectedChatId(isSelected ? null : chat.id)} 
+                                                className={cn(
+                                                    "flex items-center gap-4 p-4 text-left rounded-[1.5rem] transition-all group relative",
+                                                    isSelected 
+                                                        ? "bg-primary text-white shadow-xl shadow-primary/20 scale-[1.02]" 
+                                                        : "hover:bg-muted/50"
+                                                )}
+                                            >
+                                                <Avatar className="h-12 w-12 border-2 border-background shadow-md">
+                                                    <AvatarImage src={otherP.photoURL} alt={otherP.displayName} className="object-cover" />
+                                                    <AvatarFallback className="bg-primary/5 text-primary font-black">
+                                                        {otherP.displayName.charAt(0)}
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="font-black text-sm truncate">{otherP.displayName}</p>
+                                                    <p className={cn(
+                                                        "text-[10px] font-bold uppercase tracking-widest mt-0.5",
+                                                        isSelected ? "text-white/60" : "text-muted-foreground"
+                                                    )}>@{otherP.username}</p>
+                                                </div>
+                                                {isSelected && (
+                                                    <div className="bg-white text-primary p-1 rounded-full shadow-lg">
+                                                        <Check className="h-3 w-3" />
+                                                    </div>
+                                                )}
+                                            </motion.button>
+                                        )
+                                    })}
+                                </AnimatePresence>
+                                {!isLoadingThreads && filteredChats.length === 0 && (
+                                    <div className="text-center py-20 opacity-30 flex flex-col items-center gap-4">
+                                        <MessageSquare className="h-12 w-12" />
+                                        <p className="text-xs font-bold uppercase tracking-widest">Kontak Kosong</p>
+                                    </div>
+                                )}
                             </div>
                         )}
-                        <div className="flex flex-col gap-2">
-                            <AnimatePresence mode="popLayout">
-                                {filteredChats.map(chat => {
-                                    const otherP = chat.participants.find(p => p.uid !== currentUser?.uid);
-                                    if (!otherP) return null;
-                                    const isSelected = selectedChatId === chat.id;
-
-                                    return (
-                                        <motion.button 
-                                            key={chat.id}
-                                            layout
-                                            initial={{ opacity: 0, x: -10 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            exit={{ opacity: 0, scale: 0.95 }}
-                                            onClick={() => setSelectedChatId(isSelected ? null : chat.id)} 
-                                            className={cn(
-                                                "flex items-center gap-4 p-3 text-left rounded-2xl transition-all group relative",
-                                                isSelected 
-                                                    ? "bg-primary text-white shadow-lg shadow-primary/20" 
-                                                    : "hover:bg-muted/50"
-                                            )}
-                                        >
-                                            <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
-                                                <AvatarImage src={otherP.photoURL} alt={otherP.displayName} />
-                                                <AvatarFallback className="bg-primary/5 text-primary font-black">
-                                                    {otherP.displayName.charAt(0)}
-                                                </AvatarFallback>
-                                            </Avatar>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="font-bold text-sm truncate">{otherP.displayName}</p>
-                                                <p className={cn(
-                                                    "text-[10px] font-bold uppercase tracking-widest",
-                                                    isSelected ? "text-white/60" : "text-muted-foreground"
-                                                )}>@{otherP.username}</p>
-                                            </div>
-                                            {isSelected && (
-                                                <div className="bg-white text-primary p-1 rounded-full shadow-md">
-                                                    <Check className="h-3 w-3" />
-                                                </div>
-                                            )}
-                                        </motion.button>
-                                    )
-                                })}
-                            </AnimatePresence>
-                            {!isLoadingThreads && filteredChats.length === 0 && (
-                                <div className="text-center py-12 opacity-40">
-                                    <MessageSquare className="h-10 w-10 mx-auto mb-3" />
-                                    <p className="text-sm font-medium">Tidak ada obrolan ditemukan.</p>
-                                </div>
-                            )}
-                        </div>
                     </ScrollArea>
                 </div>
 
-                {/* Footer: Fixed at bottom */}
                 <DialogFooter className="p-6 bg-muted/20 border-t border-border/50 shrink-0 mt-auto">
-                    <Button variant="ghost" onClick={() => onOpenChange(false)} className="rounded-full font-bold">Batal</Button>
+                    <Button variant="ghost" onClick={() => onOpenChange(false)} className="rounded-full font-bold h-12 px-6">Batal</Button>
                     <Button 
                         onClick={handleSend} 
                         disabled={!selectedChatId || isSending}
-                        className="rounded-full px-8 font-black shadow-xl shadow-primary/20 h-11"
+                        className="rounded-full px-10 font-black shadow-xl shadow-primary/20 h-12"
                     >
                         {isSending ? (
-                            <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Mengirim...</>
+                            <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Mengirim...</>
                         ) : (
-                            <><Send className="mr-2 h-4 w-4" /> Kirim Sekarang</>
+                            <><Send className="mr-2 h-5 w-5" /> Bagikan Sekarang</>
                         )}
                     </Button>
                 </DialogFooter>
