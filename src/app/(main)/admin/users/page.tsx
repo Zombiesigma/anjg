@@ -51,22 +51,25 @@ function UserListPageContent() {
         if (!firestore) return null;
         const usersCollection = collection(firestore, 'users');
         if (roleFilter) {
-            return query(usersCollection, where('role', '==', roleFilter), orderBy('displayName', 'asc'));
+            return query(usersCollection, where('role', '==', roleFilter));
         }
-        return query(usersCollection, orderBy('displayName', 'asc'));
+        return usersCollection;
     }, [firestore, roleFilter]);
 
     const { data: allUsers, isLoading } = useCollection<User>(usersQuery);
 
     const filteredUsers = useMemo(() => {
         if (!allUsers) return [];
-        if (!searchTerm.trim()) return allUsers;
-        const term = searchTerm.toLowerCase();
-        return allUsers.filter(u => 
-            u.displayName.toLowerCase().includes(term) || 
-            u.username.toLowerCase().includes(term) || 
-            u.email.toLowerCase().includes(term)
-        );
+        let result = allUsers;
+        if (searchTerm.trim()) {
+            const term = searchTerm.toLowerCase();
+            result = result.filter(u => 
+                u.displayName.toLowerCase().includes(term) || 
+                u.username.toLowerCase().includes(term) || 
+                u.email.toLowerCase().includes(term)
+            );
+        }
+        return [...result].sort((a, b) => a.displayName.localeCompare(b.displayName));
     }, [allUsers, searchTerm]);
 
     const stats = useMemo(() => {
@@ -81,7 +84,6 @@ function UserListPageContent() {
 
     return (
         <div className="max-w-6xl mx-auto space-y-10 pb-20">
-            {/* Header Area */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
                     <div className="flex items-center gap-4 mb-4">
@@ -110,7 +112,6 @@ function UserListPageContent() {
                 </div>
             </div>
 
-            {/* Premium Stats Grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
                 {[
                     { label: 'Total Jiwa', value: stats.total, icon: Users, color: 'text-indigo-500', bg: 'bg-indigo-500/5' },
@@ -134,7 +135,6 @@ function UserListPageContent() {
                 ))}
             </div>
 
-            {/* Interactive User Table */}
             <Card className="border-none shadow-2xl rounded-[2.5rem] overflow-hidden bg-card">
                 <CardHeader className="p-8 border-b bg-muted/30 flex flex-row items-center justify-between space-y-0">
                     <div>

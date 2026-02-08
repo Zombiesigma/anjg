@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useFirestore, useCollection, useUser, useDoc } from '@/firebase';
-import { collection, query, doc, writeBatch, updateDoc, where, orderBy, limit, deleteDoc } from 'firebase/firestore';
+import { collection, query, doc, writeBatch, updateDoc, where, deleteDoc } from 'firebase/firestore';
 import {
   Card,
   CardContent,
@@ -40,6 +40,7 @@ import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function AdminPage() {
   const { user: currentUser } = useUser();
@@ -47,32 +48,31 @@ export default function AdminPage() {
   const { toast } = useToast();
   const [processingId, setProcessingId] = useState<string | null>(null);
 
-  // Profile check for Admin role
   const { data: adminProfile, isLoading: isAdminChecking } = useDoc<AppUser>(
     (firestore && currentUser) ? doc(firestore, 'users', currentUser.uid) : null
   );
 
   const isAdmin = adminProfile?.role === 'admin';
 
-  // Queries - Mengizinkan pengambilan data di fase pengembangan tanpa restriksi list
+  // Permintaan Penulis: Disederhanakan untuk memastikan data muncul tanpa masalah indeks
   const authorRequestsQuery = useMemo(() => (
-    (firestore && isAdmin) ? query(collection(firestore, 'authorRequests'), where('status', '==', 'pending'), orderBy('requestedAt', 'desc')) : null
-  ), [firestore, isAdmin]);
+    firestore ? query(collection(firestore, 'authorRequests'), where('status', '==', 'pending')) : null
+  ), [firestore]);
   const { data: authorRequests, isLoading: areAuthorRequestsLoading } = useCollection<AuthorRequest>(authorRequestsQuery);
   
   const pendingBooksQuery = useMemo(() => (
-    (firestore && isAdmin) ? query(collection(firestore, 'books'), where('status', '==', 'pending_review'), orderBy('createdAt', 'desc')) : null
-  ), [firestore, isAdmin]);
+    firestore ? query(collection(firestore, 'books'), where('status', '==', 'pending_review')) : null
+  ), [firestore]);
   const { data: pendingBooks, isLoading: areBooksLoading } = useCollection<Book>(pendingBooksQuery);
   
   const usersQuery = useMemo(() => (
-    (firestore && isAdmin) ? collection(firestore, 'users') : null
-  ), [firestore, isAdmin]);
+    firestore ? collection(firestore, 'users') : null
+  ), [firestore]);
   const { data: users, isLoading: areUsersLoading } = useCollection<AppUser>(usersQuery);
 
   const storiesQuery = useMemo(() => (
-    (firestore && isAdmin) ? query(collection(firestore, 'stories'), orderBy('createdAt', 'desc'), limit(50)) : null
-  ), [firestore, isAdmin]);
+    firestore ? collection(firestore, 'stories') : null
+  ), [firestore]);
   const { data: activeStories, isLoading: areStoriesLoading } = useCollection<Story>(storiesQuery);
 
   const stats = useMemo(() => {
@@ -320,7 +320,7 @@ export default function AdminPage() {
                                             <p className="text-xs font-medium">{request.email}</p>
                                             {request.portfolio && <a href={request.portfolio} target="_blank" className="text-[10px] text-primary font-bold hover:underline">Portofolio</a>}
                                         </TableCell>
-                                        <TableCell className="text-xs font-medium text-muted-foreground">{request.requestedAt?.toDate().toLocaleDateString('id-ID')}</TableCell>
+                                        <TableCell className="text-xs font-medium text-muted-foreground">{request.requestedAt ? request.requestedAt.toDate().toLocaleDateString('id-ID') : 'Baru saja'}</TableCell>
                                         <TableCell className="text-right px-8 space-x-2">
                                             <Button size="sm" onClick={() => handleApproveAuthor(request)} disabled={!!processingId} className="rounded-full bg-emerald-600 hover:bg-emerald-700">Setujui</Button>
                                             <Button variant="outline" size="sm" className="rounded-full border-rose-100 text-rose-600 hover:bg-rose-50">Tolak</Button>
