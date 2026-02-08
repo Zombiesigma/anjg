@@ -196,6 +196,16 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
     }
   }
 
+  // Safety net: Pastikan pointer-events kembali normal saat viewer ditutup
+  useEffect(() => {
+    if (!isOpen) {
+        const timer = setTimeout(() => {
+            document.body.style.pointerEvents = '';
+        }, 300);
+        return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
+
   if (!isOpen || !currentGroup || !currentStory) return null;
 
   return (

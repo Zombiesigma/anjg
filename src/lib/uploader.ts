@@ -55,9 +55,12 @@ export async function uploadFile(file: File, service: string = 'Catbox'): Promis
     return uploadedUrl;
   } catch (error) {
     console.error('Error in uploadFile:', error);
+    
+    // Memberikan pesan error yang lebih spesifik untuk kegagalan fetch (biasanya CORS atau Jaringan)
     if (error instanceof TypeError && error.message === 'Failed to fetch') {
-      throw new Error('Gagal menghubungi server uploader. Periksa koneksi internet atau coba matikan VPN/Adblock.');
+      throw new Error('Gagal menghubungi server uploader. Periksa koneksi internet Anda atau coba matikan VPN/Adblock jika aktif.');
     }
+    
     throw error;
   }
 }

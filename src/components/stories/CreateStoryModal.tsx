@@ -58,7 +58,7 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
     if (!isOpen) {
       form.reset();
       setBgIndex(0);
-      // Safety reset untuk pointer events
+      // Safety reset untuk pointer events agar layar tidak terkunci
       const timer = setTimeout(() => {
         document.body.style.pointerEvents = '';
       }, 300);
