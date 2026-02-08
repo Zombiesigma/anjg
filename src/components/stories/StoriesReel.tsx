@@ -8,6 +8,7 @@ import { CreateStoryModal } from './CreateStoryModal';
 import { StoryViewer } from './StoryViewer';
 import type { Story, User as AppUser } from '@/lib/types';
 import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 interface StoriesReelProps {
   stories: Story[];
@@ -83,7 +84,7 @@ export function StoriesReel({ stories, isLoading, currentUserProfile }: StoriesR
       )}
 
       <div className="flex items-center gap-5 pb-6 border-b border-border/50 overflow-x-auto no-scrollbar relative">
-        {/* Tombol Buat Story - Tersedia untuk semua user login */}
+        {/* Tombol Buat Story */}
         {currentUserProfile && (
           <motion.div 
             whileHover={{ scale: 1.05 }}
@@ -114,14 +115,14 @@ export function StoriesReel({ stories, isLoading, currentUserProfile }: StoriesR
               <button 
                   onClick={() => openViewer(group.authorId)} 
                   className={cn(
-                    "relative w-17 h-17 p-0.5 rounded-full transition-all active:scale-90",
+                    "relative w-16 h-16 p-0.5 rounded-full transition-all active:scale-90",
                     isOfficial 
                         ? "bg-gradient-to-tr from-primary via-accent to-indigo-500 shadow-lg shadow-primary/10" 
                         : "bg-muted-foreground/20"
                   )}
               >
                 <div className="rounded-full bg-background p-0.5">
-                    <Avatar className="w-15 h-15 border border-border/50">
+                    <Avatar className="w-full h-full border border-border/50">
                         <AvatarImage src={group.authorAvatarUrl} alt={group.authorName} className="object-cover" />
                         <AvatarFallback className="bg-primary/5 text-primary font-black uppercase">
                             {group.authorName.charAt(0)}
