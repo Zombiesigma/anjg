@@ -1,4 +1,3 @@
-
 import type { Timestamp } from 'firebase/firestore';
 
 export type User = {
@@ -166,7 +165,7 @@ export type Story = {
   likes: number;
   commentCount: number;
   viewCount: number;
-  background?: string; // Hex color or gradient name
+  background?: string;
 };
 
 export type StoryComment = {

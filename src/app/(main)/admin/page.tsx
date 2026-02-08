@@ -40,7 +40,6 @@ import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Skeleton } from "@/components/ui/skeleton";
 
 export default function AdminPage() {
   const { user: currentUser } = useUser();
@@ -380,7 +379,7 @@ export default function AdminPage() {
                                         <TableCell className="font-bold text-xs">{book.authorName}</TableCell>
                                         <TableCell className="text-right px-8 space-x-2">
                                             <Button size="sm" onClick={() => handleApproveBook(book.id, book.title)} disabled={!!processingId} className="rounded-full">Terbitkan</Button>
-                                            <Button variant="outline" size="sm" className="rounded-full">Tinjau</Button>
+                                            <Button variant="outline" size="sm" className="rounded-full" asChild><Link href={`/books/${book.id}`}>Tinjau</Link></Button>
                                         </TableCell>
                                     </TableRow>
                                 ))}
@@ -428,7 +427,7 @@ export default function AdminPage() {
                                                 <p className="font-bold text-xs">{story.authorName}</p>
                                             </div>
                                         </TableCell>
-                                        <TableCell className="text-xs italic truncate max-w-[200px]">"{story.content || 'Konten Media'}"</TableCell>
+                                        <TableCell className="text-xs italic truncate max-w-[200px]">"{story.content || 'Konten Teks'}"</TableCell>
                                         <TableCell className="text-right px-8">
                                             <Button variant="ghost" size="icon" onClick={() => handleDeleteStory(story.id)} className="text-rose-500 rounded-full hover:bg-rose-50"><Trash2 className="h-4 w-4"/></Button>
                                         </TableCell>

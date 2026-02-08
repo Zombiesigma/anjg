@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -18,9 +17,8 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, X, Check, Type, Palette } from 'lucide-react';
+import { Loader2, X, Palette, Send } from 'lucide-react';
 import type { User as AppUser } from '@/lib/types';
-import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 const storySchema = z.object({
@@ -131,7 +129,7 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
             <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
             
             <Form {...form}>
-                <form className="w-full max-w-lg relative z-10">
+                <form className="w-full max-w-lg relative z-10" onSubmit={(e) => e.preventDefault()}>
                     <FormField control={form.control} name="content" render={({ field }) => (
                         <FormItem>
                             <FormControl>

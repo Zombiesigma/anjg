@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -8,8 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser } from '@/firebase';
-import { doc, collection, orderBy, serverTimestamp, writeBatch, increment, addDoc, getDoc } from 'firebase/firestore';
-import { useDoc, useCollection } from '@/firebase';
+import { doc, collection, serverTimestamp, writeBatch, increment, addDoc, getDoc } from 'firebase/firestore';
+import { useDoc } from '@/firebase';
 import type { Story, User as AppUser, StoryLike } from '@/lib/types';
 import { X, Heart, MessageSquare, Send, ChevronLeft, ChevronRight, Loader2, Eye, MoreHorizontal } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
