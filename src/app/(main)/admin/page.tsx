@@ -54,12 +54,16 @@ export default function AdminPage() {
 
   const isAdmin = adminProfile?.role === 'admin';
 
-  // Permintaan Penulis: Disederhanakan untuk memastikan data muncul tanpa masalah indeks
+  // Permintaan Penulis: Mengambil semua dan filter di client untuk kepastian data muncul
   const authorRequestsQuery = useMemo(() => (
-    firestore ? query(collection(firestore, 'authorRequests'), where('status', '==', 'pending')) : null
+    firestore ? collection(firestore, 'authorRequests') : null
   ), [firestore]);
-  const { data: authorRequests, isLoading: areAuthorRequestsLoading } = useCollection<AuthorRequest>(authorRequestsQuery);
+  const { data: rawAuthorRequests, isLoading: areAuthorRequestsLoading } = useCollection<AuthorRequest>(authorRequestsQuery);
   
+  const authorRequests = useMemo(() => (
+    rawAuthorRequests?.filter(r => r.status === 'pending') || []
+  ), [rawAuthorRequests]);
+
   const pendingBooksQuery = useMemo(() => (
     firestore ? query(collection(firestore, 'books'), where('status', '==', 'pending_review')) : null
   ), [firestore]);
@@ -304,7 +308,7 @@ export default function AdminPage() {
                             <TableBody>
                                 {areAuthorRequestsLoading ? (
                                     <TableRow><TableCell colSpan={4} className="h-32 text-center"><Loader2 className="h-6 w-6 animate-spin mx-auto"/></TableCell></TableRow>
-                                ) : authorRequests?.length === 0 ? (
+                                ) : authorRequests.length === 0 ? (
                                     <TableRow>
                                         <TableCell colSpan={4} className="h-64 text-center">
                                             <div className="flex flex-col items-center gap-4 opacity-30">
@@ -313,7 +317,7 @@ export default function AdminPage() {
                                             </div>
                                         </TableCell>
                                     </TableRow>
-                                ) : authorRequests?.map(request => (
+                                ) : authorRequests.map(request => (
                                     <TableRow key={request.id} className="hover:bg-muted/30 transition-colors">
                                         <TableCell className="px-8 py-6 font-bold">{request.name}</TableCell>
                                         <TableCell>
@@ -365,7 +369,8 @@ export default function AdminPage() {
                                         <TableCell className="px-8 py-6">
                                             <div className="flex items-center gap-4">
                                                 <div className="h-12 w-8 bg-muted rounded shadow-sm overflow-hidden shrink-0 relative">
-                                                    <AvatarImage src={book.coverUrl} className="object-cover h-full w-full" />
+                                                    {/* MEMPERBAIKI AVATAR CONTEXT: Menggunakan img tag untuk cover buku berbentuk persegi panjang */}
+                                                    <img src={book.coverUrl} alt={book.title} className="object-cover h-full w-full" />
                                                 </div>
                                                 <div className="min-w-0">
                                                     <p className="font-black text-sm truncate">{book.title}</p>
