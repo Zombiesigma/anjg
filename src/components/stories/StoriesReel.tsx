@@ -1,13 +1,13 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Plus } from 'lucide-react';
+import { Plus, Sparkles } from 'lucide-react';
 import { CreateStoryModal } from './CreateStoryModal';
 import { StoryViewer } from './StoryViewer';
 import type { Story, User as AppUser } from '@/lib/types';
+import { motion } from 'framer-motion';
 
 interface StoriesReelProps {
   stories: Story[];
@@ -44,11 +44,9 @@ export function StoriesReel({ stories, isLoading, currentUserProfile }: StoriesR
       }
       groups[story.authorId].stories.push(story);
     });
-    return Object.values(groups);
+    // Urutkan grup berdasarkan story terbaru
+    return Object.values(groups).sort((a, b) => b.stories[0].createdAt.toMillis() - a.stories[0].createdAt.toMillis());
   }, [stories]);
-
-  // Semua pengguna yang sudah login dapat membuat cerita
-  const canCreateStory = !!currentUserProfile;
 
   const openViewer = (authorId: string) => {
     setViewerState({ isOpen: true, initialAuthorId: authorId });
@@ -56,27 +54,25 @@ export function StoriesReel({ stories, isLoading, currentUserProfile }: StoriesR
 
   if (isLoading) {
     return (
-      <div className="flex items-center gap-4 pb-4 border-b">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <Skeleton key={i} className="h-16 w-16 rounded-full" />
+      <div className="flex items-center gap-5 pb-6 border-b border-border/50 overflow-x-auto no-scrollbar">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="flex flex-col items-center gap-2 flex-shrink-0">
+            <Skeleton className="h-16 w-16 rounded-full" />
+            <Skeleton className="h-2 w-12 rounded-full" />
+          </div>
         ))}
       </div>
     );
   }
-  
-  if (stories.length === 0 && !canCreateStory) {
-    return null;
-  }
 
   return (
     <>
-      {canCreateStory && (
-        <CreateStoryModal 
-          isOpen={isCreateModalOpen} 
-          onClose={() => setCreateModalOpen(false)}
-          currentUserProfile={currentUserProfile}
-        />
-      )}
+      <CreateStoryModal 
+        isOpen={isCreateModalOpen} 
+        onClose={() => setCreateModalOpen(false)}
+        currentUserProfile={currentUserProfile}
+      />
+      
       {viewerState.isOpen && viewerState.initialAuthorId && (
         <StoryViewer 
             stories={stories}
@@ -86,32 +82,71 @@ export function StoriesReel({ stories, isLoading, currentUserProfile }: StoriesR
         />
       )}
 
-      <div className="flex items-center gap-4 pb-4 border-b overflow-x-auto no-scrollbar">
-        {canCreateStory && (
-          <div className="flex flex-col items-center gap-1.5 flex-shrink-0">
+      <div className="flex items-center gap-5 pb-6 border-b border-border/50 overflow-x-auto no-scrollbar relative">
+        {/* Tombol Buat Story - Tersedia untuk semua user login */}
+        {currentUserProfile && (
+          <motion.div 
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="flex flex-col items-center gap-2 flex-shrink-0"
+          >
             <button
               onClick={() => setCreateModalOpen(true)}
-              className="w-16 h-16 rounded-full bg-muted flex items-center justify-center border-2 border-dashed hover:border-primary transition-colors"
+              className="w-16 h-16 rounded-full bg-primary/5 border-2 border-dashed border-primary/30 flex items-center justify-center hover:bg-primary/10 hover:border-primary transition-all group relative overflow-hidden"
             >
-              <Plus className="h-6 w-6 text-muted-foreground" />
+              <Plus className="h-7 w-7 text-primary group-hover:scale-110 transition-transform" />
+              <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
             </button>
-            <p className="text-xs font-medium">Buat Cerita</p>
-          </div>
+            <p className="text-[10px] font-black uppercase tracking-widest text-primary">Momen</p>
+          </motion.div>
         )}
-        {storyGroups.map(group => (
-          <div key={group.authorId} className="flex flex-col items-center gap-1.5 flex-shrink-0">
-            <button 
-                onClick={() => openViewer(group.authorId)} 
-                className={`w-fit h-fit p-0.5 rounded-full ${group.authorRole === 'penulis' || group.authorRole === 'admin' ? 'bg-gradient-to-tr from-blue-500 to-primary' : 'bg-muted border border-border'}`}
+
+        {/* Daftar Story Groups */}
+        {storyGroups.map(group => {
+          const isOfficial = group.authorRole === 'penulis' || group.authorRole === 'admin';
+          return (
+            <motion.div 
+                key={group.authorId} 
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="flex flex-col items-center gap-2 flex-shrink-0"
             >
-              <Avatar className="w-16 h-16 border-2 border-background">
-                <AvatarImage src={group.authorAvatarUrl} alt={group.authorName} />
-                <AvatarFallback>{group.authorName.charAt(0)}</AvatarFallback>
-              </Avatar>
-            </button>
-            <p className="text-xs w-16 truncate text-center">{group.authorName}</p>
-          </div>
-        ))}
+              <button 
+                  onClick={() => openViewer(group.authorId)} 
+                  className={cn(
+                    "relative w-17 h-17 p-0.5 rounded-full transition-all active:scale-90",
+                    isOfficial 
+                        ? "bg-gradient-to-tr from-primary via-accent to-indigo-500 shadow-lg shadow-primary/10" 
+                        : "bg-muted-foreground/20"
+                  )}
+              >
+                <div className="rounded-full bg-background p-0.5">
+                    <Avatar className="w-15 h-15 border border-border/50">
+                        <AvatarImage src={group.authorAvatarUrl} alt={group.authorName} className="object-cover" />
+                        <AvatarFallback className="bg-primary/5 text-primary font-black uppercase">
+                            {group.authorName.charAt(0)}
+                        </AvatarFallback>
+                    </Avatar>
+                </div>
+                {isOfficial && (
+                    <div className="absolute -bottom-1 -right-1 bg-white p-0.5 rounded-full shadow-md">
+                        <Sparkles className="h-3 w-3 text-primary" />
+                    </div>
+                )}
+              </button>
+              <p className="text-[10px] font-bold w-16 truncate text-center text-muted-foreground uppercase tracking-tighter">
+                {group.authorId === currentUserProfile?.uid ? "Cerita Anda" : group.authorName.split(' ')[0]}
+              </p>
+            </motion.div>
+          )
+        })}
+
+        {storyGroups.length === 0 && !currentUserProfile && (
+            <div className="flex items-center gap-3 px-4 py-3 bg-muted/30 rounded-2xl border border-dashed border-muted-foreground/20 w-full justify-center">
+                <Sparkles className="h-4 w-4 text-muted-foreground/40" />
+                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 italic">Hening di semesta hari ini...</p>
+            </div>
+        )}
       </div>
     </>
   );

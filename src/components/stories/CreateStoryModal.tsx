@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, X, Palette, Send } from 'lucide-react';
+import { Loader2, X, Palette, Send as SendIcon } from 'lucide-react';
 import type { User as AppUser } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
@@ -65,15 +65,19 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
   }, [isOpen, form]);
 
   async function onSubmit(values: z.infer<typeof storySchema>) {
-    if (!firestore || !currentUser || !currentUserProfile) return;
+    if (!firestore || !currentUser || !currentUserProfile) {
+        toast({ variant: 'destructive', title: 'Akses Ditolak', description: 'Profil Anda belum termuat sempurna.' });
+        return;
+    }
+
     setIsSubmitting(true);
     try {
       await addDoc(collection(firestore, 'stories'), {
         type: 'text',
         authorId: currentUser.uid,
-        authorName: currentUser.displayName || currentUserProfile.displayName,
-        authorAvatarUrl: currentUser.photoURL || currentUserProfile.photoURL,
-        authorRole: currentUserProfile.role,
+        authorName: currentUserProfile.displayName || currentUser.displayName,
+        authorAvatarUrl: currentUserProfile.photoURL || currentUser.photoURL || `https://api.dicebear.com/8.x/identicon/svg?seed=${currentUser.uid}`,
+        authorRole: currentUserProfile.role || 'pembaca',
         content: values.content,
         background: BACKGROUNDS[bgIndex],
         likes: 0,
@@ -83,10 +87,12 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
       });
       
       onClose();
-      setTimeout(() => toast({ title: "Cerita Teks Diterbitkan!" }), 100);
+      setTimeout(() => {
+        toast({ variant: 'success', title: "Cerita Berhasil Terbit!", description: "Momen Anda sekarang bisa dilihat oleh teman-teman." });
+      }, 100);
     } catch (error) {
-      console.error(error);
-      toast({ variant: 'destructive', title: 'Gagal menerbitkan cerita.' });
+      console.error("Error publishing story:", error);
+      toast({ variant: 'destructive', title: 'Gagal Menerbitkan', description: 'Terjadi kendala teknis saat menghubungi database.' });
     } finally {
       setIsSubmitting(false);
     }
@@ -99,21 +105,27 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
         onCloseAutoFocus={(e) => { e.preventDefault(); document.body.style.pointerEvents = ''; }}
       >
         <DialogHeader className="sr-only">
-          <DialogTitle>Buat Cerita Teks</DialogTitle>
-          <DialogDescription>Bagikan pemikiran Anda melalui kata-kata.</DialogDescription>
+          <DialogTitle>Tulis Momen Elitera</DialogTitle>
+          <DialogDescription>Gunakan teks untuk mengekspresikan pikiran Anda hari ini.</DialogDescription>
         </DialogHeader>
 
-        <div className="absolute top-0 left-0 right-0 p-4 flex items-center justify-between z-[110] bg-gradient-to-b from-black/40 to-transparent">
-          <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 rounded-full" onClick={onClose}>
+        {/* Toolbar Atas */}
+        <div className="absolute top-0 left-0 right-0 p-4 flex items-center justify-between z-[110] bg-gradient-to-b from-black/60 to-transparent">
+          <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 rounded-full h-12 w-12" onClick={onClose}>
             <X className="h-6 w-6" />
           </Button>
-          <div className="flex items-center gap-2">
-             <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 rounded-full" onClick={() => setBgIndex((bgIndex + 1) % BACKGROUNDS.length)}>
-                <Palette className="h-5 w-5" />
-             </Button>
+          <div className="flex items-center gap-3">
              <Button 
                 variant="ghost" 
-                className="text-white font-black uppercase tracking-widest text-xs" 
+                size="icon" 
+                className="text-white hover:bg-white/20 rounded-full h-12 w-12 transition-all active:scale-90" 
+                onClick={() => setBgIndex((bgIndex + 1) % BACKGROUNDS.length)}
+                title="Ganti Latar"
+             >
+                <Palette className="h-6 w-6" />
+             </Button>
+             <Button 
+                className="bg-white text-black hover:bg-white/90 rounded-full px-6 h-10 font-black uppercase tracking-widest text-xs shadow-xl active:scale-95 transition-all" 
                 onClick={form.handleSubmit(onSubmit)} 
                 disabled={isSubmitting || !form.watch('content')?.trim()}
              >
@@ -122,34 +134,36 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
           </div>
         </div>
 
+        {/* Editor Area */}
         <div className={cn(
-            "flex-1 relative flex flex-col items-center justify-center transition-all duration-700 bg-gradient-to-br px-8",
+            "flex-1 relative flex flex-col items-center justify-center transition-all duration-1000 ease-in-out bg-gradient-to-br px-8",
             BACKGROUNDS[bgIndex]
         )}>
             <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
             
             <Form {...form}>
-                <form className="w-full max-w-lg relative z-10" onSubmit={(e) => e.preventDefault()}>
+                <form className="w-full max-w-2xl relative z-10" onSubmit={(e) => e.preventDefault()}>
                     <FormField control={form.control} name="content" render={({ field }) => (
                         <FormItem>
                             <FormControl>
                                 <Textarea 
-                                    placeholder="Apa yang Anda pikirkan hari ini?..." 
-                                    className="bg-transparent border-none shadow-none text-3xl md:text-5xl font-headline font-black text-white text-center min-h-[300px] resize-none focus-visible:ring-0 placeholder:text-white/20" 
+                                    placeholder="Ada kutipan atau kabar apa hari ini?..." 
+                                    className="bg-transparent border-none shadow-none text-3xl md:text-6xl font-headline font-black text-white text-center min-h-[400px] resize-none focus-visible:ring-0 placeholder:text-white/25 leading-tight scroll-none" 
                                     {...field} 
                                     autoFocus 
                                 />
                             </FormControl>
-                            <FormMessage className="text-white/80 text-center font-bold" />
+                            <FormMessage className="text-white/80 text-center font-bold bg-black/20 backdrop-blur-md rounded-full px-4 py-1 w-fit mx-auto mt-4" />
                         </FormItem>
                     )} />
                 </form>
             </Form>
 
-            <div className="absolute bottom-12 left-0 right-0 flex flex-col items-center gap-4 px-8">
+            {/* Info Footer Editor */}
+            <div className="absolute bottom-12 left-0 right-0 flex flex-col items-center gap-4 px-8 pointer-events-none">
                 <p className={cn(
-                    "text-[10px] font-black uppercase tracking-[0.2em] transition-all",
-                    form.watch('content')?.length > 250 ? "text-yellow-300" : "text-white/40"
+                    "text-[10px] font-black uppercase tracking-[0.3em] transition-all px-4 py-2 rounded-full backdrop-blur-md border border-white/10",
+                    form.watch('content')?.length > 250 ? "text-yellow-300 bg-yellow-500/10" : "text-white/50 bg-white/5"
                 )}>
                     {form.watch('content')?.length || 0} / 280 Karakter
                 </p>
