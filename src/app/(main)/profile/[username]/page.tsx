@@ -10,7 +10,6 @@ import type { User, Book, Chat, Favorite, Follow, Story } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/tabs'; // Using path aliasing if available, otherwise full path
 import { Badge } from '@/components/ui/badge';
 import { BookCard } from '@/components/BookCard';
 import { UserPlus, MessageCircle, Edit, Loader2, UserMinus, Sparkles, Users, BookOpen, Heart as HeartIcon, CheckCircle2 } from 'lucide-react';
@@ -20,9 +19,7 @@ import { StoryViewer } from '@/components/stories/StoryViewer';
 import { cn } from '@/lib/utils';
 import { FollowsSheet } from '@/components/profile/FollowsSheet';
 import { motion, AnimatePresence } from 'framer-motion';
-
-// Fix for missing Tabs imports
-import { Tabs as UiTabs, TabsContent as UiTabsContent, TabsList as UiTabsList, TabsTrigger as UiTabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function ProfilePage() {
   const params = useParams<{ username: string }>();
@@ -39,7 +36,7 @@ export default function ProfilePage() {
   
   const [sheetState, setSheetState] = useState<{open: boolean; type: 'followers' | 'following'}>({ open: false, type: 'followers' });
 
-  // Normalisasi username pencarian ke lowercase
+  // Normalisasi username pencarian ke lowercase untuk mencegah 404
   const normalizedUsername = useMemo(() => params.username.toLowerCase(), [params.username]);
 
   const userQuery = useMemo(() => (
@@ -432,16 +429,16 @@ export default function ProfilePage() {
         </Card>
 
         {/* Content Section */}
-        <UiTabs defaultValue="published-books" className="space-y-8">
+        <Tabs defaultValue="published-books" className="space-y-8">
           <div className="flex items-center justify-center">
-            <UiTabsList className="bg-muted/50 p-1.5 rounded-full h-auto">
-                <UiTabsTrigger value="published-books" className="rounded-full px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-white font-bold transition-all">Buku Terbitan</UiTabsTrigger>
-                {isOwnProfile && <UiTabsTrigger value="drafts" className="rounded-full px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-white font-bold transition-all">Draf</UiTabsTrigger>}
-                {isOwnProfile && <UiTabsTrigger value="favorites" className="rounded-full px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-white font-bold transition-all">Favorit</UiTabsTrigger>}
-            </UiTabsList>
+            <TabsList className="bg-muted/50 p-1.5 rounded-full h-auto">
+                <TabsTrigger value="published-books" className="rounded-full px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-white font-bold transition-all">Buku Terbitan</TabsTrigger>
+                {isOwnProfile && <TabsTrigger value="drafts" className="rounded-full px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-white font-bold transition-all">Draf</TabsTrigger>}
+                {isOwnProfile && <TabsTrigger value="favorites" className="rounded-full px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-white font-bold transition-all">Favorit</TabsTrigger>}
+            </TabsList>
           </div>
 
-          <UiTabsContent value="published-books" className="mt-0">
+          <TabsContent value="published-books" className="mt-0">
                {arePublishedBooksLoading && (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
                       {Array.from({ length: 4 }).map((_, i) => (
@@ -466,10 +463,10 @@ export default function ProfilePage() {
                       <p className="text-muted-foreground font-headline font-bold text-lg">{isOwnProfile ? "Anda" : "Pengguna ini"} belum menerbitkan karya.</p>
                   </div>
               )}
-          </UiTabsContent>
+          </TabsContent>
 
           {isOwnProfile && (
-            <UiTabsContent value="drafts" className="mt-0">
+            <TabsContent value="drafts" className="mt-0">
                  {areOtherBooksLoading && (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
                         {Array.from({ length: 2 }).map((_, i) => (
@@ -489,11 +486,11 @@ export default function ProfilePage() {
                         <p className="text-muted-foreground font-headline font-bold text-lg">Anda tidak memiliki draf buku.</p>
                     </div>
                 )}
-            </UiTabsContent>
+            </TabsContent>
           )}
 
           {isOwnProfile && (
-              <UiTabsContent value="favorites" className="mt-0">
+              <TabsContent value="favorites" className="mt-0">
                   {(areFavoritesLoading || areFavoriteBooksLoading) && (
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
                           {Array.from({ length: 4 }).map((_, i) => (
@@ -513,9 +510,9 @@ export default function ProfilePage() {
                         <p className="text-muted-foreground font-headline font-bold text-lg">Belum ada buku favorit.</p>
                     </div>
                   )}
-              </UiTabsContent>
+              </TabsContent>
           )}
-        </UiTabs>
+        </Tabs>
       </motion.div>
     </>
   )

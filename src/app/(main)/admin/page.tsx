@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { useFirestore, useCollection, useUser, useDoc } from '@/firebase';
 import { collection, query, doc, writeBatch, updateDoc, where, orderBy, limit, deleteDoc } from 'firebase/firestore';
 import {
@@ -9,7 +9,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter
 } from "@/components/ui/card";
 import {
   Table,
@@ -22,21 +21,15 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { 
   Loader2, 
   Users, 
   ShieldCheck, 
-  BookUser, 
   BookCopy, 
   Megaphone, 
-  TrendingUp, 
   CheckCircle2, 
-  Clock, 
   Trash2, 
-  Eye, 
   Flame, 
-  Sparkles,
   ChevronRight,
   PenTool,
   Activity,
@@ -45,10 +38,8 @@ import {
 import type { AuthorRequest, Book, User as AppUser, Story } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
-import { Skeleton } from "@/components/ui/skeleton";
 import { motion, AnimatePresence } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { cn } from "@/lib/utils";
 
 export default function AdminPage() {
   const { user: currentUser } = useUser();
@@ -63,7 +54,7 @@ export default function AdminPage() {
 
   const isAdmin = adminProfile?.role === 'admin';
 
-  // Queries - Protected by isAdmin check to prevent early permission errors
+  // Queries - Mengizinkan pengambilan data di fase pengembangan tanpa restriksi list
   const authorRequestsQuery = useMemo(() => (
     (firestore && isAdmin) ? query(collection(firestore, 'authorRequests'), where('status', '==', 'pending'), orderBy('requestedAt', 'desc')) : null
   ), [firestore, isAdmin]);
@@ -94,7 +85,6 @@ export default function AdminPage() {
     }
   }, [users]);
 
-  // Actions
   const handleApproveAuthor = async (request: AuthorRequest) => {
     if (!firestore) return;
     setProcessingId(request.id);
@@ -132,7 +122,7 @@ export default function AdminPage() {
     setProcessingId(storyId);
     try {
       await deleteDoc(doc(firestore, 'stories', storyId));
-      toast({ variant: 'success', title: "Cerita Dihapus", description: "Momen telah dihapus dari platform." });
+      toast({ variant: 'success', title: "Cerita Dihapus" });
     } catch (error) {
       toast({ variant: "destructive", title: "Gagal Menghapus" });
     } finally {
@@ -157,7 +147,7 @@ export default function AdminPage() {
         </div>
         <h1 className="text-3xl font-headline font-black">Akses Terbatas</h1>
         <p className="text-muted-foreground">Anda tidak memiliki izin untuk mengakses area kontrol pusat.</p>
-        <Button asChild rounded-full>
+        <Button asChild className="rounded-full">
           <Link href="/">Kembali ke Beranda</Link>
         </Button>
       </div>
@@ -166,7 +156,6 @@ export default function AdminPage() {
 
   return (
     <div className="space-y-10 pb-20">
-      {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-[10px] font-black uppercase tracking-widest mb-3">
@@ -192,9 +181,7 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* Premium Stats Grid */}
       <div className="grid gap-6 md:grid-cols-12">
-        {/* Main Stats Card */}
         <Card className="md:col-span-8 border-none shadow-2xl rounded-[2.5rem] bg-indigo-950 text-white overflow-hidden relative group">
             <div className="absolute top-[-20%] right-[-10%] w-64 h-64 bg-white/5 rounded-full blur-3xl pointer-events-none group-hover:scale-110 transition-transform duration-700" />
             <CardHeader className="p-8 border-b border-white/5">
@@ -224,28 +211,27 @@ export default function AdminPage() {
                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-300/50">Pujangga</p>
                         <p className="text-4xl font-black">{areUsersLoading ? '...' : stats.penulis}</p>
                         <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
-                            <motion.div initial={{ width: 0 }} animate={{ width: `${(stats.penulis/stats.total)*100}%` }} className="h-full bg-emerald-400" />
+                            <motion.div initial={{ width: 0 }} animate={{ width: `${(stats.penulis/Math.max(stats.total, 1))*100}%` }} className="h-full bg-emerald-400" />
                         </div>
                     </div>
                     <div className="space-y-2">
                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-300/50">Pembaca</p>
                         <p className="text-4xl font-black">{areUsersLoading ? '...' : stats.pembaca}</p>
                         <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
-                            <motion.div initial={{ width: 0 }} animate={{ width: `${(stats.pembaca/stats.total)*100}%` }} className="h-full bg-blue-400" />
+                            <motion.div initial={{ width: 0 }} animate={{ width: `${(stats.pembaca/Math.max(stats.total, 1))*100}%` }} className="h-full bg-blue-400" />
                         </div>
                     </div>
                     <div className="space-y-2">
                         <p className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-300/50">Tim Moderator</p>
                         <p className="text-4xl font-black">{areUsersLoading ? '...' : stats.admins}</p>
                         <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
-                            <motion.div initial={{ width: 0 }} animate={{ width: `${(stats.admins/stats.total)*100}%` }} className="h-full bg-rose-400" />
+                            <motion.div initial={{ width: 0 }} animate={{ width: `${(stats.admins/Math.max(stats.total, 1))*100}%` }} className="h-full bg-rose-400" />
                         </div>
                     </div>
                 </div>
             </CardContent>
         </Card>
 
-        {/* Small Action Card */}
         <Card className="md:col-span-4 border-none shadow-xl rounded-[2.5rem] bg-card p-8 flex flex-col justify-between group overflow-hidden relative">
             <div className="absolute bottom-[-20%] right-[-10%] p-10 opacity-5 pointer-events-none group-hover:scale-110 transition-transform">
                 <ShieldCheck className="h-40 w-40 text-primary" />
@@ -276,7 +262,6 @@ export default function AdminPage() {
         </Card>
       </div>
 
-      {/* Moderation Tabs */}
       <Tabs defaultValue="authors" className="space-y-8">
         <div className="flex items-center justify-between border-b pb-4">
             <TabsList className="bg-muted/50 p-1 rounded-full h-auto">
@@ -379,7 +364,7 @@ export default function AdminPage() {
                                     <TableRow key={book.id}>
                                         <TableCell className="px-8 py-6">
                                             <div className="flex items-center gap-4">
-                                                <div className="h-12 w-8 bg-muted rounded shadow-sm overflow-hidden shrink-0">
+                                                <div className="h-12 w-8 bg-muted rounded shadow-sm overflow-hidden shrink-0 relative">
                                                     <AvatarImage src={book.coverUrl} className="object-cover h-full w-full" />
                                                 </div>
                                                 <div className="min-w-0">

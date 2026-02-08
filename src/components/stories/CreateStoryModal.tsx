@@ -22,7 +22,6 @@ import { Loader2, Camera, Type, Image as ImageIcon, X, Check, ArrowLeft, Refresh
 import type { User as AppUser } from '@/lib/types';
 import { uploadFile } from '@/lib/uploader';
 import Image from 'next/image';
-import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const storySchema = z.object({

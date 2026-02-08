@@ -23,10 +23,8 @@ import {
   BookUser,
   Info,
   ChevronRight,
-  UserPlus,
   Moon,
   Sun,
-  Loader2,
   Shield,
   User as UserIcon,
 } from 'lucide-react';
