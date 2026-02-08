@@ -220,7 +220,7 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
         }}
       >
         <DialogTitle className="sr-only">Cerita {currentGroup.authorName}</DialogTitle>
-        <DialogDescription className="sr-only">Melihat momen cerita teks dengan Markdown.</DialogDescription>
+        <DialogDescription className="sr-only">Melihat momen cerita teks atau gambar dengan Markdown.</DialogDescription>
         
         <div className="relative w-full h-full flex items-center justify-center">
             {/* Desktop Navigation */}
@@ -278,23 +278,39 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
 
                 {/* Content Area */}
                 <div className={cn(
-                    "flex-1 relative flex items-center justify-center bg-gradient-to-br",
-                    currentStory.background || "from-indigo-600 to-rose-500"
+                    "flex-1 relative flex items-center justify-center",
+                    currentStory.type === 'text' 
+                        ? (currentStory.background || "bg-gradient-to-br from-indigo-600 to-rose-500") 
+                        : "bg-black"
                 )}>
-                  <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
+                  {currentStory.type === 'text' && <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />}
+                  
                   <AnimatePresence mode="wait">
                     <motion.div
                         key={`${currentStory.id}`}
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 1.1 }}
-                        className="w-full h-full flex items-center justify-center p-12 text-center overflow-y-auto no-scrollbar"
+                        className="w-full h-full flex flex-col items-center justify-center text-center overflow-hidden"
                     >
-                        <div className="prose prose-invert prose-p:text-2xl md:prose-p:text-3xl prose-p:font-headline prose-p:font-black prose-p:leading-tight prose-p:drop-shadow-lg prose-blockquote:border-l-4 prose-blockquote:border-white/40 prose-blockquote:pl-4 prose-blockquote:italic prose-p:m-0 max-w-none">
-                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                {currentStory.content}
-                            </ReactMarkdown>
-                        </div>
+                        {currentStory.type === 'image' ? (
+                            <div className="w-full h-full relative">
+                                <img src={currentStory.mediaUrl} alt="Story Content" className="w-full h-full object-cover" />
+                                {currentStory.content && (
+                                    <div className="absolute bottom-24 left-0 right-0 p-6 bg-gradient-to-t from-black/80 to-transparent">
+                                        <p className="text-white text-lg font-medium drop-shadow-md">{currentStory.content}</p>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="p-12 overflow-y-auto no-scrollbar">
+                                <div className="prose prose-invert prose-p:text-2xl md:prose-p:text-3xl prose-p:font-headline prose-p:font-black prose-p:leading-tight prose-p:drop-shadow-lg prose-blockquote:border-l-4 prose-blockquote:border-white/40 prose-blockquote:pl-4 prose-blockquote:italic prose-p:m-0 max-w-none">
+                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                        {currentStory.content}
+                                    </ReactMarkdown>
+                                </div>
+                            </div>
+                        )}
                     </motion.div>
                   </AnimatePresence>
                 </div>

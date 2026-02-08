@@ -155,7 +155,7 @@ export type Follow = {
 
 export type Story = {
   id: string;
-  type: 'text';
+  type: 'text' | 'image';
   authorId: string;
   authorName: string;
   authorAvatarUrl: string;
@@ -166,6 +166,7 @@ export type Story = {
   commentCount: number;
   viewCount: number;
   background?: string;
+  mediaUrl?: string;
 };
 
 export type StoryComment = {
