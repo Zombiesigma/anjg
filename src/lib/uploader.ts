@@ -39,21 +39,25 @@ export async function uploadFile(file: File, service: string = 'Catbox'): Promis
     });
 
     if (!response.ok) {
-      throw new Error(`Upload gagal dengan status: ${response.status}`);
+      throw new Error(`Upload gagal dengan status: ${response.status}. Silakan coba lagi nanti.`);
     }
 
     const data = await response.json();
     
-    // Berdasarkan pola umum API uploader himmel, URL biasanya ada di data.result atau data.url
-    const uploadedUrl = data.result || data.url || data.link || (data.data && data.data.url);
+    // Mencari URL dalam berbagai kemungkinan struktur respons API
+    const uploadedUrl = data.result || data.url || data.link || (data.data && data.data.url) || data.files?.[0]?.url;
 
     if (!uploadedUrl) {
-      throw new Error('Gagal mendapatkan URL hasil unggahan dari respons server.');
+      console.error('Respons API tidak dikenal:', data);
+      throw new Error('Gagal mendapatkan URL hasil unggahan. Server tidak memberikan tautan balik.');
     }
 
     return uploadedUrl;
   } catch (error) {
-    console.error('Error uploading file:', error);
+    console.error('Error in uploadFile:', error);
+    if (error instanceof TypeError && error.message === 'Failed to fetch') {
+      throw new Error('Gagal menghubungi server uploader. Periksa koneksi internet atau coba matikan VPN/Adblock.');
+    }
     throw error;
   }
 }

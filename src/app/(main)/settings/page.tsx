@@ -132,17 +132,17 @@ export default function SettingsPage() {
     setIsUploading(true);
     try {
       const url = await uploadFile(file);
-      profileForm.setValue('photoURL', url);
+      profileForm.setValue('photoURL', url, { shouldDirty: true });
       toast({
         variant: 'success',
         title: "Foto Berhasil Diunggah",
         description: "Klik simpan untuk menerapkan perubahan profil Anda.",
       });
-    } catch (error) {
+    } catch (error: any) {
       toast({
         variant: 'destructive',
         title: "Upload Gagal",
-        description: "Gagal mengunggah foto. Silakan coba lagi.",
+        description: error.message || "Gagal mengunggah foto. Silakan coba lagi.",
       });
     } finally {
       setIsUploading(false);
@@ -154,8 +154,9 @@ export default function SettingsPage() {
     
     setIsSavingProfile(true);
     try {
-      // 1. Validasi Username Unik (Jika diubah)
       const normalizedUsername = values.username.toLowerCase();
+      
+      // 1. Validasi Username Unik (Jika diubah)
       if (normalizedUsername !== userProfile.username) {
         const usernameQuery = query(
           collection(firestore, 'users'), 
@@ -177,13 +178,13 @@ export default function SettingsPage() {
       // 2. Perbarui profil di Firebase Auth
       await updateProfile(currentUser, {
         displayName: values.displayName,
-        photoURL: values.photoURL,
+        photoURL: values.photoURL || userProfile.photoURL,
       });
 
-      // 3. Siapkan batch untuk sinkronisasi data atomik
+      // 3. Batch Update untuk sinkronisasi identitas global
       const batch = writeBatch(firestore);
 
-      // 4. Perbarui dokumen profil utama
+      // Profil Utama
       batch.update(userProfileRef, {
         username: normalizedUsername,
         displayName: values.displayName,
@@ -191,7 +192,7 @@ export default function SettingsPage() {
         photoURL: values.photoURL || userProfile.photoURL,
       });
 
-      // 5. Sinkronisasi ke Buku yang ditulis pengguna
+      // Sinkronisasi ke Buku
       const booksQuery = query(collection(firestore, 'books'), where('authorId', '==', currentUser.uid));
       const booksSnap = await getDocs(booksQuery);
       booksSnap.forEach((bookDoc) => {
@@ -201,7 +202,7 @@ export default function SettingsPage() {
         });
       });
 
-      // 6. Sinkronisasi ke Story yang aktif
+      // Sinkronisasi ke Story
       const storiesQuery = query(collection(firestore, 'stories'), where('authorId', '==', currentUser.uid));
       const storiesSnap = await getDocs(storiesQuery);
       storiesSnap.forEach((storyDoc) => {
@@ -211,7 +212,7 @@ export default function SettingsPage() {
         });
       });
 
-      // 7. Sinkronisasi ke Pesan/Obrolan
+      // Sinkronisasi ke Chat
       const chatsQuery = query(collection(firestore, 'chats'), where('participantUids', 'array-contains', currentUser.uid));
       const chatsSnap = await getDocs(chatsQuery);
       chatsSnap.forEach((chatDoc) => {
@@ -230,20 +231,19 @@ export default function SettingsPage() {
         batch.update(chatDoc.ref, { participants: updatedParticipants });
       });
 
-      // 8. Eksekusi semua pembaruan secara atomik
       await batch.commit();
 
       toast({
         variant: 'success',
         title: "Profil Diperbarui",
-        description: "Perubahan Anda telah berhasil disinkronkan ke seluruh sistem Elitera.",
+        description: "Semua perubahan identitas Anda telah disinkronkan ke seluruh sistem.",
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating profile: ", error);
       toast({
         variant: "destructive",
         title: "Gagal Menyimpan",
-        description: "Terjadi kesalahan saat menyinkronkan data profil Anda.",
+        description: error.message || "Terjadi kesalahan saat menyinkronkan data profil Anda.",
       });
     } finally {
       setIsSavingProfile(false);
@@ -261,7 +261,6 @@ export default function SettingsPage() {
           description: "Pengaturan notifikasi Anda telah disimpan secara aman." 
         });
     } catch (error) {
-        console.error("Error updating notification preferences: ", error);
         toast({ variant: "destructive", title: "Gagal Menyimpan" });
     } finally {
         setIsSavingNotifications(false);
@@ -295,31 +294,29 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-10 pb-20">
-      <div className="space-y-2">
+      <div className="space-y-2 px-2">
         <h1 className="text-4xl font-headline font-black tracking-tight italic">Pengaturan <span className="text-primary underline decoration-primary/20">Akun</span></h1>
         <p className="text-muted-foreground font-medium">Kelola identitas digital dan preferensi Elitera Anda.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-        {/* Settings Navigation */}
-        <aside className="lg:col-span-4 space-y-2">
-            <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-[2rem] p-3 space-y-1 shadow-xl">
+        <aside className="lg:col-span-4 space-y-4 px-2">
+            <div className="bg-card/50 backdrop-blur-sm border border-border/50 rounded-[2.5rem] p-3 space-y-1 shadow-xl">
                 <NavItem tab="profile" icon={UserIcon} label="Profil Publik" />
                 <NavItem tab="appearance" icon={Palette} label="Tampilan" />
                 <NavItem tab="notifications" icon={Bell} label="Notifikasi" />
             </div>
             
-            <div className="p-6 bg-primary/5 rounded-[2rem] border border-primary/10">
+            <div className="p-8 bg-primary/5 rounded-[2.5rem] border border-primary/10">
                 <div className="flex items-center gap-3 mb-3 text-primary">
                     <Shield className="h-5 w-5" />
-                    <span className="font-black text-xs uppercase tracking-widest">Keamanan</span>
+                    <span className="font-black text-xs uppercase tracking-widest">Keamanan Data</span>
                 </div>
-                <p className="text-xs text-muted-foreground leading-relaxed">Keamanan data Anda adalah prioritas kami. Semua data dienkripsi dan dikelola secara aman di infrastruktur Elitera.</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">Informasi Anda dienkripsi secara aman. Pastikan Anda tidak membagikan kredensial login kepada siapa pun.</p>
             </div>
         </aside>
 
-        {/* Settings Content Area */}
-        <main className="lg:col-span-8">
+        <main className="lg:col-span-8 px-2">
             <AnimatePresence mode="wait">
                 {activeTab === 'profile' && (
                     <motion.div
@@ -338,7 +335,7 @@ export default function SettingsPage() {
                                             </div>
                                             <div>
                                                 <CardTitle className="font-headline text-2xl font-black">Profil Publik</CardTitle>
-                                                <CardDescription className="font-medium">Identitas Anda di hadapan jutaan pembaca Elitera.</CardDescription>
+                                                <CardDescription className="font-medium">Identitas Anda di hadapan seluruh komunitas Elitera.</CardDescription>
                                             </div>
                                         </div>
                                     </CardHeader>
@@ -354,25 +351,24 @@ export default function SettingsPage() {
                                             </div>
                                         ) : (
                                             <>
-                                                {/* Avatar Upload Section */}
                                                 <div className="flex flex-col sm:flex-row items-center gap-8">
                                                     <div className="relative group">
-                                                        <Avatar className="h-28 w-28 md:h-32 md:w-32 border-4 border-background shadow-2xl transition-transform group-hover:scale-105 duration-500">
+                                                        <Avatar className="h-32 w-32 border-4 border-background shadow-2xl transition-transform group-hover:scale-105 duration-500">
                                                             <AvatarImage src={profileForm.watch('photoURL')} className="object-cover" />
-                                                            <AvatarFallback className="bg-primary/5 text-primary text-3xl font-black italic">
+                                                            <AvatarFallback className="bg-primary/5 text-primary text-4xl font-black italic">
                                                                 {profileForm.watch('displayName')?.charAt(0)}
                                                             </AvatarFallback>
                                                         </Avatar>
                                                         {isUploading && (
-                                                            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm rounded-full flex items-center justify-center">
+                                                            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm rounded-full flex items-center justify-center z-10">
                                                                 <Loader2 className="h-8 w-8 text-white animate-spin" />
                                                             </div>
                                                         )}
                                                     </div>
                                                     <div className="flex-1 space-y-4 text-center sm:text-left">
                                                         <div className="space-y-1">
-                                                            <h4 className="font-bold text-lg">Foto Profil</h4>
-                                                            <p className="text-xs text-muted-foreground leading-relaxed max-w-xs">Gunakan foto asli atau ilustrasi ikonik agar mudah dikenali. Format JPG/PNG, maks 2MB.</p>
+                                                            <h4 className="font-bold text-lg">Foto Identitas</h4>
+                                                            <p className="text-xs text-muted-foreground leading-relaxed max-w-xs mx-auto sm:mx-0">Gunakan foto wajah yang jelas agar mudah dikenali oleh pembaca. Maks 2MB.</p>
                                                         </div>
                                                         <Button 
                                                             type="button" 
@@ -392,14 +388,14 @@ export default function SettingsPage() {
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                                     <FormField control={profileForm.control} name="username" render={({ field }) => (
                                                         <FormItem>
-                                                            <FormLabel className="font-bold ml-1">Username Unik</FormLabel>
+                                                            <FormLabel className="font-bold ml-1">Username</FormLabel>
                                                             <FormControl>
                                                                 <div className="relative group">
                                                                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50 font-bold">@</span>
                                                                     <Input placeholder="username" {...field} className="h-12 pl-8 rounded-xl bg-muted/30 border-none focus-visible:ring-primary/20 font-medium" />
                                                                 </div>
                                                             </FormControl>
-                                                            <FormDescription className="text-[10px] ml-1 uppercase font-bold tracking-tighter opacity-60">Hanya huruf kecil, angka, dan garis bawah.</FormDescription>
+                                                            <FormDescription className="text-[10px] ml-1 uppercase font-bold tracking-tighter opacity-60">Hanya huruf kecil, angka, dan underscore.</FormDescription>
                                                             <FormMessage />
                                                         </FormItem>
                                                     )} />
@@ -417,11 +413,11 @@ export default function SettingsPage() {
 
                                                 <FormField control={profileForm.control} name="bio" render={({ field }) => (
                                                     <FormItem>
-                                                        <FormLabel className="font-bold ml-1">Biografi Singkat</FormLabel>
+                                                        <FormLabel className="font-bold ml-1">Biografi Pujangga</FormLabel>
                                                         <FormControl>
-                                                            <Textarea placeholder="Ceritakan siapa Anda..." {...field} rows={4} className="rounded-2xl bg-muted/30 border-none focus-visible:ring-primary/20 font-medium resize-none py-4" />
+                                                            <Textarea placeholder="Bagikan sedikit tentang diri Anda..." {...field} rows={4} className="rounded-2xl bg-muted/30 border-none focus-visible:ring-primary/20 font-medium resize-none py-4" />
                                                         </FormControl>
-                                                        <FormDescription className="text-[10px] ml-1">Biografi ini akan tampil di halaman profil publik Anda.</FormDescription>
+                                                        <FormDescription className="text-[10px] ml-1">Maksimal 160 karakter untuk deskripsi singkat profil.</FormDescription>
                                                         <FormMessage />
                                                     </FormItem>
                                                 )} />
@@ -429,9 +425,9 @@ export default function SettingsPage() {
                                         )}
                                     </CardContent>
                                     <CardFooter className="p-8 pt-0 flex justify-end">
-                                        <Button type="submit" size="lg" className="rounded-full px-10 h-14 font-black shadow-xl shadow-primary/20" disabled={isSavingProfile || isLoading || isUploading}>
+                                        <Button type="submit" size="lg" className="rounded-full px-10 h-14 font-black shadow-xl shadow-primary/20" disabled={isSavingProfile || isLoading || isUploading || !profileForm.formState.isDirty}>
                                             {isSavingProfile ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Sparkles className="mr-2 h-5 w-5" />}
-                                            Simpan Perubahan Identitas
+                                            Terapkan Perubahan
                                         </Button>
                                     </CardFooter>
                                 </form>
@@ -454,24 +450,24 @@ export default function SettingsPage() {
                                         <Palette className="h-6 w-6" />
                                     </div>
                                     <div>
-                                        <CardTitle className="font-headline text-2xl font-black">Kustomisasi Tampilan</CardTitle>
-                                        <CardDescription className="font-medium">Sesuaikan kenyamanan mata Anda saat menjelajah Elitera.</CardDescription>
+                                        <CardTitle className="font-headline text-2xl font-black">Mode Tampilan</CardTitle>
+                                        <CardDescription className="font-medium">Pilih gaya visual yang paling nyaman untuk Anda.</CardDescription>
                                     </div>
                                 </div>
                             </CardHeader>
                             <CardContent className="p-8 space-y-10">
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                                     {[
-                                        { id: 'light', label: 'Mode Terang', icon: Sun, color: 'bg-white border-zinc-200' },
-                                        { id: 'dark', label: 'Mode Gelap', icon: Moon, color: 'bg-zinc-900 border-zinc-800 text-white' },
-                                        { id: 'system', label: 'Sistem', icon: Monitor, color: 'bg-gradient-to-br from-white to-zinc-900 border-zinc-300' }
+                                        { id: 'light', label: 'Terang', icon: Sun, color: 'bg-white border-zinc-200' },
+                                        { id: 'dark', label: 'Gelap', icon: Moon, color: 'bg-zinc-900 border-zinc-800 text-white' },
+                                        { id: 'system', label: 'Otomatis', icon: Monitor, color: 'bg-gradient-to-br from-white to-zinc-900 border-zinc-300' }
                                     ].map((mode) => (
                                         <button
                                             key={mode.id}
                                             onClick={() => handleThemeChange(mode.id)}
                                             className={cn(
-                                                "relative flex flex-col items-center gap-4 p-6 rounded-3xl border-2 transition-all duration-500 overflow-hidden group",
-                                                theme === mode.id ? "border-primary bg-primary/5 ring-4 ring-primary/10 scale-105" : "border-transparent bg-muted/20 hover:bg-muted/40"
+                                                "relative flex flex-col items-center gap-4 p-6 rounded-3xl border-2 transition-all duration-500 group",
+                                                theme === mode.id ? "border-primary bg-primary/5 ring-4 ring-primary/10 scale-105 shadow-xl" : "border-transparent bg-muted/20 hover:bg-muted/40"
                                             )}
                                         >
                                             <div className={cn("w-full aspect-video rounded-xl border mb-2 flex items-center justify-center", mode.color)}>
@@ -507,22 +503,22 @@ export default function SettingsPage() {
                                                 <Bell className="h-6 w-6" />
                                             </div>
                                             <div>
-                                                <CardTitle className="font-headline text-2xl font-black">Pusat Notifikasi</CardTitle>
-                                                <CardDescription className="font-medium">Kendalikan informasi yang ingin Anda dengar.</CardDescription>
+                                                <CardTitle className="font-headline text-2xl font-black">Notifikasi</CardTitle>
+                                                <CardDescription className="font-medium">Atur informasi apa saja yang ingin Anda terima.</CardDescription>
                                             </div>
                                         </div>
                                     </CardHeader>
                                     <CardContent className="p-8 space-y-2">
                                         {[
-                                            { name: 'onNewFollower', label: 'Pengikut Baru', desc: 'Dapatkan kabar saat seseorang mengagumi karya Anda.' },
-                                            { name: 'onBookComment', label: 'Diskusi Buku', desc: 'Notifikasi saat pembaca memberikan ulasan di buku Anda.' },
-                                            { name: 'onBookFavorite', label: 'Apresiasi Karya', desc: 'Kabar saat buku Anda ditambahkan ke koleksi favorit.' },
-                                            { name: 'onStoryComment', label: 'Interaksi Cerita', desc: 'Notifikasi saat ada balasan pada momen singkat Anda.' }
+                                            { name: 'onNewFollower', label: 'Pengikut Baru', desc: 'Saat seseorang mulai mengikuti profil Anda.' },
+                                            { name: 'onBookComment', label: 'Komentar Buku', desc: 'Saat ada ulasan baru pada karya-karya Anda.' },
+                                            { name: 'onBookFavorite', label: 'Karya Favorit', desc: 'Saat buku Anda ditambahkan ke koleksi favorit pembaca.' },
+                                            { name: 'onStoryComment', label: 'Respon Momen', desc: 'Saat seseorang membalas cerita singkat Anda.' }
                                         ].map((item) => (
                                             <FormField key={item.name} control={notificationForm.control} name={item.name as any} render={({ field }) => (
-                                                <div className="flex items-center justify-between p-6 rounded-2xl transition-colors hover:bg-muted/30 group">
+                                                <div className="flex items-center justify-between p-6 rounded-3xl transition-colors hover:bg-muted/30 group border border-transparent hover:border-border/50">
                                                     <div className="space-y-1">
-                                                        <Label className="font-black text-base transition-colors group-hover:text-primary">{item.label}</Label>
+                                                        <Label className="font-black text-base transition-colors group-hover:text-primary cursor-pointer" onClick={() => field.onChange(!field.value)}>{item.label}</Label>
                                                         <p className="text-xs text-muted-foreground font-medium">{item.desc}</p>
                                                     </div>
                                                     <FormControl>
@@ -533,9 +529,9 @@ export default function SettingsPage() {
                                         ))}
                                     </CardContent>
                                     <CardFooter className="p-8 pt-0 flex justify-end">
-                                        <Button type="submit" size="lg" className="rounded-full px-10 h-14 font-black shadow-xl shadow-primary/20" disabled={isSavingNotifications || isLoading}>
-                                            {isSavingNotifications && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
-                                            Simpan Preferensi Notifikasi
+                                        <Button type="submit" size="lg" className="rounded-full px-10 h-14 font-black shadow-xl shadow-primary/20" disabled={isSavingNotifications || isLoading || !notificationForm.formState.isDirty}>
+                                            {isSavingNotifications ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Check className="mr-2 h-5 w-5" />}
+                                            Simpan Notifikasi
                                         </Button>
                                     </CardFooter>
                                 </form>
