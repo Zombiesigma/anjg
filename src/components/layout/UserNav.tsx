@@ -179,7 +179,7 @@ export function UserNav() {
           <SheetFooter className="p-4 border-t bg-muted/10 mt-auto">
             <SheetClose asChild>
               <Link 
-                href={userProfile ? `/profile/${userProfile.username}` : '#'} 
+                href={userProfile ? `/profile/${userProfile.username.toLowerCase()}` : '#'} 
                 className={cn(
                     "flex items-center gap-4 w-full p-3 rounded-2xl transition-all hover:bg-white hover:shadow-xl hover:shadow-primary/5 group",
                     isProfileLoading && "pointer-events-none"
