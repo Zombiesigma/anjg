@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useFirestore, useUser, useDoc } from '@/firebase';
-import { doc, updateDoc, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
+import { doc, updateDoc, collection, query, where, getDocs, writeBatch, limit } from 'firebase/firestore';
 import { updateProfile } from 'firebase/auth';
 import type { User } from '@/lib/types';
 import {
@@ -34,7 +34,7 @@ const profileFormSchema = z.object({
   username: z.string()
     .min(3, { message: "Nama pengguna minimal 3 karakter." })
     .max(20, { message: "Nama pengguna maksimal 20 karakter." })
-    .regex(/^[a-zA-Z0-9_]+$/, 'Hanya boleh berisi huruf, angka, dan garis bawah.'),
+    .regex(/^[a-z0-9_]+$/, 'Hanya boleh berisi huruf kecil, angka, dan garis bawah.'),
   displayName: z.string().min(3, { message: "Nama lengkap minimal 3 karakter." }),
   photoURL: z.string().url({ message: "URL foto profil tidak valid." }).optional().or(z.literal('')),
   bio: z.string().max(160, { message: "Bio tidak boleh lebih dari 160 karakter." }).optional(),
@@ -134,6 +134,7 @@ export default function SettingsPage() {
       const url = await uploadFile(file);
       profileForm.setValue('photoURL', url);
       toast({
+        variant: 'success',
         title: "Foto Berhasil Diunggah",
         description: "Klik simpan untuk menerapkan perubahan profil Anda.",
       });
@@ -149,47 +150,68 @@ export default function SettingsPage() {
   };
 
   async function onProfileSubmit(values: z.infer<typeof profileFormSchema>) {
-    if (!userProfileRef || !currentUser || !firestore) return;
+    if (!userProfileRef || !currentUser || !firestore || !userProfile) return;
+    
     setIsSavingProfile(true);
     try {
-      // 1. Perbarui profil di Firebase Auth
+      // 1. Validasi Username Unik (Jika diubah)
+      const normalizedUsername = values.username.toLowerCase();
+      if (normalizedUsername !== userProfile.username) {
+        const usernameQuery = query(
+          collection(firestore, 'users'), 
+          where('username', '==', normalizedUsername),
+          limit(1)
+        );
+        const usernameSnap = await getDocs(usernameQuery);
+        if (!usernameSnap.empty) {
+          toast({
+            variant: 'destructive',
+            title: "Username Sudah Digunakan",
+            description: "Silakan pilih username lain yang unik.",
+          });
+          setIsSavingProfile(false);
+          return;
+        }
+      }
+
+      // 2. Perbarui profil di Firebase Auth
       await updateProfile(currentUser, {
         displayName: values.displayName,
         photoURL: values.photoURL,
       });
 
-      // 2. Siapkan batch untuk sinkronisasi data atomik
+      // 3. Siapkan batch untuk sinkronisasi data atomik
       const batch = writeBatch(firestore);
 
-      // 3. Perbarui dokumen profil utama
+      // 4. Perbarui dokumen profil utama
       batch.update(userProfileRef, {
-        username: values.username,
+        username: normalizedUsername,
         displayName: values.displayName,
-        bio: values.bio,
-        photoURL: values.photoURL,
+        bio: values.bio || '',
+        photoURL: values.photoURL || userProfile.photoURL,
       });
 
-      // 4. Sinkronisasi ke Buku yang ditulis pengguna
+      // 5. Sinkronisasi ke Buku yang ditulis pengguna
       const booksQuery = query(collection(firestore, 'books'), where('authorId', '==', currentUser.uid));
       const booksSnap = await getDocs(booksQuery);
       booksSnap.forEach((bookDoc) => {
         batch.update(bookDoc.ref, {
           authorName: values.displayName,
-          authorAvatarUrl: values.photoURL,
+          authorAvatarUrl: values.photoURL || userProfile.photoURL,
         });
       });
 
-      // 5. Sinkronisasi ke Story yang aktif
+      // 6. Sinkronisasi ke Story yang aktif
       const storiesQuery = query(collection(firestore, 'stories'), where('authorId', '==', currentUser.uid));
       const storiesSnap = await getDocs(storiesQuery);
       storiesSnap.forEach((storyDoc) => {
         batch.update(storyDoc.ref, {
           authorName: values.displayName,
-          authorAvatarUrl: values.photoURL,
+          authorAvatarUrl: values.photoURL || userProfile.photoURL,
         });
       });
 
-      // 6. Sinkronisasi ke Pesan/Obrolan
+      // 7. Sinkronisasi ke Pesan/Obrolan
       const chatsQuery = query(collection(firestore, 'chats'), where('participantUids', 'array-contains', currentUser.uid));
       const chatsSnap = await getDocs(chatsQuery);
       chatsSnap.forEach((chatDoc) => {
@@ -199,8 +221,8 @@ export default function SettingsPage() {
             return { 
               ...p, 
               displayName: values.displayName, 
-              photoURL: values.photoURL, 
-              username: values.username 
+              photoURL: values.photoURL || userProfile.photoURL, 
+              username: normalizedUsername 
             };
           }
           return p;
@@ -208,10 +230,11 @@ export default function SettingsPage() {
         batch.update(chatDoc.ref, { participants: updatedParticipants });
       });
 
-      // 7. Eksekusi semua pembaruan secara atomik
+      // 8. Eksekusi semua pembaruan secara atomik
       await batch.commit();
 
       toast({
+        variant: 'success',
         title: "Profil Diperbarui",
         description: "Perubahan Anda telah berhasil disinkronkan ke seluruh sistem Elitera.",
       });
@@ -232,7 +255,11 @@ export default function SettingsPage() {
     setIsSavingNotifications(true);
     try {
         await updateDoc(userProfileRef, { notificationPreferences: values });
-        toast({ title: "Preferensi Diperbarui", description: "Pengaturan notifikasi Anda telah disimpan." });
+        toast({ 
+          variant: 'success',
+          title: "Preferensi Diperbarui", 
+          description: "Pengaturan notifikasi Anda telah disimpan secara aman." 
+        });
     } catch (error) {
         console.error("Error updating notification preferences: ", error);
         toast({ variant: "destructive", title: "Gagal Menyimpan" });
@@ -287,7 +314,7 @@ export default function SettingsPage() {
                     <Shield className="h-5 w-5" />
                     <span className="font-black text-xs uppercase tracking-widest">Keamanan</span>
                 </div>
-                <p className="text-xs text-muted-foreground leading-relaxed">Keamanan data Anda adalah prioritas kami. Semua data dienkripsi dan dikelola secara aman di Elitera Cloud.</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">Keamanan data Anda adalah prioritas kami. Semua data dienkripsi dan dikelola secara aman di infrastruktur Elitera.</p>
             </div>
         </aside>
 
@@ -356,7 +383,7 @@ export default function SettingsPage() {
                                                             disabled={isUploading}
                                                         >
                                                             {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
-                                                            Unggah Foto Baru
+                                                            Ganti Foto Profil
                                                         </Button>
                                                         <input id="photo-upload" type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
                                                     </div>
@@ -372,6 +399,7 @@ export default function SettingsPage() {
                                                                     <Input placeholder="username" {...field} className="h-12 pl-8 rounded-xl bg-muted/30 border-none focus-visible:ring-primary/20 font-medium" />
                                                                 </div>
                                                             </FormControl>
+                                                            <FormDescription className="text-[10px] ml-1 uppercase font-bold tracking-tighter opacity-60">Hanya huruf kecil, angka, dan garis bawah.</FormDescription>
                                                             <FormMessage />
                                                         </FormItem>
                                                     )} />
@@ -393,7 +421,7 @@ export default function SettingsPage() {
                                                         <FormControl>
                                                             <Textarea placeholder="Ceritakan siapa Anda..." {...field} rows={4} className="rounded-2xl bg-muted/30 border-none focus-visible:ring-primary/20 font-medium resize-none py-4" />
                                                         </FormControl>
-                                                        <FormDescription className="text-[10px] ml-1">Biografi ini akan tampil di halaman profil Anda.</FormDescription>
+                                                        <FormDescription className="text-[10px] ml-1">Biografi ini akan tampil di halaman profil publik Anda.</FormDescription>
                                                         <FormMessage />
                                                     </FormItem>
                                                 )} />
@@ -403,7 +431,7 @@ export default function SettingsPage() {
                                     <CardFooter className="p-8 pt-0 flex justify-end">
                                         <Button type="submit" size="lg" className="rounded-full px-10 h-14 font-black shadow-xl shadow-primary/20" disabled={isSavingProfile || isLoading || isUploading}>
                                             {isSavingProfile ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Sparkles className="mr-2 h-5 w-5" />}
-                                            Simpan Perubahan
+                                            Simpan Perubahan Identitas
                                         </Button>
                                     </CardFooter>
                                 </form>
@@ -507,7 +535,7 @@ export default function SettingsPage() {
                                     <CardFooter className="p-8 pt-0 flex justify-end">
                                         <Button type="submit" size="lg" className="rounded-full px-10 h-14 font-black shadow-xl shadow-primary/20" disabled={isSavingNotifications || isLoading}>
                                             {isSavingNotifications && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
-                                            Simpan Preferensi
+                                            Simpan Preferensi Notifikasi
                                         </Button>
                                     </CardFooter>
                                 </form>
