@@ -14,8 +14,9 @@ import { useToast } from '@/hooks/use-toast';
 import { signInWithEmail, signInWithGoogle } from '@/firebase/auth/service';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Mail, Lock, Sparkles, Chrome } from 'lucide-react';
 import { useAuthRedirect } from '@/hooks/use-auth-redirect';
+import { motion } from 'framer-motion';
 
 const formSchema = z.object({
   email: z.string().email({ message: 'Email tidak valid.' }),
@@ -48,13 +49,12 @@ export default function LoginPage() {
       setIsLoading(false);
     } else if (user) {
       if (!user.emailVerified && user.providerData.some(p => p.providerId === 'password')) {
-        // User needs to verify email, redirect to waiting page
         router.push('/verify-email');
       } else {
-        // User is verified or uses another provider (e.g., Google)
         toast({
-          title: 'Berhasil Masuk',
-          description: 'Selamat datang kembali!',
+          variant: 'success',
+          title: 'Selamat Datang Kembali',
+          description: 'Mari lanjutkan petualangan sastra Anda.',
         });
         router.push('/');
       }
@@ -67,80 +67,118 @@ export default function LoginPage() {
     if (error) {
       toast({
         variant: 'destructive',
-        title: 'Gagal Masuk dengan Google',
-        description: (error as Error).message || 'Terjadi kesalahan. Silakan coba lagi.',
+        title: 'Gagal Masuk',
+        description: (error as Error).message || 'Terjadi kesalahan saat masuk dengan Google.',
       });
       setIsLoading(false);
     } else {
       toast({
+        variant: 'success',
         title: 'Berhasil Masuk',
-        description: 'Selamat datang!',
+        description: 'Selamat menjelajahi semesta Elitera!',
       });
       router.push('/');
     }
   }
 
   return (
-    <Card className="mx-auto max-w-sm w-full">
-      <CardHeader className="space-y-2 text-center">
-        <div className="inline-block mx-auto">
-          <Logo className="h-10 w-10" />
+    <div className="w-full max-w-[400px] space-y-8 relative">
+      {/* Background Decorative Blobs */}
+      <div className="absolute -top-20 -left-20 w-64 h-64 bg-primary/10 rounded-full blur-[80px] -z-10" />
+      <div className="absolute -bottom-20 -right-20 w-64 h-64 bg-accent/10 rounded-full blur-[80px] -z-10" />
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+      >
+        <div className="flex flex-col items-center text-center space-y-4 mb-8">
+          <div className="p-4 rounded-[2rem] bg-background shadow-2xl shadow-primary/10 ring-1 ring-border/50">
+            <Logo className="h-12 w-12" />
+          </div>
+          <div className="space-y-1">
+            <h1 className="text-4xl font-headline font-black tracking-tight">Selamat <span className="text-primary italic">Datang.</span></h1>
+            <p className="text-muted-foreground font-medium text-sm">Masuk untuk melanjutkan jejak imajinasimu.</p>
+          </div>
         </div>
-        <CardTitle className="text-2xl font-headline">Selamat Datang Kembali</CardTitle>
-        <CardDescription>Masukkan kredensial Anda untuk mengakses akun Anda</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input placeholder="m@example.com" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <div className="flex items-center">
-                    <FormLabel>Kata Sandi</FormLabel>
-                    <Link href="#" className="ml-auto inline-block text-sm underline">
-                      Lupa kata sandi?
-                    </Link>
-                  </div>
-                  <FormControl>
-                    <Input type="password" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Masuk
+
+        <Card className="border-none shadow-2xl bg-card/50 backdrop-blur-xl rounded-[2.5rem] overflow-hidden">
+          <CardHeader className="sr-only">
+            <CardTitle>Masuk ke Akun</CardTitle>
+            <CardDescription>Masukkan kredensial Anda</CardDescription>
+          </CardHeader>
+          <CardContent className="p-8 pt-10">
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="font-bold ml-1 text-xs uppercase tracking-widest opacity-70">Email</FormLabel>
+                      <FormControl>
+                        <div className="relative group">
+                          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                          <Input placeholder="anda@email.com" {...field} className="h-12 pl-11 rounded-xl bg-muted/30 border-none focus-visible:ring-primary/20 font-medium" />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <div className="flex items-center justify-between ml-1">
+                        <FormLabel className="font-bold text-xs uppercase tracking-widest opacity-70">Kata Sandi</FormLabel>
+                        <Link href="#" className="text-[10px] font-black uppercase text-primary hover:underline">Lupa?</Link>
+                      </div>
+                      <FormControl>
+                        <div className="relative group">
+                          <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                          <Input type="password" placeholder="••••••••" {...field} className="h-12 pl-11 rounded-xl bg-muted/30 border-none focus-visible:ring-primary/20 font-medium" />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button type="submit" className="w-full h-12 rounded-xl font-black text-sm uppercase tracking-widest shadow-xl shadow-primary/20 transition-all active:scale-95 group" disabled={isLoading}>
+                  {isLoading ? (
+                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Mengakses...</>
+                  ) : (
+                    <><Sparkles className="mr-2 h-4 w-4 transition-transform group-hover:rotate-12" /> Masuk Sekarang</>
+                  )}
+                </Button>
+              </form>
+            </Form>
+
+            <div className="relative my-8">
+              <div className="absolute inset-0 flex items-center">
+                <Separator />
+              </div>
+              <div className="relative flex justify-center text-[10px] font-black uppercase tracking-widest">
+                <span className="bg-background px-4 text-muted-foreground/60">Atau Gunakan</span>
+              </div>
+            </div>
+
+            <Button variant="outline" className="w-full h-12 rounded-xl font-bold border-2 hover:bg-primary/5 hover:border-primary/20 transition-all active:scale-95" onClick={handleGoogleSignIn} disabled={isLoading}>
+              <Chrome className="mr-2 h-4 w-4 text-primary" /> Lanjutkan dengan Google
             </Button>
-          </form>
-        </Form>
-        <Separator className="my-4" />
-        <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading}>
-          {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Masuk dengan Google
-        </Button>
-        <div className="mt-4 text-center text-sm">
-          Belum punya akun?{' '}
-          <Link href="/register" className="underline">
-            Daftar
-          </Link>
-        </div>
-      </CardContent>
-    </Card>
+
+            <div className="mt-8 text-center">
+              <p className="text-sm text-muted-foreground font-medium">
+                Belum punya akun?{' '}
+                <Link href="/register" className="text-primary font-black hover:underline underline-offset-4">
+                  Daftar Gratis
+                </Link>
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+    </div>
   );
 }

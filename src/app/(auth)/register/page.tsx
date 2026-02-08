@@ -14,10 +14,11 @@ import { useToast } from '@/hooks/use-toast';
 import { signUpWithEmail, signInWithGoogle } from '@/firebase/auth/service';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import { Loader2, Upload, User as UserIcon } from 'lucide-react';
+import { Loader2, Upload, User as UserIcon, Mail, Lock, Sparkles, Chrome, PenTool } from 'lucide-react';
 import { useAuthRedirect } from '@/hooks/use-auth-redirect';
 import { uploadFile } from '@/lib/uploader';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { motion } from 'framer-motion';
 
 const formSchema = z.object({
   fullName: z.string().min(3, { message: 'Nama lengkap minimal 3 karakter.' }),
@@ -73,12 +74,13 @@ export default function RegisterPage() {
         toast({
           variant: 'destructive',
           title: 'Gagal Mendaftar',
-          description: (error as Error).message || 'Email ini mungkin sudah digunakan. Silakan coba lagi.',
+          description: (error as Error).message || 'Email ini mungkin sudah digunakan.',
         });
       } else {
         toast({
+          variant: 'success',
           title: 'Pendaftaran Berhasil',
-          description: 'Kami telah mengirimkan tautan verifikasi ke email Anda.',
+          description: 'Silakan verifikasi email Anda untuk memulai.',
         });
         router.push('/verify-email');
       }
@@ -86,7 +88,7 @@ export default function RegisterPage() {
       toast({
         variant: 'destructive',
         title: 'Gagal Mengunggah Foto',
-        description: 'Terjadi kesalahan saat mengunggah foto profil Anda.',
+        description: 'Terjadi kesalahan saat memproses foto profil Anda.',
       });
     } finally {
       setIsLoading(false);
@@ -99,108 +101,157 @@ export default function RegisterPage() {
     if (error) {
       toast({
         variant: 'destructive',
-        title: 'Gagal Masuk dengan Google',
-        description: (error as Error).message || 'Terjadi kesalahan. Silakan coba lagi.',
+        title: 'Gagal Mendaftar',
+        description: (error as Error).message || 'Terjadi kesalahan saat masuk dengan Google.',
       });
        setIsLoading(false);
     } else {
       toast({
-        title: 'Berhasil Masuk',
-        description: 'Selamat datang di Elitera!',
+        variant: 'success',
+        title: 'Selamat Datang',
+        description: 'Anda telah berhasil bergabung dengan Elitera!',
       });
       router.push('/');
     }
   }
 
   return (
-    <Card className="mx-auto max-w-sm w-full">
-      <CardHeader className="space-y-2 text-center">
-        <div className="inline-block mx-auto">
-          <Logo className="h-10 w-10" />
-        </div>
-        <CardTitle className="text-2xl font-headline">Buat Akun</CardTitle>
-        <CardDescription>Masukkan informasi Anda untuk membuat akun</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="flex flex-col items-center mb-6">
-          <div className="relative group">
-            <Avatar className="h-20 w-20 border-2 border-muted cursor-pointer" onClick={() => document.getElementById('avatar-upload')?.click()}>
-              <AvatarImage src={previewUrl || ''} />
-              <AvatarFallback><UserIcon className="h-10 w-10 text-muted-foreground" /></AvatarFallback>
-            </Avatar>
-            <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer pointer-events-none">
-              <Upload className="h-6 w-6 text-white" />
-            </div>
+    <div className="w-full max-w-[400px] space-y-8 relative">
+      {/* Background Decorative Blobs */}
+      <div className="absolute -top-20 -right-20 w-64 h-64 bg-accent/10 rounded-full blur-[80px] -z-10" />
+      <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-primary/10 rounded-full blur-[80px] -z-10" />
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+      >
+        <div className="flex flex-col items-center text-center space-y-4 mb-8">
+          <div className="p-4 rounded-[2rem] bg-background shadow-2xl shadow-primary/10 ring-1 ring-border/50">
+            <Logo className="h-12 w-12" />
           </div>
-          <p className="text-xs text-muted-foreground mt-2">Pilih Foto Profil (Opsional)</p>
-          <input
-            id="avatar-upload"
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleFileChange}
-          />
+          <div className="space-y-1">
+            <h1 className="text-4xl font-headline font-black tracking-tight">Buat <span className="text-primary italic">Karya.</span></h1>
+            <p className="text-muted-foreground font-medium text-sm">Bergabunglah dalam barisan pujangga modern.</p>
+          </div>
         </div>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-4">
-            <FormField
-              control={form.control}
-              name="fullName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nama Lengkap</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Guntur Padilah" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input placeholder="m@example.com" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Kata Sandi</FormLabel>
-                  <FormControl>
-                    <Input type="password" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Buat akun
+        <Card className="border-none shadow-2xl bg-card/50 backdrop-blur-xl rounded-[2.5rem] overflow-hidden">
+          <CardHeader className="sr-only">
+            <CardTitle>Buat Akun Elitera</CardTitle>
+            <CardDescription>Lengkapi informasi diri Anda</CardDescription>
+          </CardHeader>
+          <CardContent className="p-8 pt-10">
+            <div className="flex flex-col items-center mb-8">
+              <div 
+                className="relative group cursor-pointer active:scale-95 transition-transform"
+                onClick={() => document.getElementById('avatar-upload')?.click()}
+              >
+                <div className="absolute inset-0 bg-gradient-to-tr from-primary via-accent to-primary rounded-full blur-xl opacity-20 group-hover:opacity-40 transition-opacity" />
+                <Avatar className="h-24 w-24 border-4 border-background shadow-2xl relative z-10">
+                  <AvatarImage src={previewUrl || ''} className="object-cover" />
+                  <AvatarFallback className="bg-primary/5 text-primary">
+                    <UserIcon className="h-10 w-10 opacity-40" />
+                  </AvatarFallback>
+                </Avatar>
+                <div className="absolute -bottom-1 -right-1 bg-primary text-white p-2 rounded-full shadow-lg z-20 ring-4 ring-background group-hover:scale-110 transition-transform">
+                  <Upload className="h-4 w-4" />
+                </div>
+              </div>
+              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mt-4">Foto Profil (Opsional)</p>
+              <input
+                id="avatar-upload"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleFileChange}
+              />
+            </div>
+
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="grid gap-5">
+                <FormField
+                  control={form.control}
+                  name="fullName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="font-bold ml-1 text-xs uppercase tracking-widest opacity-70">Nama Lengkap</FormLabel>
+                      <FormControl>
+                        <div className="relative group">
+                          <PenTool className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                          <Input placeholder="Guntur Padilah" {...field} className="h-12 pl-11 rounded-xl bg-muted/30 border-none focus-visible:ring-primary/20 font-medium" />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="font-bold ml-1 text-xs uppercase tracking-widest opacity-70">Email Resmi</FormLabel>
+                      <FormControl>
+                        <div className="relative group">
+                          <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                          <Input placeholder="anda@email.com" {...field} className="h-12 pl-11 rounded-xl bg-muted/30 border-none focus-visible:ring-primary/20 font-medium" />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="font-bold ml-1 text-xs uppercase tracking-widest opacity-70">Kata Sandi</FormLabel>
+                      <FormControl>
+                        <div className="relative group">
+                          <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                          <Input type="password" placeholder="Min. 6 Karakter" {...field} className="h-12 pl-11 rounded-xl bg-muted/30 border-none focus-visible:ring-primary/20 font-medium" />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button type="submit" className="w-full h-12 rounded-xl font-black text-sm uppercase tracking-widest shadow-xl shadow-primary/20 transition-all active:scale-95 group mt-2" disabled={isLoading}>
+                  {isLoading ? (
+                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Memproses...</>
+                  ) : (
+                    <><Sparkles className="mr-2 h-4 w-4 transition-transform group-hover:rotate-12" /> Buat Akun Gratis</>
+                  )}
+                </Button>
+              </form>
+            </Form>
+
+            <div className="relative my-8">
+              <div className="absolute inset-0 flex items-center">
+                <Separator />
+              </div>
+              <div className="relative flex justify-center text-[10px] font-black uppercase tracking-widest">
+                <span className="bg-background px-4 text-muted-foreground/60">Atau Gabung Dengan</span>
+              </div>
+            </div>
+
+            <Button variant="outline" className="w-full h-12 rounded-xl font-bold border-2 hover:bg-primary/5 hover:border-primary/20 transition-all active:scale-95" onClick={handleGoogleSignIn} disabled={isLoading}>
+              <Chrome className="mr-2 h-4 w-4 text-primary" /> Daftar dengan Google
             </Button>
-          </form>
-        </Form>
-        <Separator className="my-4" />
-        <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading}>
-          {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Daftar dengan Google
-        </Button>
-        <div className="mt-4 text-center text-sm">
-          Sudah punya akun?{' '}
-          <Link href="/login" className="underline">
-            Masuk
-          </Link>
-        </div>
-      </CardContent>
-    </Card>
+
+            <div className="mt-8 text-center">
+              <p className="text-sm text-muted-foreground font-medium">
+                Sudah menjadi pujangga?{' '}
+                <Link href="/login" className="text-primary font-black hover:underline underline-offset-4">
+                  Masuk Saja
+                </Link>
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
+    </div>
   );
 }
