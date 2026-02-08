@@ -45,7 +45,6 @@ export function StoriesReel({ stories, isLoading, currentUserProfile }: StoriesR
       }
       groups[story.authorId].stories.push(story);
     });
-    // Urutkan grup berdasarkan story terbaru
     return Object.values(groups).sort((a, b) => b.stories[0].createdAt.toMillis() - a.stories[0].createdAt.toMillis());
   }, [stories]);
 
@@ -84,7 +83,6 @@ export function StoriesReel({ stories, isLoading, currentUserProfile }: StoriesR
       )}
 
       <div className="flex items-center gap-5 pb-6 border-b border-border/50 overflow-x-auto no-scrollbar relative">
-        {/* Tombol Buat Story */}
         {currentUserProfile && (
           <motion.div 
             whileHover={{ scale: 1.05 }}
@@ -102,7 +100,6 @@ export function StoriesReel({ stories, isLoading, currentUserProfile }: StoriesR
           </motion.div>
         )}
 
-        {/* Daftar Story Groups */}
         {storyGroups.map(group => {
           const isOfficial = group.authorRole === 'penulis' || group.authorRole === 'admin';
           return (

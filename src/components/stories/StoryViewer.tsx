@@ -6,10 +6,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useUser, useDoc } from '@/firebase';
+import { useFirestore, useUser } from '@/firebase';
 import { doc, collection, serverTimestamp, writeBatch, increment, addDoc, getDoc } from 'firebase/firestore';
 import type { Story, User as AppUser, StoryLike } from '@/lib/types';
-import { X, Heart, MessageSquare, Send as SendIcon, ChevronLeft, ChevronRight, Loader2, Eye, MoreHorizontal, Sparkles } from 'lucide-react';
+import { X, Heart, MessageSquare, Send as SendIcon, ChevronLeft, ChevronRight, Loader2, Eye, Sparkles } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatDistanceToNow } from 'date-fns';
 import { id } from 'date-fns/locale';
@@ -39,9 +39,11 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
   useEffect(() => {
     if (!isOpen) {
         const timer = setTimeout(() => {
-            document.body.style.pointerEvents = '';
+            document.body.style.pointerEvents = 'auto';
         }, 300);
         return () => clearTimeout(timer);
+    } else {
+        document.body.style.pointerEvents = 'auto';
     }
   }, [isOpen]);
 
@@ -134,16 +136,14 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
       batch.update(storyRef, { viewCount: increment(1) });
       batch.set(viewRef, {
         userId: currentUser.uid,
-        userName: currentUser.displayName || 'Pujangga Anonim',
+        userName: currentUser.displayName || 'Pujangga Elitera',
         userAvatarUrl: currentUser.photoURL || `https://api.dicebear.com/8.x/identicon/svg?seed=${currentUser.uid}`,
         viewedAt: serverTimestamp()
       });
 
       batch.commit().then(() => {
         viewedStoriesInSession.current.add(currentStory.id);
-      }).catch(err => {
-        console.warn("Failed to record story view:", err);
-      });
+      }).catch(err => console.warn(err));
     }
   }, [currentStory, currentUser, firestore]);
 
@@ -162,7 +162,7 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
       batch.delete(likeRef);
       batch.update(storyRef, { likes: increment(-1) });
     } else {
-      batch.set(likeRef, { userId: currentUser!.uid, likedAt: serverTimestamp() });
+      batch.set(likeRef, { userId: currentUser.uid, likedAt: serverTimestamp() });
       batch.update(storyRef, { likes: increment(1) });
     }
     await batch.commit();
@@ -192,31 +192,9 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
     try {
         await batch.commit();
         setComment("");
-        toast({ title: "Balasan Terkirim!", description: "Apresiasi Anda telah diteruskan." });
-        
-        if(currentUser.uid !== currentStory.authorId){
-            const authorDoc = await getDoc(doc(firestore, 'users', currentStory.authorId));
-            if (authorDoc.exists()) {
-                const authorProfile = authorDoc.data() as AppUser;
-                if (authorProfile.notificationPreferences?.onStoryComment !== false) {
-                    const notifCol = collection(firestore, 'users', currentStory.authorId, 'notifications');
-                    addDoc(notifCol, {
-                        type: 'story_comment',
-                        text: `${currentUser.displayName} membalas momen Anda.`,
-                        link: `/profile/${currentGroup.authorId}`,
-                        actor: {
-                            uid: currentUser.uid,
-                            displayName: currentUser.displayName!,
-                            photoURL: currentUser.photoURL || `https://api.dicebear.com/8.x/identicon/svg?seed=${currentUser.uid}`
-                        },
-                        read: false,
-                        createdAt: serverTimestamp()
-                    });
-                }
-            }
-        }
+        toast({ title: "Terkirim" });
     } catch (e) {
-        toast({variant: 'destructive', title: "Gagal mengirim balasan."});
+        toast({variant: 'destructive', title: "Gagal"});
     } finally {
         setIsSendingComment(false);
     }
@@ -227,50 +205,44 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent 
-        className="bg-zinc-950 text-white border-0 p-0 m-0 w-screen h-screen max-w-none rounded-none overflow-hidden flex flex-col items-center justify-center z-[150]"
+        className="bg-black text-white border-0 p-0 m-0 w-screen h-screen max-w-none rounded-none overflow-hidden flex flex-col items-center justify-center z-[250]"
         onInteractOutside={(e) => e.preventDefault()}
         onPointerDownOutside={(e) => e.preventDefault()}
         onCloseAutoFocus={(e) => {
             e.preventDefault();
-            document.body.style.pointerEvents = '';
+            document.body.style.pointerEvents = 'auto';
         }}
       >
-        <DialogTitle className="sr-only">Menampilkan Cerita</DialogTitle>
-        <DialogDescription className="sr-only">Melihat momen singkat dari {currentGroup.authorName}.</DialogDescription>
+        <DialogTitle className="sr-only">Cerita {currentGroup.authorName}</DialogTitle>
+        <DialogDescription className="sr-only">Melihat momen cerita teks.</DialogDescription>
         
-        <div className="relative w-full h-full flex items-center justify-center bg-black">
-            {/* Desktop Navigation */}
-            <div className="absolute inset-0 hidden md:flex items-center justify-between px-10 pointer-events-none z-[170]">
-                <Button variant="ghost" size="icon" onClick={prevStory} disabled={authorIndex === 0 && storyIndex === 0} className="h-14 w-14 rounded-full bg-white/5 hover:bg-white/10 text-white pointer-events-auto shadow-2xl backdrop-blur-md transition-all active:scale-90">
+        <div className="relative w-full h-full flex items-center justify-center">
+            <div className="absolute inset-0 hidden md:flex items-center justify-between px-10 pointer-events-none z-[270]">
+                <Button variant="ghost" size="icon" onClick={prevStory} className="h-14 w-14 rounded-full bg-white/10 text-white pointer-events-auto backdrop-blur-md">
                     <ChevronLeft className="h-8 w-8" />
                 </Button>
-                <Button variant="ghost" size="icon" onClick={nextStory} className="h-14 w-14 rounded-full bg-white/5 hover:bg-white/10 text-white pointer-events-auto shadow-2xl backdrop-blur-md transition-all active:scale-90">
+                <Button variant="ghost" size="icon" onClick={nextStory} className="h-14 w-14 rounded-full bg-white/10 text-white pointer-events-auto backdrop-blur-md">
                     <ChevronRight className="h-8 w-8" />
                 </Button>
             </div>
 
-            {/* Tombol Tutup */}
-            <Button variant="ghost" size="icon" onClick={onClose} className="absolute top-6 right-6 z-[180] text-white/60 hover:text-white hover:bg-white/10 rounded-full h-12 w-12">
+            <Button variant="ghost" size="icon" onClick={onClose} className="absolute top-6 right-6 z-[280] text-white/60 hover:text-white rounded-full h-12 w-12">
                 <X className="h-7 w-7" />
             </Button>
             
-            {/* Container Story Utama */}
             <div 
-                className="relative w-full md:w-[450px] h-full md:h-[90vh] md:max-h-[850px] md:rounded-3xl overflow-hidden flex flex-col shadow-[0_0_100px_rgba(0,0,0,0.8)] md:ring-1 md:ring-white/10"
+                className="relative w-full md:w-[450px] h-full md:h-[90vh] md:max-h-[800px] md:rounded-3xl overflow-hidden flex flex-col shadow-2xl"
                 onClick={handleContainerClick}
                 onMouseDown={() => setIsPaused(true)}
                 onMouseUp={() => setIsPaused(false)}
-                onTouchStart={() => setIsPaused(true)}
-                onTouchEnd={() => setIsPaused(false)}
             >
-                {/* Bar Progres */}
-                <div className="absolute top-4 left-4 right-4 flex items-center gap-1.5 z-[160]">
+                <div className="absolute top-4 left-4 right-4 flex items-center gap-1.5 z-[260]">
                     {currentGroup.stories.map((_, i) => (
-                        <div key={i} className="h-1 flex-1 bg-white/20 rounded-full overflow-hidden backdrop-blur-sm">
-                            {i < storyIndex && <div className="h-full w-full bg-white shadow-[0_0_8px_white]"/>}
+                        <div key={i} className="h-1 flex-1 bg-white/20 rounded-full overflow-hidden">
+                            {i < storyIndex && <div className="h-full w-full bg-white"/>}
                             {i === storyIndex && (
                                 <motion.div 
-                                    className="h-full bg-white shadow-[0_0_10px_white]"
+                                    className="h-full bg-white"
                                     initial={{ width: '0%' }}
                                     animate={isPaused || showViews || showComments ? { width: 'auto' } : { width: '100%' }}
                                     transition={{ duration: 7, ease: 'linear' }}
@@ -280,91 +252,77 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
                     ))}
                 </div>
                 
-                {/* Header Penulis */}
-                <div className="absolute top-8 left-0 right-0 px-4 z-[160] flex items-center justify-between pointer-events-none">
-                    <div className="flex items-center gap-3 bg-black/30 backdrop-blur-xl p-1.5 pr-5 rounded-full border border-white/10 pointer-events-auto transition-all hover:bg-black/50">
+                <div className="absolute top-8 left-0 right-0 px-4 z-[260] flex items-center pointer-events-none">
+                    <div className="flex items-center gap-3 bg-black/20 backdrop-blur-xl p-1.5 pr-5 rounded-full border border-white/10 pointer-events-auto">
                         <Avatar className="h-10 w-10 ring-2 ring-primary/30">
                             <AvatarImage src={currentGroup.authorAvatarUrl} className="object-cover" />
                             <AvatarFallback className="bg-primary text-white font-black">{currentGroup.authorName.charAt(0)}</AvatarFallback>
                         </Avatar>
-                        <div className='min-w-0'>
-                            <p className="font-black text-sm text-white drop-shadow-md truncate">{currentGroup.authorName}</p>
-                            <p className="text-[9px] uppercase font-black tracking-[0.2em] text-white/60 drop-shadow-sm">
+                        <div>
+                            <p className="font-black text-sm text-white truncate">{currentGroup.authorName}</p>
+                            <p className="text-[9px] uppercase font-black text-white/60">
                                 {formatDistanceToNow(currentStory.createdAt.toDate(), { locale: id, addSuffix: true })}
                             </p>
                         </div>
                     </div>
-                    <Button variant="ghost" size="icon" className="h-10 w-10 text-white/80 pointer-events-auto rounded-full hover:bg-white/10">
-                        <MoreHorizontal className="h-5 w-5" />
-                    </Button>
                 </div>
 
-                {/* Konten Teks & Background */}
                 <div className={cn(
-                    "flex-1 relative flex items-center justify-center overflow-hidden transition-all duration-1000 ease-in-out bg-gradient-to-br",
+                    "flex-1 relative flex items-center justify-center bg-gradient-to-br",
                     currentStory.background || "from-indigo-600 to-rose-500"
                 )}>
                   <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
                   <AnimatePresence mode="wait">
                     <motion.div
                         key={`${currentStory.id}`}
-                        initial={{ opacity: 0, scale: 0.8, y: 30 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 1.1, filter: 'blur(10px)' }}
-                        transition={{ duration: 0.5, type: 'spring', damping: 20 }}
-                        className="w-full h-full relative flex items-center justify-center p-12 text-center"
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 1.1 }}
+                        className="w-full h-full flex items-center justify-center p-12 text-center"
                     >
-                        <div className="relative">
-                            <Sparkles className="absolute -top-8 -left-8 h-6 w-6 text-white/20 animate-pulse" />
-                            <p className="text-3xl md:text-4xl font-headline font-black text-white whitespace-pre-wrap leading-[1.3] drop-shadow-[0_8px_30px_rgba(0,0,0,0.5)] relative z-10">
-                                "{currentStory.content}"
-                            </p>
-                            <Sparkles className="absolute -bottom-8 -right-8 h-6 w-6 text-white/20 animate-pulse delay-700" />
-                        </div>
+                        <p className="text-3xl md:text-4xl font-headline font-black text-white whitespace-pre-wrap leading-tight drop-shadow-lg">
+                            "{currentStory.content}"
+                        </p>
                     </motion.div>
                   </AnimatePresence>
                 </div>
 
-                {/* Footer Interaksi */}
-                <div className="absolute bottom-0 left-0 right-0 p-6 z-[160] bg-gradient-to-t from-black/95 via-black/60 to-transparent" onClick={(e) => e.stopPropagation()}>
-                   <div className='flex items-center gap-8 mb-6 px-2'>
-                     <button onClick={handleToggleLike} disabled={isLikeLoading} className={cn("flex flex-col items-center gap-1.5 transition-all active:scale-125 group", isLiked ? "text-rose-500" : "text-white/80 hover:text-white")}>
-                        <Heart className={cn("h-8 w-8 transition-all group-hover:scale-110", isLiked && "fill-current drop-shadow-[0_0_15px_rgba(244,63,94,0.6)]")}/> 
-                        <span className="text-[10px] font-black uppercase tracking-widest">{currentStory.likes}</span>
+                <div className="absolute bottom-0 left-0 right-0 p-6 z-[260] bg-gradient-to-t from-black/80 to-transparent" onClick={(e) => e.stopPropagation()}>
+                   <div className='flex items-center gap-6 mb-4'>
+                     <button onClick={handleToggleLike} disabled={isLikeLoading} className={cn("flex flex-col items-center gap-1", isLiked ? "text-rose-500" : "text-white/80")}>
+                        <Heart className={cn("h-8 w-8", isLiked && "fill-current")}/> 
+                        <span className="text-[10px] font-black">{currentStory.likes}</span>
                      </button>
-                     <button onClick={() => setShowComments(true)} className="flex flex-col items-center gap-1.5 text-white/80 hover:text-white transition-all group">
-                        <MessageSquare className="h-8 w-8 group-hover:scale-110 transition-transform"/> 
-                        <span className="text-[10px] font-black uppercase tracking-widest">{currentStory.commentCount}</span>
+                     <button onClick={() => setShowComments(true)} className="flex flex-col items-center gap-1 text-white/80">
+                        <MessageSquare className="h-8 w-8"/> 
+                        <span className="text-[10px] font-black">{currentStory.commentCount}</span>
                      </button>
                      {isAuthor && (
-                        <button onClick={() => setShowViews(true)} className="flex flex-col items-center gap-1.5 text-white/80 hover:text-white ml-auto transition-all group">
-                            <div className="flex items-center gap-2 bg-white/10 px-5 py-2.5 rounded-full border border-white/10 hover:bg-primary hover:border-primary transition-all active:scale-95 shadow-xl">
-                                <Eye className="h-4 w-4"/>
-                                <span className="text-xs font-black tracking-widest">{currentStory.viewCount}</span>
-                            </div>
+                        <button onClick={() => setShowViews(true)} className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full border border-white/10 ml-auto text-white/80">
+                            <Eye className="h-4 w-4"/>
+                            <span className="text-xs font-black">{currentStory.viewCount}</span>
                         </button>
                       )}
                    </div>
 
-                    <form onSubmit={(e) => { e.preventDefault(); handleComment(); }} className='flex items-center gap-3'>
+                    <form onSubmit={(e) => { e.preventDefault(); handleComment(); }} className='flex items-center gap-2'>
                         <Input 
                             value={comment} 
                             onChange={(e) => setComment(e.target.value)} 
-                            placeholder='Berikan apresiasi...' 
-                            className='bg-white/10 border-white/10 text-white placeholder:text-white/30 focus-visible:ring-primary/50 focus-visible:bg-white/20 backdrop-blur-2xl h-14 rounded-2xl px-6 transition-all shadow-2xl' 
+                            placeholder='Kirim pesan...' 
+                            className='bg-white/10 border-white/10 text-white placeholder:text-white/40 focus-visible:ring-primary/50 h-12 rounded-2xl' 
                         />
                         <Button 
                             size="icon" 
-                            className="h-14 w-14 shrink-0 rounded-2xl bg-primary hover:bg-primary/90 shadow-2xl transition-all active:scale-90" 
+                            className="h-12 w-12 rounded-2xl bg-primary hover:bg-primary/90" 
                             disabled={isSendingComment || !comment.trim()}
                         >
-                           {isSendingComment ? <Loader2 className="animate-spin h-6 w-6" /> : <SendIcon className="h-6 w-6 ml-0.5" />}
+                           {isSendingComment ? <Loader2 className="animate-spin h-5 w-5" /> : <SendIcon className="h-5 w-5" />}
                         </Button>
                     </form>
                 </div>
             </div>
 
-            {/* Sheets */}
             {isAuthor && <StoryViewersSheet storyId={currentStory.id} isOpen={showViews} onOpenChange={setShowViews} />}
             <StoryCommentsSheet storyId={currentStory.id} isOpen={showComments} onOpenChange={setShowComments} />
         </div>

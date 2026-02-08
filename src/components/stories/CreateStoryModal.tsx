@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, X, Palette, Send as SendIcon } from 'lucide-react';
+import { Loader2, X, Palette } from 'lucide-react';
 import type { User as AppUser } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
@@ -53,20 +53,23 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
     defaultValues: { content: "" },
   });
 
+  // Safety net to ensure pointer events are restored and form is reset
   useEffect(() => {
     if (!isOpen) {
       const timer = setTimeout(() => {
         form.reset();
         setBgIndex(0);
-        document.body.style.pointerEvents = '';
+        document.body.style.pointerEvents = 'auto';
       }, 300);
       return () => clearTimeout(timer);
+    } else {
+        document.body.style.pointerEvents = 'auto';
     }
   }, [isOpen, form]);
 
   async function onSubmit(values: z.infer<typeof storySchema>) {
     if (!firestore || !currentUser || !currentUserProfile) {
-        toast({ variant: 'destructive', title: 'Akses Ditolak', description: 'Profil Anda belum termuat sempurna.' });
+        toast({ variant: 'destructive', title: 'Akses Ditolak', description: 'Profil belum termuat.' });
         return;
     }
 
@@ -87,12 +90,9 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
       });
       
       onClose();
-      setTimeout(() => {
-        toast({ variant: 'success', title: "Cerita Berhasil Terbit!", description: "Momen Anda sekarang bisa dilihat oleh teman-teman." });
-      }, 100);
+      toast({ variant: 'success', title: "Terbit!", description: "Momen Anda berhasil diterbitkan." });
     } catch (error) {
-      console.error("Error publishing story:", error);
-      toast({ variant: 'destructive', title: 'Gagal Menerbitkan', description: 'Terjadi kendala teknis saat menghubungi database.' });
+      toast({ variant: 'destructive', title: 'Gagal', description: 'Terjadi kendala saat menerbitkan.' });
     } finally {
       setIsSubmitting(false);
     }
@@ -101,18 +101,20 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent 
-        className="max-w-none w-screen h-screen p-0 border-0 m-0 bg-black overflow-hidden flex flex-col rounded-none z-[100]"
+        className="max-w-none w-screen h-screen p-0 border-0 m-0 bg-black overflow-hidden flex flex-col rounded-none z-[200]"
         onPointerDownOutside={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}
-        onCloseAutoFocus={(e) => { e.preventDefault(); document.body.style.pointerEvents = ''; }}
+        onCloseAutoFocus={(e) => {
+            e.preventDefault();
+            document.body.style.pointerEvents = 'auto';
+        }}
       >
         <DialogHeader className="sr-only">
-          <DialogTitle>Tulis Momen Elitera</DialogTitle>
-          <DialogDescription>Gunakan teks untuk mengekspresikan pikiran Anda hari ini.</DialogDescription>
+          <DialogTitle>Tulis Momen</DialogTitle>
+          <DialogDescription>Bagikan tulisan inspiratif Anda.</DialogDescription>
         </DialogHeader>
 
-        {/* Toolbar Atas */}
-        <div className="absolute top-0 left-0 right-0 p-4 flex items-center justify-between z-[110] bg-gradient-to-b from-black/60 to-transparent">
+        <div className="absolute top-0 left-0 right-0 p-4 flex items-center justify-between z-[210] bg-gradient-to-b from-black/60 to-transparent">
           <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 rounded-full h-12 w-12" onClick={onClose}>
             <X className="h-6 w-6" />
           </Button>
@@ -120,14 +122,14 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
              <Button 
                 variant="ghost" 
                 size="icon" 
-                className="text-white hover:bg-white/20 rounded-full h-12 w-12 transition-all active:scale-90" 
+                className="text-white hover:bg-white/20 rounded-full h-12 w-12" 
                 onClick={() => setBgIndex((bgIndex + 1) % BACKGROUNDS.length)}
                 type="button"
              >
                 <Palette className="h-6 w-6" />
              </Button>
              <Button 
-                className="bg-white text-black hover:bg-white/90 rounded-full px-6 h-10 font-black uppercase tracking-widest text-xs shadow-xl active:scale-95 transition-all" 
+                className="bg-white text-black hover:bg-white/90 rounded-full px-6 h-10 font-black" 
                 onClick={form.handleSubmit(onSubmit)} 
                 disabled={isSubmitting || !form.watch('content')?.trim()}
              >
@@ -136,39 +138,34 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
           </div>
         </div>
 
-        {/* Editor Area */}
         <div className={cn(
-            "flex-1 relative flex flex-col items-center justify-center transition-all duration-1000 ease-in-out bg-gradient-to-br px-8",
+            "flex-1 relative flex flex-col items-center justify-center bg-gradient-to-br px-8",
             BACKGROUNDS[bgIndex]
         )}>
             <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
             
             <Form {...form}>
-                <form className="w-full max-w-2xl relative z-10" onSubmit={(e) => e.preventDefault()}>
+                <form className="w-full max-w-2xl relative z-[220]" onSubmit={(e) => e.preventDefault()}>
                     <FormField control={form.control} name="content" render={({ field }) => (
                         <FormItem>
                             <FormControl>
                                 <Textarea 
-                                    placeholder="Ada kutipan atau kabar apa hari ini?..." 
-                                    className="bg-transparent border-none shadow-none text-3xl md:text-6xl font-headline font-black text-white text-center min-h-[400px] resize-none focus-visible:ring-0 placeholder:text-white/25 leading-tight scroll-none" 
+                                    placeholder="Apa yang Anda pikirkan?..." 
+                                    className="bg-transparent border-none shadow-none text-3xl md:text-5xl font-headline font-black text-white text-center min-h-[300px] resize-none focus-visible:ring-0 placeholder:text-white/30 leading-tight" 
                                     {...field} 
                                     autoFocus 
                                     onPointerDown={(e) => e.stopPropagation()}
                                 />
                             </FormControl>
-                            <FormMessage className="text-white/80 text-center font-bold bg-black/20 backdrop-blur-md rounded-full px-4 py-1 w-fit mx-auto mt-4" />
+                            <FormMessage className="text-white bg-black/20 backdrop-blur-md rounded-full px-4 py-1 w-fit mx-auto mt-4" />
                         </FormItem>
                     )} />
                 </form>
             </Form>
 
-            {/* Info Footer Editor */}
-            <div className="absolute bottom-12 left-0 right-0 flex flex-col items-center gap-4 px-8 pointer-events-none">
-                <p className={cn(
-                    "text-[10px] font-black uppercase tracking-[0.3em] transition-all px-4 py-2 rounded-full backdrop-blur-md border border-white/10",
-                    form.watch('content')?.length > 250 ? "text-yellow-300 bg-yellow-500/10" : "text-white/50 bg-white/5"
-                )}>
-                    {form.watch('content')?.length || 0} / 280 Karakter
+            <div className="absolute bottom-12 left-0 right-0 flex justify-center pointer-events-none">
+                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/50 px-4 py-2 rounded-full backdrop-blur-md border border-white/10">
+                    {form.watch('content')?.length || 0} / 280
                 </p>
             </div>
         </div>
