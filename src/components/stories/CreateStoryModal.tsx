@@ -17,12 +17,12 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, X, Palette } from 'lucide-react';
+import { Loader2, X, Palette, Send as SendIcon } from 'lucide-react';
 import type { User as AppUser } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
 const storySchema = z.object({
-  content: z.string().min(1, "Konten tidak boleh kosong.").max(280, "Maksimal 280 karakter."),
+  content: z.string().min(1, "Tulis sesuatu...").max(280, "Terlalu panjang (maks 280)."),
 });
 
 interface CreateStoryModalProps {
@@ -53,32 +53,24 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
     defaultValues: { content: "" },
   });
 
-  // Memastikan scroll/pointer-events kembali normal saat modal ditutup
   useEffect(() => {
     if (!isOpen) {
       form.reset();
       setBgIndex(0);
-      // Safety reset untuk pointer events agar layar tidak terkunci
-      const timer = setTimeout(() => {
-        document.body.style.pointerEvents = '';
-      }, 300);
+      const timer = setTimeout(() => { document.body.style.pointerEvents = ''; }, 300);
       return () => clearTimeout(timer);
     }
   }, [isOpen, form]);
 
   async function onSubmit(values: z.infer<typeof storySchema>) {
-    if (!firestore || !currentUser || !currentUserProfile) {
-        toast({ variant: 'destructive', title: 'Akses Ditolak', description: 'Profil belum termuat.' });
-        return;
-    }
-
+    if (!firestore || !currentUser || !currentUserProfile) return;
     setIsSubmitting(true);
     try {
       await addDoc(collection(firestore, 'stories'), {
         type: 'text',
         authorId: currentUser.uid,
         authorName: currentUserProfile.displayName || currentUser.displayName,
-        authorAvatarUrl: currentUserProfile.photoURL || currentUser.photoURL || `https://api.dicebear.com/8.x/identicon/svg?seed=${currentUser.uid}`,
+        authorAvatarUrl: currentUserProfile.photoURL || currentUser.photoURL,
         authorRole: currentUserProfile.role || 'pembaca',
         content: values.content,
         background: BACKGROUNDS[bgIndex],
@@ -87,11 +79,10 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
         viewCount: 0,
         createdAt: serverTimestamp(),
       });
-      
       onClose();
-      toast({ variant: 'success', title: "Terbit!", description: "Momen Anda berhasil diterbitkan." });
+      toast({ variant: 'success', title: "Terbit!", description: "Momen Anda berhasil dibagikan." });
     } catch (error) {
-      toast({ variant: 'destructive', title: 'Gagal', description: 'Terjadi kendala saat menerbitkan.' });
+      toast({ variant: 'destructive', title: 'Gagal', description: 'Terjadi gangguan sistem.' });
     } finally {
       setIsSubmitting(false);
     }
@@ -103,66 +94,48 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
         className="max-w-none w-screen h-screen p-0 border-0 m-0 bg-black overflow-hidden flex flex-col rounded-none z-[200]"
         onPointerDownOutside={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}
-        onCloseAutoFocus={(e) => {
-            e.preventDefault();
-            document.body.style.pointerEvents = '';
-        }}
+        onCloseAutoFocus={(e) => { e.preventDefault(); document.body.style.pointerEvents = ''; }}
       >
         <DialogHeader className="sr-only">
-          <DialogTitle>Tulis Momen</DialogTitle>
-          <DialogDescription>Bagikan tulisan inspiratif Anda.</DialogDescription>
+          <DialogTitle>Cerita Baru</DialogTitle>
+          <DialogDescription>Tuangkan isi pikiranmu.</DialogDescription>
         </DialogHeader>
 
-        <div className="absolute top-0 left-0 right-0 p-4 flex items-center justify-between z-[210] bg-gradient-to-b from-black/60 to-transparent">
-          <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 rounded-full h-12 w-12" onClick={onClose}>
+        <div className="absolute top-0 left-0 right-0 p-4 flex items-center justify-between z-[210] bg-gradient-to-b from-black/60 to-transparent pt-[max(1rem,env(safe-area-inset-top))]">
+          <Button variant="ghost" size="icon" className="text-white rounded-full h-12 w-12" onClick={onClose}>
             <X className="h-6 w-6" />
           </Button>
           <div className="flex items-center gap-3">
-             <Button 
-                variant="ghost" 
-                size="icon" 
-                className="text-white hover:bg-white/20 rounded-full h-12 w-12" 
-                onClick={() => setBgIndex((bgIndex + 1) % BACKGROUNDS.length)}
-                type="button"
-             >
+             <Button variant="ghost" size="icon" className="text-white rounded-full h-12 w-12" onClick={() => setBgIndex((bgIndex + 1) % BACKGROUNDS.length)}>
                 <Palette className="h-6 w-6" />
              </Button>
-             <Button 
-                className="bg-white text-black hover:bg-white/90 rounded-full px-6 h-10 font-black" 
-                onClick={form.handleSubmit(onSubmit)} 
-                disabled={isSubmitting || !form.watch('content')?.trim()}
-             >
-                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Terbitkan"}
+             <Button className="bg-white text-black hover:bg-white/90 rounded-full px-6 h-10 font-black uppercase text-[10px] tracking-widest" onClick={form.handleSubmit(onSubmit)} disabled={isSubmitting || !form.watch('content')?.trim()}>
+                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Kirim"}
              </Button>
           </div>
         </div>
 
-        <div className={cn(
-            "flex-1 relative flex flex-col items-center justify-center bg-gradient-to-br px-8",
-            BACKGROUNDS[bgIndex]
-        )}>
+        <div className={cn("flex-1 relative flex flex-col items-center justify-center bg-gradient-to-br px-8 transition-all duration-700", BACKGROUNDS[bgIndex])}>
             <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
-            
             <Form {...form}>
-                <form className="w-full max-w-2xl relative z-[220]" onSubmit={(e) => e.preventDefault()}>
+                <form className="w-full max-w-lg relative z-[220]" onSubmit={(e) => e.preventDefault()}>
                     <FormField control={form.control} name="content" render={({ field }) => (
                         <FormItem>
                             <FormControl>
                                 <Textarea 
-                                    placeholder="Apa yang Anda pikirkan?..." 
-                                    className="bg-transparent border-none shadow-none text-3xl md:text-5xl font-headline font-black text-white text-center min-h-[300px] resize-none focus-visible:ring-0 placeholder:text-white/30 leading-tight" 
+                                    placeholder="Ada ide cerita?..." 
+                                    className="bg-transparent border-none shadow-none text-3xl md:text-5xl font-headline font-black text-white text-center min-h-[300px] resize-none focus-visible:ring-0 placeholder:text-white/20 leading-tight" 
                                     {...field} 
                                     autoFocus 
                                 />
                             </FormControl>
-                            <FormMessage className="text-white bg-black/20 backdrop-blur-md rounded-full px-4 py-1 w-fit mx-auto mt-4" />
+                            <FormMessage className="text-white bg-black/20 backdrop-blur-md rounded-full px-4 py-1 w-fit mx-auto mt-4 text-[10px] font-black uppercase" />
                         </FormItem>
                     )} />
                 </form>
             </Form>
-
-            <div className="absolute bottom-12 left-0 right-0 flex justify-center pointer-events-none">
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/50 px-4 py-2 rounded-full backdrop-blur-md border border-white/10">
+            <div className="absolute bottom-12 left-0 right-0 flex justify-center pointer-events-none pb-[max(0rem,env(safe-area-inset-bottom))]">
+                <p className="text-[9px] font-black uppercase tracking-[0.4em] text-white/40 px-4 py-2 rounded-full border border-white/10 bg-black/10 backdrop-blur-md">
                     {form.watch('content')?.length || 0} / 280
                 </p>
             </div>

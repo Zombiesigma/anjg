@@ -54,7 +54,7 @@ export function StoriesReel({ stories, isLoading, currentUserProfile }: StoriesR
 
   if (isLoading) {
     return (
-      <div className="flex items-center gap-5 pb-6 border-b border-border/50 overflow-x-auto no-scrollbar">
+      <div className="flex items-center gap-5 pb-6 overflow-x-auto no-scrollbar">
         {Array.from({ length: 6 }).map((_, i) => (
           <div key={i} className="flex flex-col items-center gap-2 flex-shrink-0">
             <Skeleton className="h-16 w-16 rounded-full" />
@@ -91,34 +91,26 @@ export function StoriesReel({ stories, isLoading, currentUserProfile }: StoriesR
           >
             <button
               onClick={() => setCreateModalOpen(true)}
-              className="w-16 h-16 rounded-full bg-primary/5 border-2 border-dashed border-primary/30 flex items-center justify-center hover:bg-primary/10 hover:border-primary transition-all group relative overflow-hidden"
+              className="w-16 h-16 rounded-full bg-primary/5 border-2 border-dashed border-primary/30 flex items-center justify-center hover:bg-primary/10 transition-all group overflow-hidden"
             >
               <Plus className="h-7 w-7 text-primary group-hover:scale-110 transition-transform" />
-              <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
             </button>
-            <p className="text-[10px] font-black uppercase tracking-widest text-primary">Momen</p>
+            <p className="text-[9px] font-black uppercase tracking-widest text-primary">Buat Momen</p>
           </motion.div>
         )}
 
         {storyGroups.map(group => {
           const isOfficial = group.authorRole === 'penulis' || group.authorRole === 'admin';
           return (
-            <motion.div 
-                key={group.authorId} 
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="flex flex-col items-center gap-2 flex-shrink-0"
-            >
+            <motion.div key={group.authorId} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="flex flex-col items-center gap-2 flex-shrink-0">
               <button 
                   onClick={() => openViewer(group.authorId)} 
                   className={cn(
-                    "relative w-16 h-16 p-0.5 rounded-full transition-all active:scale-90",
-                    isOfficial 
-                        ? "bg-gradient-to-tr from-primary via-accent to-indigo-500 shadow-lg shadow-primary/10" 
-                        : "bg-muted-foreground/20"
+                    "relative w-16 h-16 p-0.5 rounded-full transition-all active:scale-90 shadow-md",
+                    isOfficial ? "bg-gradient-to-tr from-primary via-accent to-indigo-500" : "bg-muted-foreground/20"
                   )}
               >
-                <div className="rounded-full bg-background p-0.5">
+                <div className="rounded-full bg-background p-0.5 h-full w-full">
                     <Avatar className="w-full h-full border border-border/50">
                         <AvatarImage src={group.authorAvatarUrl} alt={group.authorName} className="object-cover" />
                         <AvatarFallback className="bg-primary/5 text-primary font-black uppercase">
@@ -127,24 +119,17 @@ export function StoriesReel({ stories, isLoading, currentUserProfile }: StoriesR
                     </Avatar>
                 </div>
                 {isOfficial && (
-                    <div className="absolute -bottom-1 -right-1 bg-white p-0.5 rounded-full shadow-md">
+                    <div className="absolute -bottom-1 -right-1 bg-white p-0.5 rounded-full shadow-lg">
                         <Sparkles className="h-3 w-3 text-primary" />
                     </div>
                 )}
               </button>
-              <p className="text-[10px] font-bold w-16 truncate text-center text-muted-foreground uppercase tracking-tighter">
-                {group.authorId === currentUserProfile?.uid ? "Cerita Anda" : group.authorName.split(' ')[0]}
+              <p className="text-[9px] font-black w-16 truncate text-center text-muted-foreground uppercase tracking-tighter">
+                {group.authorId === currentUserProfile?.uid ? "Anda" : group.authorName.split(' ')[0]}
               </p>
             </motion.div>
           )
         })}
-
-        {storyGroups.length === 0 && !currentUserProfile && (
-            <div className="flex items-center gap-3 px-4 py-3 bg-muted/30 rounded-2xl border border-dashed border-muted-foreground/20 w-full justify-center">
-                <Sparkles className="h-4 w-4 text-muted-foreground/40" />
-                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40 italic">Hening di semesta hari ini...</p>
-            </div>
-        )}
       </div>
     </>
   );

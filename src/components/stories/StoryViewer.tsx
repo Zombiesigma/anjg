@@ -223,6 +223,7 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
         <DialogDescription className="sr-only">Melihat momen cerita teks dengan Markdown.</DialogDescription>
         
         <div className="relative w-full h-full flex items-center justify-center">
+            {/* Desktop Navigation */}
             <div className="absolute inset-0 hidden md:flex items-center justify-between px-10 pointer-events-none z-[270]">
                 <button onClick={prevStory} className="h-14 w-14 rounded-full bg-white/10 text-white pointer-events-auto backdrop-blur-md flex items-center justify-center hover:bg-white/20 transition-all">
                     <ChevronLeft className="h-8 w-8" />
@@ -242,6 +243,7 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
                 onMouseDown={() => setIsPaused(true)}
                 onMouseUp={() => setIsPaused(false)}
             >
+                {/* Progress Bars */}
                 <div className="absolute top-4 left-4 right-4 flex items-center gap-1.5 z-[260]">
                     {currentGroup.stories.map((_, i) => (
                         <div key={i} className="h-1 flex-1 bg-white/20 rounded-full overflow-hidden">
@@ -258,6 +260,7 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
                     ))}
                 </div>
                 
+                {/* Header Profile */}
                 <div className="absolute top-8 left-0 right-0 px-4 z-[260] flex items-center pointer-events-none">
                     <div className="flex items-center gap-3 bg-black/20 backdrop-blur-xl p-1.5 pr-5 rounded-full border border-white/10 pointer-events-auto">
                         <Avatar className="h-10 w-10 ring-2 ring-primary/30">
@@ -273,6 +276,7 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
                     </div>
                 </div>
 
+                {/* Content Area */}
                 <div className={cn(
                     "flex-1 relative flex items-center justify-center bg-gradient-to-br",
                     currentStory.background || "from-indigo-600 to-rose-500"
@@ -284,7 +288,7 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 1.1 }}
-                        className="w-full h-full flex items-center justify-center p-12 text-center overflow-y-auto"
+                        className="w-full h-full flex items-center justify-center p-12 text-center overflow-y-auto no-scrollbar"
                     >
                         <div className="prose prose-invert prose-p:text-2xl md:prose-p:text-3xl prose-p:font-headline prose-p:font-black prose-p:leading-tight prose-p:drop-shadow-lg prose-blockquote:border-l-4 prose-blockquote:border-white/40 prose-blockquote:pl-4 prose-blockquote:italic prose-p:m-0 max-w-none">
                             <ReactMarkdown remarkPlugins={[remarkGfm]}>
@@ -295,7 +299,8 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
                   </AnimatePresence>
                 </div>
 
-                <div className="absolute bottom-0 left-0 right-0 p-6 z-[260] bg-gradient-to-t from-black/80 to-transparent" onClick={(e) => e.stopPropagation()}>
+                {/* Footer Interactions */}
+                <div className="absolute bottom-0 left-0 right-0 p-6 z-[260] bg-gradient-to-t from-black/80 to-transparent pb-[max(1.5rem,env(safe-area-inset-bottom))]" onClick={(e) => e.stopPropagation()}>
                    <div className='flex items-center gap-6 mb-4'>
                      <button onClick={handleToggleLike} disabled={isLikeLoading} className={cn("flex flex-col items-center gap-1 transition-transform active:scale-90", isLiked ? "text-rose-500" : "text-white/80")}>
                         <Heart className={cn("h-8 w-8", isLiked && "fill-current")}/> 

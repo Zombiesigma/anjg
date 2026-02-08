@@ -9,10 +9,13 @@ export default function MainAppLayout({
 }) {
   return (
     <ProtectedLayout>
-      <div className="relative flex min-h-screen flex-col">
+      <div className="relative flex min-h-screen flex-col bg-background">
         <Header />
-        <main className="flex-1 container py-6">{children}</main>
-        <div className="h-16 md:hidden" /> {/* Spacer for mobile nav */}
+        <main className="flex-1 container px-4 py-6 md:px-6">
+          {children}
+        </main>
+        {/* Padding bawah untuk Mobile Nav agar konten tidak tertutup */}
+        <div className="h-24 md:hidden" /> 
         <MobileNav />
       </div>
     </ProtectedLayout>

@@ -22,13 +22,13 @@ export function MobileNav() {
     { href: '/', icon: Home, label: 'Beranda' },
     { href: '/join-author', icon: BookUser, label: 'Penulis' },
     ...(canUpload ? [{ href: '/upload', icon: PlusSquare, label: 'Unggah' }] : []),
-    { href: '/ai', icon: Bot, label: 'Elitera AI' },
+    { href: '/ai', icon: Bot, label: 'AI' },
     { href: '/profile', icon: User, label: 'Profil' },
   ];
 
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[90vw] max-w-lg md:hidden">
-      <div className="bg-background/80 backdrop-blur-2xl border border-white/20 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] rounded-full h-16 flex items-center justify-around px-2 relative overflow-hidden">
+    <div className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-6 md:hidden pointer-events-none">
+      <div className="bg-background/80 backdrop-blur-2xl border border-white/20 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] rounded-[2rem] h-16 flex items-center justify-around px-2 relative overflow-hidden pointer-events-auto max-w-lg mx-auto">
         {navItems.map((item) => {
           const isActive = (item.href === '/' && pathname === '/') || (item.href !== '/' && pathname.startsWith(item.href));
           
@@ -46,12 +46,12 @@ export function MobileNav() {
                 <item.icon 
                   className={cn(
                     'w-5 h-5 transition-all duration-300', 
-                    isActive ? 'text-primary scale-110' : 'text-muted-foreground group-hover:text-primary'
+                    isActive ? 'text-primary scale-110' : 'text-muted-foreground'
                   )} 
                 />
                 <span 
                   className={cn(
-                    'text-[10px] font-bold mt-1 tracking-tighter transition-all duration-300',
+                    'text-[10px] font-black mt-1 tracking-tighter transition-all duration-300 uppercase',
                      isActive ? 'text-primary' : 'text-muted-foreground'
                   )}
                 >
@@ -62,7 +62,7 @@ export function MobileNav() {
               {isActive && (
                 <motion.div
                   layoutId="mobile-nav-indicator"
-                  className="absolute inset-0 bg-primary/10 rounded-full z-[-1]"
+                  className="absolute inset-1 bg-primary/10 rounded-2xl z-[-1]"
                   initial={false}
                   transition={{ type: 'spring', stiffness: 350, damping: 30 }}
                 />
