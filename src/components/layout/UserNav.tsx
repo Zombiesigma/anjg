@@ -27,6 +27,7 @@ import {
   Sun,
   Shield,
   User as UserIcon,
+  HelpCircle,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -144,6 +145,7 @@ export function UserNav() {
               
               <NavLink href="/settings" icon={Settings} label="Pengaturan Akun" />
               <NavLink href="/join-author" icon={BookUser} label="Daftar Penulis" />
+              <NavLink href="/guide" icon={HelpCircle} label="Panduan Pengguna" />
               <NavLink href="/about" icon={Info} label="Tentang Elitera" />
               
               <div
