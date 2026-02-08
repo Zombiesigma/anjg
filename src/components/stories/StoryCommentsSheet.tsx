@@ -16,7 +16,6 @@ import { Loader2, MessageCircle, Clock } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { Separator } from '@/components/ui/separator';
-import Link from 'next/link';
 
 interface StoryCommentsSheetProps {
   storyId: string;
@@ -46,7 +45,7 @@ export function StoryCommentsSheet({ storyId, isOpen, onOpenChange }: StoryComme
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
       <SheetContent 
         side="bottom" 
-        className="h-[70vh] md:h-[60vh] flex flex-col rounded-t-[2.5rem] border-t-0 bg-background p-0 overflow-hidden"
+        className="h-[70vh] md:h-[60vh] flex flex-col rounded-t-[2.5rem] border-t-0 bg-background p-0 overflow-hidden z-[300]"
         onCloseAutoFocus={(e) => {
             e.preventDefault();
             document.body.style.pointerEvents = '';
@@ -70,7 +69,7 @@ export function StoryCommentsSheet({ storyId, isOpen, onOpenChange }: StoryComme
           {isLoading ? (
             <div className="flex flex-col items-center justify-center h-full gap-3 opacity-50">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
-              <p className="text-xs font-bold uppercase tracking-widest">Memperbarui...</p>
+              <p className="text-[10px] font-black uppercase tracking-widest">Sinkronisasi Percakapan...</p>
             </div>
           ) : !comments || comments.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center p-10 opacity-40">
@@ -104,7 +103,6 @@ export function StoryCommentsSheet({ storyId, isOpen, onOpenChange }: StoryComme
                   </div>
                 </div>
               ))}
-              {/* Extra spacing at bottom */}
               <div className="h-24" />
             </div>
           )}

@@ -111,6 +111,7 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
     return () => clearTimeout(timer);
   }, [storyIndex, authorIndex, isOpen, isPaused, showViews, showComments, nextStory]);
   
+  // Logic View Count Sempurna
   useEffect(() => {
     if (!currentStory || !currentUser || !firestore) return;
 
@@ -132,7 +133,7 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
 
       batch.commit().then(() => {
         viewedStoriesInSession.current.add(currentStory.id);
-      }).catch(err => console.warn(err));
+      }).catch(err => console.warn("Failed to increment views", err));
     }
   }, [currentStory, currentUser, firestore]);
 
@@ -155,7 +156,12 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
       batch.set(likeRef, { userId: currentUser.uid, likedAt: serverTimestamp() });
       batch.update(storyRef, { likes: increment(1) });
     }
-    await batch.commit();
+    
+    try {
+        await batch.commit();
+    } catch (e) {
+        console.error("Error toggling like", e);
+    }
   }
   
   const [comment, setComment] = useState("");
@@ -270,7 +276,7 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
                         exit={{ opacity: 0, scale: 1.1 }}
                         className="w-full h-full flex items-center justify-center p-12 text-center"
                     >
-                        <p className="text-3xl md:text-4xl font-headline font-black text-white whitespace-pre-wrap leading-tight drop-shadow-lg">
+                        <p className="text-2xl md:text-3xl font-headline font-black text-white whitespace-pre-wrap leading-tight drop-shadow-lg">
                             "{currentStory.content}"
                         </p>
                     </motion.div>
@@ -279,16 +285,16 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
 
                 <div className="absolute bottom-0 left-0 right-0 p-6 z-[260] bg-gradient-to-t from-black/80 to-transparent" onClick={(e) => e.stopPropagation()}>
                    <div className='flex items-center gap-6 mb-4'>
-                     <button onClick={handleToggleLike} disabled={isLikeLoading} className={cn("flex flex-col items-center gap-1", isLiked ? "text-rose-500" : "text-white/80")}>
+                     <button onClick={handleToggleLike} disabled={isLikeLoading} className={cn("flex flex-col items-center gap-1 transition-transform active:scale-90", isLiked ? "text-rose-500" : "text-white/80")}>
                         <Heart className={cn("h-8 w-8", isLiked && "fill-current")}/> 
                         <span className="text-[10px] font-black">{currentStory.likes}</span>
                      </button>
-                     <button onClick={() => setShowComments(true)} className="flex flex-col items-center gap-1 text-white/80">
+                     <button onClick={() => setShowComments(true)} className="flex flex-col items-center gap-1 text-white/80 transition-transform active:scale-90">
                         <MessageSquare className="h-8 w-8"/> 
                         <span className="text-[10px] font-black">{currentStory.commentCount}</span>
                      </button>
                      {isAuthor && (
-                        <button onClick={() => setShowViews(true)} className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full border border-white/10 ml-auto text-white/80">
+                        <button onClick={() => setShowViews(true)} className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full border border-white/10 ml-auto text-white/80 transition-all hover:bg-white/20 active:scale-95">
                             <Eye className="h-4 w-4"/>
                             <span className="text-xs font-black">{currentStory.viewCount}</span>
                         </button>
@@ -299,12 +305,12 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
                         <Input 
                             value={comment} 
                             onChange={(e) => setComment(e.target.value)} 
-                            placeholder='Kirim pesan...' 
+                            placeholder='Berikan apresiasi...' 
                             className='bg-white/10 border-white/10 text-white placeholder:text-white/40 focus-visible:ring-primary/50 h-12 rounded-2xl' 
                         />
                         <Button 
                             size="icon" 
-                            className="h-12 w-12 rounded-2xl bg-primary hover:bg-primary/90" 
+                            className="h-12 w-12 rounded-2xl bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20" 
                             disabled={isSendingComment || !comment.trim()}
                         >
                            {isSendingComment ? <Loader2 className="animate-spin h-5 w-5" /> : <SendIcon className="h-5 w-5" />}

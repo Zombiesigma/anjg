@@ -45,7 +45,7 @@ export function StoryViewersSheet({ storyId, isOpen, onOpenChange }: StoryViewer
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
       <SheetContent 
         side="bottom" 
-        className="h-[70vh] md:h-[60vh] flex flex-col rounded-t-[2.5rem] border-t-0 bg-background p-0 overflow-hidden"
+        className="h-[70vh] md:h-[60vh] flex flex-col rounded-t-[2.5rem] border-t-0 bg-background p-0 overflow-hidden z-[300]"
         onCloseAutoFocus={(e) => {
             e.preventDefault();
             document.body.style.pointerEvents = '';
@@ -69,7 +69,7 @@ export function StoryViewersSheet({ storyId, isOpen, onOpenChange }: StoryViewer
           {isLoading ? (
             <div className="flex flex-col items-center justify-center h-full gap-3 opacity-50">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
-              <p className="text-xs font-bold uppercase tracking-widest">Memuat Daftar...</p>
+              <p className="text-[10px] font-black uppercase tracking-widest">Sinkronisasi Daftar...</p>
             </div>
           ) : !viewers || viewers.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center p-10 opacity-40">
@@ -98,8 +98,7 @@ export function StoryViewersSheet({ storyId, isOpen, onOpenChange }: StoryViewer
                   </div>
                 </div>
               ))}
-              {/* Extra spacing at bottom for mobile nav safety */}
-              <div className="h-20" />
+              <div className="h-24" />
             </div>
           )}
         </div>
