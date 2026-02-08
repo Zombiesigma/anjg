@@ -530,13 +530,86 @@ export default function EditBookPage() {
                                         <input id="edit-cover-upload" type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
                                     </div>
                                     <div className="md:col-span-8 space-y-6">
-                                        <FormField control={settingsForm.control} name="title" render={({ field }) => (<FormItem><FormLabel className="font-bold">Judul</FormLabel><FormControl><Input {...field} className="h-12 text-lg rounded-xl focus-visible:ring-primary/20 font-medium" /></FormControl><FormMessage /></FormItem>)} />
-                                        <FormField control={settingsForm.control} name="genre" render={({ field }) => (<FormItem><FormLabel className="font-bold">Genre</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger className="h-12 rounded-xl focus:ring-primary/20"><SelectValue /></SelectTrigger></FormControl><SelectContent className="rounded-xl"><SelectItem value="novel">Novel</SelectItem><SelectItem value="fantasy">Fantasi</SelectItem><SelectItem value="sci-fi">Fiksi Ilmiah</SelectItem><SelectItem value="horror">Horor</SelectItem><SelectItem value="romance">Romansa</SelectItem></Select><FormMessage /></FormItem>)} />
-                                        <FormField control={settingsForm.control} name="visibility" render={({ field }) => (<FormItem className="space-y-3"><FormLabel className="font-bold">Visibilitas</FormLabel><FormControl><RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-1 sm:grid-cols-2 gap-3"><FormItem className={cn("flex items-center space-x-3 space-y-0 p-4 rounded-xl border transition-all cursor-pointer", field.value === 'public' ? "border-primary bg-primary/5" : "hover:bg-muted/50")}><FormControl><RadioGroupItem value="public" className="sr-only" /></FormControl><Label className="flex items-center gap-3 cursor-pointer w-full font-normal" onClick={() => field.onChange('public')}><Globe className="h-4 w-4" /><span className="font-bold text-sm">Publik</span></Label></FormItem><FormItem className={cn("flex items-center space-x-3 space-y-0 p-4 rounded-xl border transition-all cursor-pointer", field.value === 'followers_only' ? "border-primary bg-primary/5" : "hover:bg-muted/50")}><FormControl><RadioGroupItem value="followers_only" className="sr-only" /></FormControl><Label className="flex items-center gap-3 cursor-pointer w-full font-normal" onClick={() => field.onChange('followers_only')}><Users className="h-4 w-4" /><span className="font-bold text-sm">Pengikut</span></Label></FormItem></RadioGroup></FormControl><FormMessage /></FormItem>)} />
+                                        <FormField 
+                                            control={settingsForm.control} 
+                                            name="title" 
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel className="font-bold">Judul</FormLabel>
+                                                    <FormControl>
+                                                        <Input {...field} className="h-12 text-lg rounded-xl focus-visible:ring-primary/20 font-medium" />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )} 
+                                        />
+                                        <FormField 
+                                            control={settingsForm.control} 
+                                            name="genre" 
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel className="font-bold">Genre</FormLabel>
+                                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                        <FormControl>
+                                                            <SelectTrigger className="h-12 rounded-xl focus:ring-primary/20">
+                                                                <SelectValue />
+                                                            </SelectTrigger>
+                                                        </FormControl>
+                                                        <SelectContent className="rounded-xl">
+                                                            <SelectItem value="novel">Novel</SelectItem>
+                                                            <SelectItem value="fantasy">Fantasi</SelectItem>
+                                                            <SelectItem value="sci-fi">Fiksi Ilmiah</SelectItem>
+                                                            <SelectItem value="horror">Horor</SelectItem>
+                                                            <SelectItem value="romance">Romansa</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )} 
+                                        />
+                                        <FormField 
+                                            control={settingsForm.control} 
+                                            name="visibility" 
+                                            render={({ field }) => (
+                                                <FormItem className="space-y-3">
+                                                    <FormLabel className="font-bold">Visibilitas</FormLabel>
+                                                    <FormControl>
+                                                        <RadioGroup onValueChange={field.onChange} value={field.value} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                            <FormItem className={cn("flex items-center space-x-3 space-y-0 p-4 rounded-xl border transition-all cursor-pointer", field.value === 'public' ? "border-primary bg-primary/5" : "hover:bg-muted/50")}>
+                                                                <FormControl><RadioGroupItem value="public" className="sr-only" /></FormControl>
+                                                                <Label className="flex items-center gap-3 cursor-pointer w-full font-normal" onClick={() => field.onChange('public')}><Globe className="h-4 w-4" /><span className="font-bold text-sm">Publik</span></Label>
+                                                            </FormItem>
+                                                            <FormItem className={cn("flex items-center space-x-3 space-y-0 p-4 rounded-xl border transition-all cursor-pointer", field.value === 'followers_only' ? "border-primary bg-primary/5" : "hover:bg-muted/50")}>
+                                                                <FormControl><RadioGroupItem value="followers_only" className="sr-only" /></FormControl>
+                                                                <Label className="flex items-center gap-3 cursor-pointer w-full font-normal" onClick={() => field.onChange('followers_only')}><Users className="h-4 w-4" /><span className="font-bold text-sm">Pengikut</span></Label>
+                                                            </FormItem>
+                                                        </RadioGroup>
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )} 
+                                        />
                                     </div>
                                 </div>
-                                <FormField control={settingsForm.control} name="synopsis" render={({ field }) => (<FormItem><FormLabel className="font-bold">Sinopsis</FormLabel><FormControl><Textarea rows={8} {...field} className="rounded-2xl text-base leading-relaxed focus-visible:ring-primary/20 font-serif" /></FormControl><FormMessage /></FormItem>)} />
-                                <div className="flex justify-end pt-4"><Button type="submit" size="lg" className="rounded-full px-10 h-14 font-black shadow-xl shadow-primary/20" disabled={isSavingSettings || !settingsForm.formState.isDirty}>{isSavingSettings ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Sparkles className="mr-2 h-5 w-5" />}Simpan Perubahan</Button></div>
+                                <FormField 
+                                    control={settingsForm.control} 
+                                    name="synopsis" 
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel className="font-bold">Sinopsis</FormLabel>
+                                            <FormControl>
+                                                <Textarea rows={8} {...field} className="rounded-2xl text-base leading-relaxed focus-visible:ring-primary/20 font-serif" />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )} 
+                                />
+                                <div className="flex justify-end pt-4">
+                                    <Button type="submit" size="lg" className="rounded-full px-10 h-14 font-black shadow-xl shadow-primary/20" disabled={isSavingSettings || !settingsForm.formState.isDirty}>
+                                        {isSavingSettings ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Sparkles className="mr-2 h-5 w-5" />}
+                                        Simpan Perubahan
+                                    </Button>
+                                </div>
                             </form>
                         </Form>
                     </motion.div>
@@ -544,15 +617,48 @@ export default function EditBookPage() {
                     <motion.div key={activeChapterId} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="max-w-4xl mx-auto py-8 md:py-12 px-6 lg:px-12">
                         <Form {...chapterForm}>
                             <form className="space-y-8 pb-32" onSubmit={(e) => e.preventDefault()}>
-                                {book.status === 'pending_review' && (<Alert className="bg-primary/5 border-primary/20 rounded-2xl"><Info className="h-4 w-4 text-primary" /><AlertTitle className="font-bold">Konten Terkunci</AlertTitle><AlertDescription className="text-muted-foreground">Buku sedang dalam tahap peninjauan admin Elitera.</AlertDescription></Alert>)}
-                                <FormField control={chapterForm.control} name="title" render={({ field }) => (<FormItem><FormControl><Input placeholder="Judul Bab..." {...field} disabled={isReviewing} className="border-none shadow-none text-3xl md:text-5xl font-headline font-black px-0 h-auto focus-visible:ring-0 placeholder:text-muted-foreground/30 mb-2" /></FormControl><FormMessage /></FormItem>)} />
+                                {book.status === 'pending_review' && (
+                                    <Alert className="bg-primary/5 border-primary/20 rounded-2xl">
+                                        <Info className="h-4 w-4 text-primary" />
+                                        <AlertTitle className="font-bold">Konten Terkunci</AlertTitle>
+                                        <AlertDescription className="text-muted-foreground">Buku sedang dalam tahap peninjauan admin Elitera.</AlertDescription>
+                                    </Alert>
+                                )}
+                                <FormField 
+                                    control={chapterForm.control} 
+                                    name="title" 
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormControl>
+                                                <Input placeholder="Judul Bab..." {...field} disabled={isReviewing} className="border-none shadow-none text-3xl md:text-5xl font-headline font-black px-0 h-auto focus-visible:ring-0 placeholder:text-muted-foreground/30 mb-2" />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )} 
+                                />
                                 <div className="w-16 h-1 bg-primary/20 rounded-full mb-10" />
-                                <FormField control={chapterForm.control} name="content" render={({ field }) => (<FormItem><FormControl><Textarea placeholder="Mulai tuangkan kata-kata Anda..." {...field} className="min-h-[70vh] border-none shadow-none px-0 focus-visible:ring-0 text-lg md:text-2xl leading-[1.8] font-serif resize-none bg-transparent placeholder:text-muted-foreground/20 scroll-smooth" disabled={isReviewing} /></FormControl><FormMessage /></FormItem>)} />
+                                <FormField 
+                                    control={chapterForm.control} 
+                                    name="content" 
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormControl>
+                                                <Textarea placeholder="Mulai tuangkan kata-kata Anda..." {...field} className="min-h-[70vh] border-none shadow-none px-0 focus-visible:ring-0 text-lg md:text-2xl leading-[1.8] font-serif resize-none bg-transparent placeholder:text-muted-foreground/20 scroll-smooth" disabled={isReviewing} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )} 
+                                />
                             </form>
                         </Form>
                     </motion.div>
                 ) : (
-                    <div className="flex flex-col items-center justify-center h-full text-center p-12"><PlusCircle className="h-16 w-16 text-muted-foreground/20 mb-6 animate-bounce" /><h4 className="text-2xl font-headline font-bold">Mulai Bab Pertama</h4><p className="text-muted-foreground max-w-sm mx-auto mb-8">Setiap cerita hebat dimulai dengan satu kata. Mari kita mulai babak baru karya Anda.</p><Button onClick={handleAddChapter} size="lg" className="rounded-full px-8 font-bold shadow-lg shadow-primary/10"><PlusCircle className="mr-2 h-5 w-5" /> Buat Bab Pertama</Button></div>
+                    <div className="flex flex-col items-center justify-center h-full text-center p-12">
+                        <PlusCircle className="h-16 w-16 text-muted-foreground/20 mb-6 animate-bounce" />
+                        <h4 className="text-2xl font-headline font-bold">Mulai Bab Pertama</h4>
+                        <p className="text-muted-foreground max-w-sm mx-auto mb-8">Setiap cerita hebat dimulai dengan satu kata. Mari kita mulai babak baru karya Anda.</p>
+                        <Button onClick={handleAddChapter} size="lg" className="rounded-full px-8 font-bold shadow-lg shadow-primary/10"><PlusCircle className="mr-2 h-5 w-5" /> Buat Bab Pertama</Button>
+                    </div>
                 )}
             </AnimatePresence>
         </div>
