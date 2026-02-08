@@ -16,6 +16,7 @@ import type { Chat, ChatMessage, User as AppUser } from '@/lib/types';
 import { isSameDay, format, isToday, isYesterday } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function MessagesPage() {
   const firestore = useFirestore();
