@@ -99,9 +99,11 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent 
         className="max-w-none w-screen h-screen p-0 border-0 m-0 bg-black overflow-hidden flex flex-col rounded-none z-[100]"
+        onPointerDownOutside={(e) => e.preventDefault()}
+        onInteractOutside={(e) => e.preventDefault()}
         onCloseAutoFocus={(e) => { e.preventDefault(); document.body.style.pointerEvents = ''; }}
       >
         <DialogHeader className="sr-only">
@@ -120,7 +122,7 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
                 size="icon" 
                 className="text-white hover:bg-white/20 rounded-full h-12 w-12 transition-all active:scale-90" 
                 onClick={() => setBgIndex((bgIndex + 1) % BACKGROUNDS.length)}
-                title="Ganti Latar"
+                type="button"
              >
                 <Palette className="h-6 w-6" />
              </Button>
@@ -151,6 +153,7 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
                                     className="bg-transparent border-none shadow-none text-3xl md:text-6xl font-headline font-black text-white text-center min-h-[400px] resize-none focus-visible:ring-0 placeholder:text-white/25 leading-tight scroll-none" 
                                     {...field} 
                                     autoFocus 
+                                    onPointerDown={(e) => e.stopPropagation()}
                                 />
                             </FormControl>
                             <FormMessage className="text-white/80 text-center font-bold bg-black/20 backdrop-blur-md rounded-full px-4 py-1 w-fit mx-auto mt-4" />
