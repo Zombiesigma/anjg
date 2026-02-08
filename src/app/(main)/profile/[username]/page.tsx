@@ -10,7 +10,7 @@ import type { User, Book, Chat, Favorite, Follow, Story } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/tabs'; // Using path aliasing if available, otherwise full path
 import { Badge } from '@/components/ui/badge';
 import { BookCard } from '@/components/BookCard';
 import { UserPlus, MessageCircle, Edit, Loader2, UserMinus, Sparkles, Users, BookOpen, Heart as HeartIcon, CheckCircle2 } from 'lucide-react';
@@ -20,6 +20,9 @@ import { StoryViewer } from '@/components/stories/StoryViewer';
 import { cn } from '@/lib/utils';
 import { FollowsSheet } from '@/components/profile/FollowsSheet';
 import { motion, AnimatePresence } from 'framer-motion';
+
+// Fix for missing Tabs imports
+import { Tabs as UiTabs, TabsContent as UiTabsContent, TabsList as UiTabsList, TabsTrigger as UiTabsTrigger } from "@/components/ui/tabs";
 
 export default function ProfilePage() {
   const params = useParams<{ username: string }>();
@@ -36,12 +39,14 @@ export default function ProfilePage() {
   
   const [sheetState, setSheetState] = useState<{open: boolean; type: 'followers' | 'following'}>({ open: false, type: 'followers' });
 
+  // Normalisasi username pencarian ke lowercase
+  const normalizedUsername = useMemo(() => params.username.toLowerCase(), [params.username]);
 
   const userQuery = useMemo(() => (
     firestore 
-      ? query(collection(firestore, 'users'), where('username', '==', params.username), limit(1)) 
+      ? query(collection(firestore, 'users'), where('username', '==', normalizedUsername), limit(1)) 
       : null
-  ), [firestore, params.username]);
+  ), [firestore, normalizedUsername]);
   const { data: users, isLoading: isUserLoading } = useCollection<User>(userQuery);
   const user = users?.[0];
 
@@ -60,10 +65,10 @@ export default function ProfilePage() {
         }
         
         let lastSeenMillis = 0;
-        if (typeof user.lastSeen.toMillis === 'function') {
-            lastSeenMillis = user.lastSeen.toMillis();
+        if (typeof (user.lastSeen as any).toMillis === 'function') {
+            lastSeenMillis = (user.lastSeen as any).toMillis();
         } else if (user.lastSeen instanceof Date) {
-            lastSeenMillis = user.lastSeen.getTime();
+            lastSeenMillis = (user.lastSeen as any).getTime();
         }
 
         const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
@@ -243,7 +248,7 @@ export default function ProfilePage() {
                     const notificationData = {
                         type: 'follow' as const,
                         text: `${currentUser.displayName} mulai mengikuti Anda.`,
-                        link: `/profile/${currentUserProfile.username}`,
+                        link: `/profile/${currentUserProfile.username.toLowerCase()}`,
                         actor: {
                             uid: currentUser.uid,
                             displayName: currentUser.displayName!,
@@ -307,7 +312,6 @@ export default function ProfilePage() {
       >
         {/* Profile Card Premium */}
         <Card className="overflow-hidden border-none shadow-2xl bg-card/50 backdrop-blur-md rounded-[2.5rem] relative">
-          {/* Cover Background with Pattern */}
           <div className="h-40 md:h-64 bg-gradient-to-br from-primary via-accent to-indigo-600 relative overflow-hidden">
               <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
@@ -315,7 +319,6 @@ export default function ProfilePage() {
 
           <CardContent className="p-6 md:p-10 relative">
               <div className="flex flex-col md:flex-row items-center md:items-end gap-6 -mt-20 md:-mt-32">
-                  {/* Avatar with Story Ring */}
                   <div className="relative group">
                     <button
                         disabled={!userHasActiveStory}
@@ -387,7 +390,7 @@ export default function ProfilePage() {
                                       <Loader2 className="h-4 w-4 animate-spin"/>
                                   ) : (
                                       <>
-                                        <MessageSquare className="md:mr-2 h-4 w-4"/>
+                                        <MessageCircle className="md:mr-2 h-4 w-4"/>
                                         <span className="hidden md:inline">Pesan</span>
                                       </>
                                   )}
@@ -404,7 +407,6 @@ export default function ProfilePage() {
                     </p>
                   </div>
                   
-                  {/* Stats Grid */}
                   <div className="grid grid-cols-3 gap-10 md:gap-12 w-full md:w-auto pt-6 md:pt-0 border-t md:border-t-0 md:border-l border-border/50 md:pl-12">
                       <div className="text-center space-y-1">
                           <p className="font-black text-2xl text-primary">{areBooksLoading ? '...' : (publishedBooks?.length ?? 0)}</p>
@@ -430,16 +432,16 @@ export default function ProfilePage() {
         </Card>
 
         {/* Content Section */}
-        <Tabs defaultValue="published-books" className="space-y-8">
+        <UiTabs defaultValue="published-books" className="space-y-8">
           <div className="flex items-center justify-center">
-            <TabsList className="bg-muted/50 p-1.5 rounded-full h-auto">
-                <TabsTrigger value="published-books" className="rounded-full px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-white font-bold transition-all">Buku Terbitan</TabsTrigger>
-                {isOwnProfile && <TabsTrigger value="drafts" className="rounded-full px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-white font-bold transition-all">Draf</TabsTrigger>}
-                {isOwnProfile && <TabsTrigger value="favorites" className="rounded-full px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-white font-bold transition-all">Favorit</TabsTrigger>}
-            </TabsList>
+            <UiTabsList className="bg-muted/50 p-1.5 rounded-full h-auto">
+                <UiTabsTrigger value="published-books" className="rounded-full px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-white font-bold transition-all">Buku Terbitan</UiTabsTrigger>
+                {isOwnProfile && <UiTabsTrigger value="drafts" className="rounded-full px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-white font-bold transition-all">Draf</UiTabsTrigger>}
+                {isOwnProfile && <UiTabsTrigger value="favorites" className="rounded-full px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-white font-bold transition-all">Favorit</UiTabsTrigger>}
+            </UiTabsList>
           </div>
 
-          <TabsContent value="published-books" className="mt-0">
+          <UiTabsContent value="published-books" className="mt-0">
                {arePublishedBooksLoading && (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
                       {Array.from({ length: 4 }).map((_, i) => (
@@ -464,10 +466,10 @@ export default function ProfilePage() {
                       <p className="text-muted-foreground font-headline font-bold text-lg">{isOwnProfile ? "Anda" : "Pengguna ini"} belum menerbitkan karya.</p>
                   </div>
               )}
-          </TabsContent>
+          </UiTabsContent>
 
           {isOwnProfile && (
-            <TabsContent value="drafts" className="mt-0">
+            <UiTabsContent value="drafts" className="mt-0">
                  {areOtherBooksLoading && (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
                         {Array.from({ length: 2 }).map((_, i) => (
@@ -487,11 +489,11 @@ export default function ProfilePage() {
                         <p className="text-muted-foreground font-headline font-bold text-lg">Anda tidak memiliki draf buku.</p>
                     </div>
                 )}
-            </TabsContent>
+            </UiTabsContent>
           )}
 
           {isOwnProfile && (
-              <TabsContent value="favorites" className="mt-0">
+              <UiTabsContent value="favorites" className="mt-0">
                   {(areFavoritesLoading || areFavoriteBooksLoading) && (
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
                           {Array.from({ length: 4 }).map((_, i) => (
@@ -511,9 +513,9 @@ export default function ProfilePage() {
                         <p className="text-muted-foreground font-headline font-bold text-lg">Belum ada buku favorit.</p>
                     </div>
                   )}
-              </TabsContent>
+              </UiTabsContent>
           )}
-        </Tabs>
+        </UiTabs>
       </motion.div>
     </>
   )

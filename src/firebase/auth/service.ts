@@ -24,13 +24,17 @@ async function createUserProfile(user: User, customPhotoURL?: string) {
   const userDoc = await getDoc(userDocRef);
 
   if (!userDoc.exists()) {
+    // Selalu simpan username dalam format lowercase untuk mencegah error 404 pada profil
+    const baseUsername = user.email?.split('@')[0] || user.uid;
+    const normalizedUsername = baseUsername.toLowerCase().replace(/[^a-z0-9_]/g, '');
+
     await setDoc(userDocRef, {
       uid: user.uid,
       email: user.email,
       displayName: user.displayName,
-      photoURL: customPhotoURL || user.photoURL,
-      role: 'pembaca', // default role
-      username: user.email?.split('@')[0] || user.uid,
+      photoURL: customPhotoURL || user.photoURL || `https://api.dicebear.com/8.x/identicon/svg?seed=${user.uid}`,
+      role: 'pembaca',
+      username: normalizedUsername,
       bio: 'Pengguna baru Elitera',
       followers: 0,
       following: 0,
@@ -38,7 +42,6 @@ async function createUserProfile(user: User, customPhotoURL?: string) {
       lastSeen: serverTimestamp(),
     });
   } else {
-    // If user exists, just update their status on login
      await updateDoc(userDocRef, {
         status: 'online',
         lastSeen: serverTimestamp(),
@@ -51,14 +54,11 @@ export async function signUpWithEmail(email: string, password: string, displayNa
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
     
-    // Send verification email
     await sendEmailVerification(user);
 
-    // Default photo if none provided
     const finalPhotoURL = photoURL || `https://api.dicebear.com/8.x/identicon/svg?seed=${user.uid}`;
     await updateProfile(user, { displayName, photoURL: finalPhotoURL });
     
-    // Create a new user object to pass to createUserProfile
     const userWithProfile = {
       ...user,
       displayName: displayName,
@@ -75,7 +75,6 @@ export async function signUpWithEmail(email: string, password: string, displayNa
 export async function signInWithEmail(email: string, password: string) {
   try {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    // Ensure profile exists on login as well, as a fallback.
     await createUserProfile(userCredential.user);
     return { user: userCredential.user };
   } catch (error) {

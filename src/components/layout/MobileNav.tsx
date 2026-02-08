@@ -27,47 +27,46 @@ export function MobileNav() {
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 z-50 w-full h-16 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:hidden">
-      <div className={cn('grid h-full max-w-lg mx-auto font-medium', canUpload ? 'grid-cols-5' : 'grid-cols-4')}>
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[90vw] max-w-lg md:hidden">
+      <div className="bg-background/80 backdrop-blur-2xl border border-white/20 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] rounded-full h-16 flex items-center justify-around px-2 relative overflow-hidden">
         {navItems.map((item) => {
-          // Handle active state for nested routes, e.g., /profile/*
           const isActive = (item.href === '/' && pathname === '/') || (item.href !== '/' && pathname.startsWith(item.href));
           
           const finalHref = item.href === '/profile'
-            ? (userProfile ? `/profile/${userProfile.username}` : '#')
+            ? (userProfile ? `/profile/${userProfile.username.toLowerCase()}` : '#')
             : item.href;
 
           return (
             <Link 
               key={item.href} 
               href={finalHref} 
-              aria-disabled={isProfileLoading && item.href === '/profile'}
-              className="flex flex-col items-center justify-center text-center px-1 group focus:outline-none focus:bg-accent/50"
+              className="flex-1 flex flex-col items-center justify-center h-full relative z-10"
             >
-              <div className="relative w-full flex flex-col items-center justify-center">
+              <div className="flex flex-col items-center justify-center transition-all duration-300">
                 <item.icon 
                   className={cn(
-                    'w-5 h-5 mb-1 transition-colors', 
-                    isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'
+                    'w-5 h-5 transition-all duration-300', 
+                    isActive ? 'text-primary scale-110' : 'text-muted-foreground group-hover:text-primary'
                   )} 
                 />
-                 <span 
+                <span 
                   className={cn(
-                    'text-xs transition-colors',
-                     isActive ? 'font-bold text-primary' : 'text-muted-foreground group-hover:text-primary'
+                    'text-[10px] font-bold mt-1 tracking-tighter transition-all duration-300',
+                     isActive ? 'text-primary' : 'text-muted-foreground'
                   )}
                 >
-                  {item.label === 'Profil' && isProfileLoading ? <Loader2 className="w-4 h-4 animate-spin mx-auto"/> : item.label}
+                  {item.label === 'Profil' && isProfileLoading ? <Loader2 className="w-3 h-3 animate-spin"/> : item.label}
                 </span>
-
-                {isActive && (
-                  <motion.div
-                    layoutId="mobile-nav-indicator"
-                    className="absolute -bottom-2.5 h-1 w-1 rounded-full bg-primary"
-                    transition={{ type: 'spring', stiffness: 350, damping: 30 }}
-                  />
-                )}
               </div>
+
+              {isActive && (
+                <motion.div
+                  layoutId="mobile-nav-indicator"
+                  className="absolute inset-0 bg-primary/10 rounded-full z-[-1]"
+                  initial={false}
+                  transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+                />
+              )}
             </Link>
           );
         })}

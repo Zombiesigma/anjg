@@ -14,6 +14,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
@@ -259,11 +260,28 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
 
             {mode === 'preview' && (
               <motion.div key="preview" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="w-full h-full relative bg-zinc-900 flex flex-col">
-                <div className="flex-1 relative flex items-center justify-center">
+                <div className="flex-1 relative flex items-center justify-center p-4">
                   {capturedImage ? (
-                    <Image src={capturedImage} alt="Preview" fill className="object-contain" />
+                    <div className="relative w-full h-full">
+                        <Image src={capturedImage} alt="Preview" fill className="object-contain rounded-2xl" />
+                        <div className="absolute bottom-10 left-0 right-0 px-6">
+                            <Form {...form}>
+                                <FormField control={form.control} name="content" render={({ field }) => (
+                                    <FormItem>
+                                        <FormControl>
+                                            <Input 
+                                                placeholder="Tambahkan keterangan..." 
+                                                {...field} 
+                                                className="bg-white/10 border-none text-white placeholder:text-white/40 focus-visible:ring-primary/50 h-12 rounded-xl px-4 font-bold"
+                                            />
+                                        </FormControl>
+                                    </FormItem>
+                                )}/>
+                            </Form>
+                        </div>
+                    </div>
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center p-8 bg-gradient-to-br from-indigo-600 to-rose-500">
+                    <div className="w-full h-full flex items-center justify-center p-8 bg-gradient-to-br from-indigo-600 to-rose-500 rounded-2xl">
                       <p className="text-3xl md:text-4xl font-black text-white text-center whitespace-pre-wrap">{form.getValues().content}</p>
                     </div>
                   )}
