@@ -15,13 +15,13 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, X, Palette, Camera, Image as ImageIcon, Type, RefreshCw, Check, ArrowLeft } from 'lucide-react';
+import { Loader2, X, Palette, Camera, Image as ImageIcon, Type, ArrowLeft } from 'lucide-react';
 import type { User as AppUser } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { uploadFile } from '@/lib/uploader';
-import Image from 'next/image';
 
 const storySchema = z.object({
   content: z.string().max(280, "Terlalu panjang (maks 280).").optional(),
@@ -54,7 +54,6 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [hasCameraPermission, setHasCameraPermission] = useState(false);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -89,7 +88,6 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
       });
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        setHasCameraPermission(true);
         setMode('camera');
       }
     } catch (err) {
@@ -117,7 +115,6 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
         const dataUrl = canvas.toDataURL('image/jpeg');
         setCapturedImage(dataUrl);
         
-        // Convert to file for uploader
         canvas.toBlob((blob) => {
           if (blob) {
             const file = new File([blob], `story-${Date.now()}.jpg`, { type: 'image/jpeg' });
@@ -197,7 +194,6 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
           <DialogDescription>Bagikan momen Anda.</DialogDescription>
         </DialogHeader>
 
-        {/* Dynamic Header */}
         <div className="absolute top-0 left-0 right-0 p-4 flex items-center justify-between z-[210] bg-gradient-to-b from-black/60 to-transparent pt-[max(1rem,env(safe-area-inset-top))]">
           <Button variant="ghost" size="icon" className="text-white rounded-full h-12 w-12" onClick={mode === 'choice' ? onClose : () => setMode('choice')}>
             {mode === 'choice' ? <X className="h-6 w-6" /> : <ArrowLeft className="h-6 w-6" />}
@@ -222,10 +218,7 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
           </div>
         </div>
 
-        {/* Main Content Area */}
         <div className="flex-1 relative overflow-hidden flex flex-col items-center justify-center">
-            
-            {/* Mode: Choice */}
             {mode === 'choice' && (
                 <div className="flex flex-col gap-6 w-full max-w-xs px-6">
                     <h2 className="text-white text-3xl font-headline font-black text-center mb-4">Bagikan Momen</h2>
@@ -257,7 +250,6 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
                 </div>
             )}
 
-            {/* Mode: Text */}
             {mode === 'text' && (
                 <div className={cn("w-full h-full flex flex-col items-center justify-center bg-gradient-to-br transition-all duration-700", BACKGROUNDS[bgIndex])}>
                     <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
@@ -286,7 +278,6 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
                 </div>
             )}
 
-            {/* Mode: Camera */}
             {mode === 'camera' && (
                 <div className="w-full h-full bg-black flex flex-col items-center justify-center relative">
                     <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
@@ -301,7 +292,6 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
                 </div>
             )}
 
-            {/* Mode: Preview (Image) */}
             {mode === 'preview' && capturedImage && (
                 <div className="w-full h-full bg-black relative flex flex-col">
                     <div className="flex-1 relative">
