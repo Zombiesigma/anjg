@@ -4,13 +4,13 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useFirestore, useUser, useCollection } from '@/firebase';
-import { collection, query, where, orderBy, doc, updateDoc, increment, documentId, writeBatch } from 'firebase/firestore';
+import { collection, query, where, orderBy, doc, updateDoc, increment, documentId, writeBatch, serverTimestamp } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
-import { MessageSquare, Loader2, Send, Search, ArrowLeft, ChevronRight, Sparkles, Zap } from 'lucide-react';
+import { MessageSquare, Loader2, Send, Search, ArrowLeft, ChevronRight, Sparkles, Zap, Plus, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Chat, ChatMessage, User as AppUser } from '@/lib/types';
 import { isSameDay, format, isToday, isYesterday } from 'date-fns';
@@ -31,6 +31,7 @@ export default function MessagesPage() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [onlineStatus, setOnlineStatus] = useState<{ [key: string]: boolean }>({});
 
+  // 1. Fetching Chat Threads
   const chatThreadsQuery = useMemo(() => (
     (firestore && currentUser)
       ? query(collection(firestore, 'chats'), where('participantUids', 'array-contains', currentUser.uid))
@@ -38,6 +39,7 @@ export default function MessagesPage() {
   ), [firestore, currentUser]);
   const { data: chatThreads, isLoading: isLoadingThreads } = useCollection<Chat>(chatThreadsQuery);
 
+  // 2. Fetching Participant Profiles for status & display
   const otherParticipantUids = useMemo(() => {
       if (!chatThreads || !currentUser) return [];
       const uids = new Set<string>();
@@ -60,6 +62,7 @@ export default function MessagesPage() {
       return new Map(participantProfiles.map(p => [p.id, p]));
   }, [participantProfiles]);
 
+  // Status Check Sync
   useEffect(() => {
     if (profilesMap.size === 0) return;
     const checkStatuses = () => {
@@ -82,6 +85,7 @@ export default function MessagesPage() {
     return () => clearInterval(interval);
   }, [profilesMap]);
 
+  // Mark as read logic
   useEffect(() => {
     if (!firestore || !currentUser?.uid || !selectedChatId || !chatThreads) return;
     const selectedChatData = chatThreads.find(c => c.id === selectedChatId);
@@ -97,6 +101,7 @@ export default function MessagesPage() {
     setSelectedChatId(chatIdFromUrl || null);
   }, [searchParams]);
 
+  // 3. Fetching Messages for current chat
   const messagesQuery = useMemo(() => (
     (firestore && selectedChatId)
       ? query(collection(firestore, 'chats', selectedChatId, 'messages'), orderBy('createdAt', 'asc'))
@@ -189,23 +194,28 @@ export default function MessagesPage() {
         
         {/* Sidebar: Chat List */}
         <div className={cn(
-          "col-span-12 md:col-span-4 lg:col-span-3 border-r h-full flex flex-col bg-card/30 overflow-hidden relative",
+          "col-span-12 md:col-span-4 lg:col-span-3 border-r h-full flex flex-col bg-card/30 overflow-hidden relative transition-all duration-500",
           selectedChatId ? "hidden md:flex" : "flex"
         )}>
           {/* Header Sidebar */}
           <div className="p-6 border-b shrink-0 bg-background/50 backdrop-blur-md z-20">
-            <div className="flex items-center gap-3 mb-6">
-                <div className="p-2.5 rounded-2xl bg-primary/10 text-primary">
-                    <MessageSquare className="h-5 w-5" />
+            <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                    <div className="p-2.5 rounded-2xl bg-primary/10 text-primary shadow-sm ring-1 ring-primary/20">
+                        <MessageSquare className="h-5 w-5" />
+                    </div>
+                    <h1 className="text-2xl font-headline font-black tracking-tight uppercase">Pesan</h1>
                 </div>
-                <h1 className="text-2xl font-headline font-black tracking-tight uppercase">Pesan</h1>
+                <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/5 text-primary">
+                    <Plus className="h-5 w-5" />
+                </Button>
             </div>
             
             <div className="relative group">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                 <Input 
                     placeholder="Cari pujangga..." 
-                    className="pl-11 h-12 bg-muted/30 border-none rounded-2xl focus-visible:ring-primary/20 transition-all shadow-inner" 
+                    className="pl-11 h-12 bg-muted/30 border-none rounded-2xl focus-visible:ring-primary/20 transition-all shadow-inner font-medium" 
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -296,78 +306,107 @@ export default function MessagesPage() {
 
         {/* Chat Box: Messages Area */}
         <div className={cn(
-            "col-span-12 md:col-span-8 lg:col-span-9 h-full flex flex-col overflow-hidden relative bg-background",
+            "col-span-12 md:col-span-8 lg:col-span-9 h-full flex flex-col overflow-hidden relative bg-background transition-all duration-500",
             selectedChatId ? 'flex' : 'hidden md:flex'
         )}>
           {!selectedChatId ? (
-            <div className="flex flex-col items-center justify-center h-full text-center p-12 bg-muted/5">
+            <div className="flex flex-col items-center justify-center h-full text-center p-12 bg-muted/5 relative">
+                <div className="absolute top-[-10%] left-[-10%] w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-64 h-64 bg-accent/5 rounded-full blur-3xl pointer-events-none" />
+                
                 <motion.div 
                     initial={{ scale: 0.9, opacity: 0 }} 
                     animate={{ scale: 1, opacity: 1 }}
-                    className="p-10 rounded-[3rem] bg-card shadow-2xl shadow-primary/5 flex flex-col items-center gap-6"
+                    className="p-10 rounded-[3.5rem] bg-card shadow-2xl shadow-primary/5 flex flex-col items-center gap-8 relative z-10 ring-1 ring-border/50"
                 >
-                    <div className="p-6 rounded-[2rem] bg-primary/5 text-primary">
-                        <MessageSquare className="h-16 w-16" />
+                    <div className="p-8 rounded-[2.5rem] bg-primary/5 text-primary shadow-inner">
+                        <MessageSquare className="h-20 w-16" />
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                         <h2 className="text-3xl font-headline font-black tracking-tight uppercase">Ruang Inspirasi</h2>
-                        <p className="text-sm text-muted-foreground max-w-xs mx-auto leading-relaxed">
-                            Pilih salah satu obrolan untuk mulai berbagi imajinasi dan kritik sastra.
+                        <p className="text-sm text-muted-foreground max-w-xs mx-auto leading-relaxed font-medium italic">
+                            "Pilih salah satu obrolan untuk mulai membagikan imajinasi, kritik sastra, dan semangat pujangga."
                         </p>
+                    </div>
+                    <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/5 text-primary text-[10px] font-black uppercase tracking-widest border border-primary/10">
+                        <Sparkles className="h-3.5 w-3.5" /> Jalin Koneksi Baru
                     </div>
                 </motion.div>
             </div>
           ) : (
             <div className="flex flex-col h-full overflow-hidden">
               {/* Header Chat Box */}
-              <div className="flex items-center px-6 py-4 border-b bg-background/95 backdrop-blur-md shrink-0 z-20 shadow-sm">
-                <Button variant="ghost" size="icon" className="md:hidden mr-4 rounded-full hover:bg-muted" onClick={handleGoBack}>
+              <div className="flex items-center px-6 py-4 border-b bg-background/95 backdrop-blur-md shrink-0 z-30 shadow-sm relative overflow-hidden">
+                <div className="absolute inset-0 bg-primary/5 opacity-20" />
+                
+                <Button variant="ghost" size="icon" className="md:hidden mr-4 rounded-full hover:bg-muted shrink-0" onClick={handleGoBack}>
                     <ArrowLeft className="h-5 w-5" />
                 </Button>
-                {otherParticipant && (
-                   <Link href={`/profile/${otherParticipant.username}`} className="flex items-center gap-4 group min-w-0">
-                    <div className="relative">
-                      <Avatar className="h-11 w-11 border-2 border-primary/10 transition-transform group-hover:scale-105">
+                
+                {otherParticipant ? (
+                   <Link href={`/profile/${otherParticipant.username}`} className="flex items-center gap-4 group min-w-0 flex-1">
+                    <div className="relative shrink-0">
+                      <Avatar className="h-12 w-12 border-2 border-primary/10 transition-all group-hover:scale-105 group-hover:border-primary/30 shadow-md">
                         <AvatarImage src={otherParticipant.photoURL} className="object-cover" />
                         <AvatarFallback className="font-black bg-primary/5 text-primary">{otherParticipant.displayName.charAt(0)}</AvatarFallback>
                       </Avatar>
                        {isOtherParticipantOnline && (
-                           <span className="absolute bottom-0 right-0 block h-3.5 w-3.5 rounded-full bg-green-500 border-2 border-background shadow-sm" />
+                           <span className="absolute bottom-0 right-0 block h-4 w-4 rounded-full bg-green-500 border-2 border-background shadow-lg animate-pulse" />
                        )}
                     </div>
                     <div className="min-w-0">
-                      <h2 className="font-black text-base group-hover:text-primary transition-colors truncate leading-none">{otherParticipant.displayName}</h2>
+                      <div className="flex items-center gap-2">
+                        <h2 className="font-black text-lg group-hover:text-primary transition-colors truncate leading-none">{otherParticipant.displayName}</h2>
+                        {isOtherParticipantOnline && (
+                            <div className="h-1.5 w-1.5 rounded-full bg-green-500" />
+                        )}
+                      </div>
                       <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mt-1.5 flex items-center gap-2">
                           @{otherParticipant.username}
-                          {isOtherParticipantOnline && <span className="text-green-500 lowercase tracking-normal">sedang aktif</span>}
+                          <span className="opacity-30">•</span>
+                          <span className={cn(isOtherParticipantOnline ? "text-green-500 lowercase tracking-normal" : "lowercase tracking-normal")}>
+                            {isOtherParticipantOnline ? 'aktif sekarang' : 'sedang istirahat'}
+                          </span>
                       </p>
                     </div>
                    </Link>
+                ) : (
+                    <div className="flex-1 min-w-0 h-12 flex items-center">
+                        <Skeleton className="h-10 w-48 rounded-full" />
+                    </div>
                 )}
+                
+                <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:text-primary">
+                        <Info className="h-5 w-5" />
+                    </Button>
+                </div>
               </div>
               
               {/* Pesan-pesan */}
               <div className="flex-1 overflow-hidden relative">
                 <ScrollArea className="h-full">
-                    <div className="py-8 px-6 space-y-8">
+                    <div className="py-10 px-6 space-y-10">
                     {isLoadingMessages ? (
-                        <div className="flex flex-col items-center justify-center py-20 gap-3 opacity-40">
-                            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                        <div className="flex flex-col items-center justify-center py-20 gap-4 opacity-40">
+                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
                             <p className="text-[10px] font-black uppercase tracking-widest">Membuka Gulungan Surat...</p>
                         </div>
                     ) : messageGroups.length === 0 ? (
-                        <div className="text-center py-32 opacity-20 flex flex-col items-center gap-4">
-                            <Sparkles className="h-12 w-12" />
-                            <p className="font-headline text-xl font-bold">Mulai Percakapan Puitis</p>
+                        <div className="text-center py-32 opacity-20 flex flex-col items-center gap-6">
+                            <div className="p-6 rounded-[2rem] bg-primary/5">
+                                <Sparkles className="h-16 w-16 text-primary" />
+                            </div>
+                            <p className="font-headline text-2xl font-black italic max-w-xs mx-auto">Mulailah Percakapan Puitis Pertama Anda</p>
                         </div>
                     ) : (
                         <AnimatePresence initial={false}>
                             {messageGroups.map((item) => {
                             if ('type' in item && item.type === 'date_marker') {
                                 return (
-                                <div key={item.id} className="flex items-center justify-center my-10 select-none">
+                                <div key={item.id} className="flex items-center justify-center my-12 select-none">
                                     <div className="h-[1px] bg-gradient-to-r from-transparent via-border to-transparent flex-1" />
-                                    <span className="text-[10px] uppercase tracking-[0.3em] font-black text-muted-foreground/50 px-6">
+                                    <span className="text-[9px] uppercase tracking-[0.4em] font-black text-muted-foreground/40 px-8 bg-background relative z-10">
                                         {isToday(item.date) ? 'Hari Ini' : isYesterday(item.date) ? 'Kemarin' : format(item.date, 'd MMM yyyy', { locale: id })}
                                     </span>
                                     <div className="h-[1px] bg-gradient-to-r from-transparent via-border to-transparent flex-1" />
@@ -377,23 +416,34 @@ export default function MessagesPage() {
                             const msg = item as ChatMessage;
                             const isSender = msg.senderId === currentUser?.uid;
                             return (
-                                <motion.div key={msg.id} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className={cn("flex items-end gap-3", isSender ? "justify-end" : "justify-start")}>
+                                <motion.div 
+                                    key={msg.id} 
+                                    initial={{ opacity: 0, y: 20, scale: 0.95 }} 
+                                    animate={{ opacity: 1, y: 0, scale: 1 }} 
+                                    className={cn("flex items-end gap-3", isSender ? "justify-end" : "justify-start")}
+                                >
                                 {!isSender && (
-                                    <Avatar className="h-8 w-8 mb-1 shrink-0 border border-border/50">
+                                    <Avatar className="h-9 w-9 mb-1 shrink-0 border-2 border-background shadow-md">
                                         <AvatarImage src={otherParticipant?.photoURL} className="object-cover" />
                                         <AvatarFallback className="bg-primary/5 text-primary text-[10px] font-bold">{otherParticipant?.displayName.charAt(0)}</AvatarFallback>
                                     </Avatar>
                                 )}
-                                <div className="flex flex-col gap-1.5 max-w-[80%] md:max-w-[60%]">
+                                <div className={cn("flex flex-col gap-1.5 max-w-[85%] md:max-w-[70%]", isSender ? "items-end" : "items-start")}>
                                     <div className={cn(
-                                        "px-5 py-3 rounded-2xl shadow-sm text-sm leading-relaxed", 
+                                        "px-6 py-4 rounded-[1.75rem] shadow-sm text-[15px] leading-relaxed relative", 
                                         isSender 
-                                            ? "bg-primary text-white rounded-br-none shadow-primary/10" 
-                                            : "bg-card border border-border/50 rounded-bl-none"
+                                            ? "bg-primary text-white rounded-br-none shadow-primary/20 ring-1 ring-white/10" 
+                                            : "bg-card border border-border/50 rounded-bl-none shadow-black/5"
                                     )}>
-                                        <p className="whitespace-pre-wrap">{msg.text}</p>
+                                        <p className="whitespace-pre-wrap font-medium">{msg.text}</p>
+                                        
+                                        {/* Subtle message arrow tail */}
+                                        <div className={cn(
+                                            "absolute bottom-0 w-4 h-4",
+                                            isSender ? "-right-1 bg-primary [clip-path:polygon(0_0,100%_100%,0_100%)]" : "-left-1 bg-card border-l border-b border-border/50 [clip-path:polygon(100%_0,100%_100%,0_100%)]"
+                                        )} />
                                     </div>
-                                    <p className={cn("text-[8px] font-black uppercase opacity-40 px-1 tracking-tighter", isSender ? "text-right" : "text-left")}>
+                                    <p className={cn("text-[8px] font-black uppercase opacity-40 px-2 tracking-widest", isSender ? "text-right" : "text-left")}>
                                         {format(msg.createdAt.toDate(), 'HH:mm')}
                                     </p>
                                 </div>
@@ -408,13 +458,14 @@ export default function MessagesPage() {
               </div>
 
               {/* Input Area */}
-              <div className="p-6 border-t bg-background/95 backdrop-blur-md shrink-0 z-20 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+              <div className="p-6 border-t bg-background/95 backdrop-blur-md shrink-0 z-30 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.05)]">
                   <form onSubmit={handleSendMessage} className="relative flex items-end gap-4 max-w-5xl mx-auto">
                       <div className="relative flex-1 group">
+                        <div className="absolute -inset-1 bg-gradient-to-r from-primary/10 to-accent/10 rounded-[2rem] blur opacity-0 group-focus-within:opacity-100 transition-opacity" />
                         <Textarea 
                             ref={textareaRef}
-                            placeholder="Tulis inspirasi Anda di sini..." 
-                            className="w-full resize-none rounded-2xl border-none bg-muted/50 px-6 py-4 pr-14 min-h-[56px] max-h-40 focus-visible:ring-primary/20 shadow-inner text-sm leading-relaxed"
+                            placeholder="Tuangkan inspirasi Anda..." 
+                            className="relative w-full resize-none rounded-[1.75rem] border-none bg-muted/40 px-6 py-4 pr-16 min-h-[60px] max-h-40 focus-visible:ring-primary/20 focus-visible:bg-background transition-all shadow-inner text-sm leading-relaxed font-medium"
                             rows={1}
                             value={newMessage}
                             onChange={(e) => setNewMessage(e.target.value)}
@@ -422,12 +473,20 @@ export default function MessagesPage() {
                             disabled={isSending}
                         />
                         <div className="absolute right-2 bottom-2">
-                            <Button type="submit" size="icon" className="h-10 w-10 rounded-xl shadow-xl shadow-primary/20 transition-all active:scale-90" disabled={isSending || !newMessage.trim()}>
+                            <Button 
+                                type="submit" 
+                                size="icon" 
+                                className="h-11 w-11 rounded-[1.25rem] shadow-xl shadow-primary/30 transition-all active:scale-90 bg-primary hover:bg-primary/90" 
+                                disabled={isSending || !newMessage.trim()}
+                            >
                                 {isSending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5 ml-0.5"/>}
                             </Button>
                         </div>
                       </div>
                   </form>
+                  <div className="mt-3 flex justify-center opacity-30 pointer-events-none select-none">
+                      <p className="text-[8px] font-black uppercase tracking-[0.4em]">Elitera Secure Chat</p>
+                  </div>
               </div>
             </div>
           )}
