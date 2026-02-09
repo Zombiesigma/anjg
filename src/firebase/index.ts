@@ -33,7 +33,8 @@ export function initializeFirebase(): {
   return { firebaseApp, auth, firestore };
 }
 
-export { FirebaseProvider, FirebaseClientProvider } from './provider';
+export { FirebaseProvider } from './provider';
+export { FirebaseClientProvider } from './client-provider';
 export {
   useFirebase,
   useFirebaseApp,
