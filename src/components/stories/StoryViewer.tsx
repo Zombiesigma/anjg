@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, useDoc } from '@/firebase';
 import { doc, collection, serverTimestamp, writeBatch, increment } from 'firebase/firestore';
 import type { Story, StoryLike } from '@/lib/types';
-import { X, Heart, MessageSquare, Send as SendIcon, ChevronLeft, ChevronRight, Loader2, Eye } from 'lucide-react';
+import { X, Heart, MessageSquare, Send as SendIcon, ChevronLeft, ChevronRight, Loader2, Eye, Play } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatDistanceToNow } from 'date-fns';
 import { id } from 'date-fns/locale';
@@ -37,6 +37,7 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
   const [showViews, setShowViews] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const viewedStoriesInSession = useRef(new Set<string>());
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   // Group stories by author
   const storyGroups = useMemo(() => {
@@ -109,16 +110,19 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
     }
   };
   
-  // Auto-progression logic
+  // Auto-progression logic (Extended for videos)
   useEffect(() => {
     if (!isOpen || isPaused || showViews || showComments) return;
+
+    // Videos manage their own timing based on duration, but we fallback to 7s if not playing
+    if (currentStory?.type === 'video') return;
 
     const timer = setTimeout(() => {
       nextStory();
     }, 7000); 
 
     return () => clearTimeout(timer);
-  }, [storyIndex, authorIndex, isOpen, isPaused, showViews, showComments, nextStory]);
+  }, [storyIndex, authorIndex, isOpen, isPaused, showViews, showComments, nextStory, currentStory?.type]);
   
   // Track view logic
   useEffect(() => {
@@ -145,6 +149,20 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
       }).catch(err => console.warn("Failed to increment views", err));
     }
   }, [currentStory, currentUser, firestore, isOpen]);
+
+  // Video duration management
+  useEffect(() => {
+    if (currentStory?.type === 'video' && videoRef.current) {
+        const video = videoRef.current;
+        const handleEnded = () => {
+            if (!isPaused && !showViews && !showComments) {
+                nextStory();
+            }
+        };
+        video.addEventListener('ended', handleEnded);
+        return () => video.removeEventListener('ended', handleEnded);
+    }
+  }, [currentStory, nextStory, isPaused, showViews, showComments]);
 
   const likeRef = useMemo(() => (
     firestore && currentUser && currentStory ? doc(firestore, 'stories', currentStory.id, 'likes', currentUser.uid) : null
@@ -229,7 +247,7 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
         }}
       >
         <DialogTitle className="sr-only">Melihat Cerita {currentGroup.authorName}</DialogTitle>
-        <DialogDescription className="sr-only">Mode imersif untuk melihat momen puitis dalam bentuk teks atau gambar.</DialogDescription>
+        <DialogDescription className="sr-only">Mode imersif untuk melihat momen puitis dalam bentuk teks, gambar, atau video.</DialogDescription>
         
         <div className="relative w-full h-full flex items-center justify-center">
             {/* Desktop Navigation Hints */}
@@ -258,7 +276,7 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
             >
                 {/* Progress Bars */}
                 <div className="absolute top-4 left-4 right-4 flex items-center gap-1.5 z-[260]">
-                    {currentGroup.stories.map((_, i) => (
+                    {currentGroup.stories.map((s, i) => (
                         <div key={i} className="h-1 flex-1 bg-white/20 rounded-full overflow-hidden">
                             {i < storyIndex ? (
                                 <div className="h-full w-full bg-white"/>
@@ -267,7 +285,10 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
                                     className="h-full bg-white origin-left"
                                     initial={{ scaleX: 0 }}
                                     animate={(isPaused || showViews || showComments) ? { scaleX: 1 } : { scaleX: 1 }}
-                                    transition={{ duration: 7, ease: 'linear' }}
+                                    transition={{ 
+                                        duration: s.type === 'video' ? 15 : 7, // Placeholder duration for video, will be managed by events
+                                        ease: 'linear' 
+                                    }}
                                     key={`${authorIndex}-${i}`}
                                 />
                             ) : (
@@ -317,9 +338,21 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
                         transition={{ duration: 0.3 }}
                         className="w-full h-full flex flex-col items-center justify-center text-center overflow-hidden"
                     >
-                        {currentStory.type === 'image' ? (
+                        {currentStory.type === 'image' || currentStory.type === 'video' ? (
                             <div className="w-full h-full relative">
-                                <img src={currentStory.mediaUrl} alt="Konten Cerita" className="w-full h-full object-cover" />
+                                {currentStory.type === 'video' ? (
+                                    <video 
+                                        ref={videoRef}
+                                        src={currentStory.mediaUrl} 
+                                        className="w-full h-full object-cover" 
+                                        autoPlay 
+                                        muted 
+                                        playsInline 
+                                    />
+                                ) : (
+                                    <img src={currentStory.mediaUrl} alt="Konten Cerita" className="w-full h-full object-cover" />
+                                )}
+                                
                                 {currentStory.content && (
                                     <div className="absolute bottom-24 left-0 right-0 p-8 bg-gradient-to-t from-black/90 via-black/40 to-transparent">
                                         <p className="text-white text-lg font-bold drop-shadow-lg leading-relaxed">{currentStory.content}</p>

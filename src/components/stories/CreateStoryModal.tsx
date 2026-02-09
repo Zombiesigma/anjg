@@ -18,10 +18,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, X, Palette, Camera, Image as ImageIcon, Type, ArrowLeft, Sparkles, Send } from 'lucide-react';
+import { Loader2, X, Palette, Camera, Image as ImageIcon, Type, ArrowLeft, Sparkles, Send, Video, Film } from 'lucide-react';
 import type { User as AppUser } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { uploadFile } from '@/lib/uploader';
+import { uploadFile, uploadVideo } from '@/lib/uploader';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const storySchema = z.object({
@@ -45,7 +45,7 @@ const BACKGROUNDS = [
   "bg-gradient-to-br from-cyan-500 to-blue-700",
 ];
 
-type StoryMode = 'choice' | 'text' | 'camera' | 'preview';
+type StoryMode = 'choice' | 'text' | 'camera' | 'preview' | 'preview_video';
 
 export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: CreateStoryModalProps) {
   const firestore = useFirestore();
@@ -55,13 +55,14 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
   const [mode, setMode] = useState<StoryMode>('choice');
   const [bgIndex, setBgIndex] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [capturedImage, setCapturedImage] = useState<string | null>(null);
-  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [capturedMedia, setCapturedMedia] = useState<string | null>(null);
+  const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [isCameraLoading, setIsCameraLoading] = useState(false);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<z.infer<typeof storySchema>>({
     resolver: zodResolver(storySchema),
@@ -82,8 +83,8 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
     stopCamera();
     setMode('choice');
     setBgIndex(0);
-    setCapturedImage(null);
-    setImageFile(null);
+    setCapturedMedia(null);
+    setMediaFile(null);
     setIsCameraLoading(false);
     form.reset();
   };
@@ -147,9 +148,9 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
       if (ctx) {
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
-        setCapturedImage(dataUrl);
+        setCapturedMedia(dataUrl);
         canvas.toBlob((blob) => {
-          if (blob) setImageFile(new File([blob], `story-${Date.now()}.jpg`, { type: 'image/jpeg' }));
+          if (blob) setMediaFile(new File([blob], `story-${Date.now()}.jpg`, { type: 'image/jpeg' }));
         }, 'image/jpeg', 0.9);
         setMode('preview');
         stopCamera();
@@ -161,16 +162,30 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
-        toast({ variant: 'destructive', title: 'File Terlalu Besar', description: 'Maksimal 5MB.' });
+        toast({ variant: 'destructive', title: 'File Terlalu Besar', description: 'Maksimal 5MB untuk gambar.' });
         return;
       }
       const reader = new FileReader();
       reader.onload = (event) => {
-        setCapturedImage(event.target?.result as string);
-        setImageFile(file);
+        setCapturedMedia(event.target?.result as string);
+        setMediaFile(file);
         setMode('preview');
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleVideoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 20 * 1024 * 1024) {
+        toast({ variant: 'destructive', title: 'Video Terlalu Besar', description: 'Maksimal durasi singkat atau ukuran 20MB.' });
+        return;
+      }
+      const url = URL.createObjectURL(file);
+      setCapturedMedia(url);
+      setMediaFile(file);
+      setMode('preview_video');
     }
   };
 
@@ -179,8 +194,17 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
     setIsSubmitting(true);
     try {
       let mediaUrl = "";
-      const type = imageFile ? 'image' : 'text';
-      if (imageFile) mediaUrl = await uploadFile(imageFile);
+      const type = mediaFile 
+        ? (mediaFile.type.startsWith('video') ? 'video' : 'image') 
+        : 'text';
+
+      if (mediaFile) {
+        if (type === 'video') {
+          mediaUrl = await uploadVideo(mediaFile);
+        } else {
+          mediaUrl = await uploadFile(mediaFile);
+        }
+      }
 
       await addDoc(collection(firestore, 'stories'), {
         type,
@@ -199,9 +223,9 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
       
       onClose();
       toast({ variant: 'success', title: "Terbit!", description: "Momen Anda telah dibagikan." });
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      toast({ variant: 'destructive', title: 'Gagal', description: 'Gagal menerbitkan cerita.' });
+      toast({ variant: 'destructive', title: 'Gagal', description: error.message || 'Gagal menerbitkan cerita.' });
     } finally {
       setIsSubmitting(false);
     }
@@ -274,25 +298,40 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
                                 <div className="p-3 rounded-2xl bg-primary/20 text-primary group-hover:scale-110 transition-transform"><Type className="h-6 w-6" /></div>
                                 Teks Puitis
                             </Button>
+                            
                             <Button 
                                 variant="outline" 
                                 size="lg" 
-                                className="h-20 rounded-[2rem] border-white/10 bg-white/5 text-white font-black text-lg gap-5 hover:bg-white/10 transition-all hover:border-accent/50 group"
-                                onClick={() => setMode('camera')}
+                                className="h-20 rounded-[2rem] border-white/10 bg-white/5 text-white font-black text-lg gap-5 hover:bg-white/10 transition-all hover:border-indigo-500/50 group"
+                                onClick={() => videoInputRef.current?.click()}
                             >
-                                <div className="p-3 rounded-2xl bg-accent/20 text-accent group-hover:scale-110 transition-transform"><Camera className="h-6 w-6" /></div>
-                                Kamera
+                                <div className="p-3 rounded-2xl bg-indigo-500/20 text-indigo-400 group-hover:scale-110 transition-transform"><Video className="h-6 w-6" /></div>
+                                Video Momen
                             </Button>
-                            <Button 
-                                variant="outline" 
-                                size="lg" 
-                                className="h-20 rounded-[2rem] border-white/10 bg-white/5 text-white font-black text-lg gap-5 hover:bg-white/10 transition-all hover:border-emerald-500/50 group"
-                                onClick={() => fileInputRef.current?.click()}
-                            >
-                                <div className="p-3 rounded-2xl bg-emerald-500/20 text-emerald-400 group-hover:scale-110 transition-transform"><ImageIcon className="h-6 w-6" /></div>
-                                Galeri
-                            </Button>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <Button 
+                                    variant="outline" 
+                                    size="lg" 
+                                    className="h-20 rounded-[2rem] border-white/10 bg-white/5 text-white font-black text-xs gap-3 hover:bg-white/10 transition-all hover:border-accent/50 group flex-col"
+                                    onClick={() => setMode('camera')}
+                                >
+                                    <Camera className="h-5 w-5 text-accent" />
+                                    Kamera
+                                </Button>
+                                <Button 
+                                    variant="outline" 
+                                    size="lg" 
+                                    className="h-20 rounded-[2rem] border-white/10 bg-white/5 text-white font-black text-xs gap-3 hover:bg-white/10 transition-all hover:border-emerald-500/50 group flex-col"
+                                    onClick={() => fileInputRef.current?.click()}
+                                >
+                                    <ImageIcon className="h-5 w-5 text-emerald-400" />
+                                    Foto Galeri
+                                </Button>
+                            </div>
+
                             <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileSelect} />
+                            <input type="file" ref={videoInputRef} className="hidden" accept="video/*" onChange={handleVideoSelect} />
                         </div>
                     </motion.div>
                 )}
@@ -357,7 +396,7 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
                     </motion.div>
                 )}
 
-                {mode === 'preview' && capturedImage && (
+                {(mode === 'preview' || mode === 'preview_video') && capturedMedia && (
                     <motion.div 
                         key="preview"
                         initial={{ opacity: 0, scale: 1.1 }}
@@ -365,7 +404,18 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
                         className="flex-1 bg-black relative flex flex-col"
                     >
                         <div className="flex-1 relative flex items-center justify-center p-2">
-                            <img src={capturedImage} alt="Captured" className="w-full h-full object-contain rounded-3xl" />
+                            {mode === 'preview_video' ? (
+                                <video src={capturedMedia} className="w-full h-full object-contain rounded-3xl" autoPlay loop muted playsInline />
+                            ) : (
+                                <img src={capturedMedia} alt="Captured" className="w-full h-full object-contain rounded-3xl" />
+                            )}
+                            
+                            <div className="absolute top-6 left-6">
+                                <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
+                                    {mode === 'preview_video' ? <Film className="h-3 w-3 text-indigo-400" /> : <ImageIcon className="h-3 w-3 text-emerald-400" />}
+                                    <span className="text-[8px] font-black text-white uppercase tracking-widest">{mode === 'preview_video' ? 'Video' : 'Gambar'}</span>
+                                </div>
+                            </div>
                         </div>
                         
                         <div className="p-6 bg-gradient-to-t from-black via-black/80 to-transparent pb-[max(2rem,env(safe-area-inset-bottom))] relative z-20">

@@ -1,6 +1,7 @@
 /**
  * @fileOverview Utilitas unggahan file Elitera yang ultra-resilient.
- * Menggunakan GitHub sebagai Storage Utama dan Catbox sebagai Failover.
+ * Menggunakan GitHub sebagai Storage Utama dan Catbox sebagai Failover untuk Gambar.
+ * Untuk Video, hanya menggunakan GitHub Storage.
  */
 
 /**
@@ -37,7 +38,7 @@ async function uploadToGithub(file: File): Promise<string> {
 }
 
 /**
- * PRIORITAS 2 (CADANGAN): Catbox via Secure Proxy
+ * CADANGAN GAMBAR: Catbox via Proxy
  */
 async function uploadToCatbox(file: File): Promise<string> {
   const formData = new FormData();
@@ -64,26 +65,41 @@ async function uploadToCatbox(file: File): Promise<string> {
 }
 
 /**
- * FUNGSI PUBLIK: uploadFile (Dengan Failover Multi-Storage)
- * Digunakan oleh komponen untuk mengunggah file.
+ * FUNGSI UNGGAL GAMBAR: uploadFile (Dengan Failover GitHub-Catbox)
  */
 export async function uploadFile(file: File): Promise<string> {
   if (file.size > 5 * 1024 * 1024) {
     throw new Error('Ukuran file terlalu besar (Maksimal 5MB).');
   }
 
-  // Langkah 1: Coba Unggah ke GitHub (Utama)
+  // Coba GitHub (Utama)
   try {
     return await uploadToGithub(file);
   } catch (err: any) {
-    console.warn('[Uploader] GitHub Storage gagal, mencoba cadangan Catbox:', err.message);
+    console.warn('[Uploader] GitHub gagal, mencoba cadangan Catbox:', err.message);
   }
 
-  // Langkah 2: Coba Unggah ke Catbox (Cadangan)
+  // Coba Catbox (Cadangan)
   try {
     return await uploadToCatbox(file);
   } catch (err: any) {
     console.error('[Uploader] Fatal: Seluruh sistem upload gagal!', err.message);
-    throw new Error('Gagal mengunggah file ke server. Harap periksa koneksi internet Anda atau coba lagi nanti.');
+    throw new Error('Gagal mengunggah file. Harap periksa koneksi internet Anda.');
+  }
+}
+
+/**
+ * FUNGSI UNGGAL VIDEO: uploadVideo (Eksklusif GitHub)
+ */
+export async function uploadVideo(file: File): Promise<string> {
+  if (file.size > 20 * 1024 * 1024) {
+    throw new Error('Ukuran video terlalu besar (Maksimal 20MB).');
+  }
+
+  try {
+    return await uploadToGithub(file);
+  } catch (err: any) {
+    console.error('[Uploader] Gagal mengunggah video ke GitHub:', err.message);
+    throw new Error('Gagal mengunggah video ke server GitHub. Video tidak mendukung failover Catbox.');
   }
 }

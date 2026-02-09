@@ -155,7 +155,7 @@ export type Follow = {
 
 export type Story = {
   id: string;
-  type: 'text' | 'image';
+  type: 'text' | 'image' | 'video';
   authorId: string;
   authorName: string;
   authorAvatarUrl: string;
