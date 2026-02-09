@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Logo } from '@/components/Logo';
-import { Github, Globe, Mail, Phone, Send, Sparkles, BookOpen, Users, Heart, ArrowRight } from 'lucide-react';
+import { Github, Globe, Mail, Phone, Send, Sparkles, BookOpen, Users, Heart, ArrowRight, Zap, ShieldCheck, Smartphone, Cpu } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const devPortfolio = "https://www.gunturpadilah.web.id/";
@@ -18,7 +18,7 @@ const devBio = "Seorang antusias literasi dan pengembang tumpukan penuh (full-st
 
 export default function AboutPage() {
   return (
-    <div className="max-w-5xl mx-auto space-y-24 pb-20 relative">
+    <div className="max-w-5xl mx-auto space-y-24 pb-32 relative">
       {/* Decorative Background */}
       <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-[120px] -z-10 pointer-events-none" />
       <div className="absolute bottom-40 left-0 w-72 h-72 bg-accent/5 rounded-full blur-[100px] -z-10 pointer-events-none" />
@@ -131,6 +131,62 @@ export default function AboutPage() {
         </Card>
       </motion.section>
 
+      {/* Technology Section */}
+      <motion.section 
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
+        className="space-y-12"
+      >
+        <div className="text-center space-y-4">
+            <h2 className="text-4xl font-headline font-black tracking-tight">Keajaiban di Balik <span className="text-primary italic">Kata</span></h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto font-medium">
+                Elitera dibangun di atas pondasi teknologi mutakhir untuk memastikan setiap imajinasi tersimpan abadi, aman, dan dapat diakses dengan secepat kilat.
+            </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+                { 
+                    icon: Zap, 
+                    title: "Next.js 15", 
+                    desc: "Framework web masa depan yang menjamin kecepatan akses luar biasa dan optimasi SEO terbaik bagi para penulis.",
+                    color: "text-blue-500",
+                    bg: "bg-blue-500/5"
+                },
+                { 
+                    icon: ShieldCheck, 
+                    title: "Firebase", 
+                    desc: "Infrastruktur Cloud dari Google yang menjaga keamanan akun dan menyinkronkan obrolan antar pujangga secara real-time.",
+                    color: "text-orange-500",
+                    bg: "bg-orange-500/5"
+                },
+                { 
+                    icon: Smartphone, 
+                    title: "Expo Native", 
+                    desc: "Teknologi inti aplikasi mobile kami, menghadirkan performa native yang mulus di genggaman Android maupun iOS Anda.",
+                    color: "text-indigo-500",
+                    bg: "bg-indigo-500/5"
+                },
+                { 
+                    icon: Cpu, 
+                    title: "Google Genkit", 
+                    desc: "Mesin kecerdasan buatan di balik Elitera AI, dirancang untuk menjadi rekan diskusi kreatif yang cerdas dan suportif.",
+                    color: "text-emerald-500",
+                    bg: "bg-emerald-500/5"
+                }
+            ].map((tech, i) => (
+                <Card key={i} className="border-none shadow-lg bg-card/50 backdrop-blur-sm rounded-[2rem] p-6 hover:shadow-xl transition-all duration-300">
+                    <div className={cn("p-3 rounded-2xl w-fit mb-4", tech.bg, tech.color)}>
+                        <tech.icon className="h-6 w-6" />
+                    </div>
+                    <h4 className="font-black text-lg mb-2">{tech.title}</h4>
+                    <p className="text-xs text-muted-foreground leading-relaxed font-medium">{tech.desc}</p>
+                </Card>
+            ))}
+        </div>
+      </motion.section>
+
       {/* Contact Section */}
       <section className="grid lg:grid-cols-12 gap-12 items-start">
         <div className="lg:col-span-5 space-y-8 pt-6">
@@ -165,7 +221,7 @@ export default function AboutPage() {
                 <div className="pt-6">
                     <Card className="bg-primary/5 border-primary/10 p-8 rounded-[2rem] text-center space-y-4">
                         <h4 className="font-black text-lg">Bawa Elitera di Genggaman</h4>
-                        <p className="text-sm text-muted-foreground">Unduh aplikasi Android untuk pengalaman yang lebih cepat dan notifikasi real-time.</p>
+                        <p className="text-sm text-muted-foreground">Unduh aplikasi Android yang dibangun dengan <strong>Expo Native</strong> untuk pengalaman yang lebih cepat dan notifikasi instan.</p>
                         <Button className="w-full rounded-xl font-bold shadow-lg shadow-primary/20">
                             Unduh Elitera.apk <ArrowRight className="ml-2 h-4 w-4" />
                         </Button>
