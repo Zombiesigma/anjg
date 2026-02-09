@@ -1,6 +1,6 @@
 /**
  * @fileOverview Utilitas untuk mengunggah file dengan sistem failover otomatis.
- * Alur: Proxy (Catbox/Litterbox/Uguu/Pomf/Quax) -> Fileditch Permanent.
+ * Alur: Proxy (Catbox/Litterbox/Uguu/Pomf/Quax) -> Fileditch Permanent Direct Link.
  */
 
 const BASE_PROXY_URL = 'https://uploader.himmel.web.id/api/upload';
@@ -25,39 +25,36 @@ function ensureHttps(url: string): string {
 }
 
 /**
- * Konversi link sementara atau mirror Fileditch menjadi link permanen tanpa token md5/expires.
- * Tautan permanen menggunakan domain up1.fileditch.com.
+ * Mengubah link preview/mirror Fileditch menjadi link direct CDN permanen.
+ * Target: https://up1.fileditch.com/[path]
  */
-function getPermanentFileditchLink(url: string): string {
+function getPermanentDirectLink(url: string): string {
   try {
     const cleanUrl = ensureHttps(url);
-    
+    const urlObj = new URL(cleanUrl);
+
     // Kasus 1: Tautan via file.php?f=/path/file.png
-    if (cleanUrl.includes("file.php")) {
-      const urlObj = new URL(cleanUrl);
-      const filePath = urlObj.searchParams.get('f');
-      if (filePath) {
-        return `https://up1.fileditch.com${filePath.startsWith('/') ? '' : '/'}${filePath}`;
-      }
+    const filePath = urlObj.searchParams.get('f');
+    if (filePath) {
+      return `https://up1.fileditch.com${filePath.startsWith('/') ? '' : '/'}${filePath}`;
     }
-    
-    // Kasus 2: Tautan mirror (thegumonmyshoe.me) atau tautan berparameter token
-    if (cleanUrl.includes("thegumonmyshoe.me") || cleanUrl.includes("fileditch.com")) {
-        const urlObj = new URL(cleanUrl);
-        // Ambil path saja untuk membuang query params (md5, expires, dll)
-        return `https://up1.fileditch.com${urlObj.pathname}`;
+
+    // Kasus 2: Tautan mirror atau dengan parameter expired (thegumonmyshoe.me, dll)
+    if (cleanUrl.includes("thegumonmyshoe.me") || cleanUrl.includes("fileditch")) {
+      // Kita ambil path-nya saja dan paksa ke domain up1.fileditch.com
+      return `https://up1.fileditch.com${urlObj.pathname}`;
     }
-    
+
     return cleanUrl;
   } catch (e) {
-    console.warn("[Uploader] Gagal membersihkan URL Fileditch:", e);
+    console.warn("[Uploader] Gagal mentransformasi URL Fileditch:", e);
     return url;
   }
 }
 
 /**
- * Mencoba mengunggah ke Fileditch (Limit besar, tanpa API Key).
- * Menghasilkan tautan permanen yang bertahan selamanya.
+ * Mencoba mengunggah ke Fileditch (Limit 15GB, Tanpa API Key).
+ * Output otomatis diubah menjadi Direct Link Permanen.
  */
 async function uploadToFileditch(file: File): Promise<string> {
   const formData = new FormData();
@@ -77,11 +74,12 @@ async function uploadToFileditch(file: File): Promise<string> {
 
     const data = await response.json();
     if (data.success && data.files && data.files.length > 0) {
+      const rawUrl = data.files[0].url;
       console.log("[Uploader] Berhasil mengunggah ke Fileditch.");
-      // Transformasi ke tautan permanen CDN sebelum dikembalikan
-      return getPermanentFileditchLink(data.files[0].url);
+      // Intersepsi dan ubah ke link permanen
+      return getPermanentDirectLink(rawUrl);
     }
-    throw new Error("Gagal mendapatkan respons valid dari Fileditch");
+    throw new Error("Respons Fileditch tidak valid");
   } catch (error) {
     console.warn("[Uploader] Fileditch error:", error);
     throw error;
@@ -129,21 +127,21 @@ async function uploadViaProxy(file: File, serviceIndex: number = 0): Promise<str
 
 /**
  * Mengunggah file dengan sistem failover otomatis.
- * Strategi: Proxy (Layanan Ringan) -> Fileditch (Layanan Kapasitas Besar).
+ * Strategi: Proxy (Multi-Service) -> Fileditch (Permanent Direct Link).
  */
 export async function uploadFile(file: File): Promise<string> {
-  // 1. Upaya pertama: Gunakan jalur Proxy untuk Catbox/Uguu/Litterbox
+  // 1. Upaya pertama: Gunakan jalur Proxy (Catbox/Uguu/Litterbox)
   try {
     return await uploadViaProxy(file);
   } catch (proxyError) {
-    console.warn(`[Uploader] Seluruh layanan proxy gagal, mengalihkan ke Fileditch Permanent...`);
+    console.warn(`[Uploader] Seluruh layanan proxy gagal, mengalihkan ke Fileditch...`);
     
-    // 2. Upaya cadangan utama: Fileditch dengan transformasi link permanen
+    // 2. Upaya cadangan: Fileditch dengan transformasi link permanen otomatis
     try {
       return await uploadToFileditch(file);
     } catch (fileditchError) {
       console.error('[Uploader] Fatal: Seluruh sistem uploader gagal!', fileditchError);
-      throw new Error('Gagal mengunggah file. Harap periksa koneksi internet Anda atau coba file yang lebih kecil.');
+      throw new Error('Gagal mengunggah file ke semua penyedia layanan. Harap periksa ukuran file atau koneksi internet Anda.');
     }
   }
 }
