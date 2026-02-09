@@ -47,7 +47,7 @@ export function ReelsClient() {
 
   if (isLoading) {
     return (
-      <div className="h-[calc(100dvh-180px)] md:h-[calc(100dvh-144px)] flex flex-col items-center justify-center gap-6 bg-zinc-950 md:rounded-[2.5rem] overflow-hidden">
+      <div className="h-[calc(100dvh-130px)] md:h-[calc(100dvh-130px)] flex flex-col items-center justify-center gap-6 bg-zinc-950 md:rounded-[2.5rem] overflow-hidden">
         <div className="relative">
             <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full scale-150 animate-pulse" />
             <Loader2 className="h-12 w-12 animate-spin text-primary relative z-10" />
@@ -61,7 +61,7 @@ export function ReelsClient() {
   }
 
   return (
-    <div className="h-[calc(100dvh-180px)] md:h-[calc(100dvh-144px)] -mt-6 -mx-4 md:-mx-6 bg-black overflow-y-auto snap-y snap-mandatory no-scrollbar rounded-none md:rounded-[2.5rem] shadow-2xl relative scroll-smooth">
+    <div className="h-[calc(100dvh-130px)] md:h-[calc(100dvh-130px)] -mt-6 -mx-4 md:-mx-6 bg-black overflow-y-auto snap-y snap-mandatory no-scrollbar rounded-none md:rounded-[2.5rem] shadow-2xl relative scroll-smooth">
       
       {/* Floating Global Controls */}
       <div className="fixed top-24 left-6 right-6 z-[110] flex items-center justify-between pointer-events-none">
