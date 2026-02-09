@@ -247,9 +247,11 @@ export default function AboutPage() {
                     <Card className="bg-primary/5 border-primary/10 p-8 rounded-[2rem] text-center space-y-4">
                         <h4 className="font-black text-lg">Bawa Elitera di Genggaman</h4>
                         <p className="text-sm text-muted-foreground">Unduh aplikasi Android yang dibangun dengan <strong>Expo Native</strong> untuk pengalaman yang lebih cepat dan notifikasi instan.</p>
-                        <Button className="w-full rounded-xl font-bold shadow-lg shadow-primary/20">
-                            Unduh Elitera.apk <ArrowRight className="ml-2 h-4 w-4" />
-                        </Button>
+                        <a href="https://raw.githubusercontent.com/Zombiesigma/elitera-asset/main/elitera.apk" download="Elitera.apk">
+                            <Button className="w-full rounded-xl font-bold shadow-lg shadow-primary/20">
+                                Unduh Elitera.apk <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
+                        </a>
                     </Card>
                 </div>
             </div>
