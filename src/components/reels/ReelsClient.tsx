@@ -5,7 +5,7 @@ import { collection, query, orderBy, doc } from 'firebase/firestore';
 import { useMemo, useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import type { Reel, User as AppUser } from '@/lib/types';
-import { Loader2, Plus, Volume2, VolumeX, Sparkles, Film } from 'lucide-react';
+import { Loader2, Plus, Sparkles, Film } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CreateReelModal } from '@/components/reels/CreateReelModal';
 import { ReelItem } from '@/components/reels/ReelItem';
@@ -15,7 +15,7 @@ export function ReelsClient() {
   const firestore = useFirestore();
   const { user: currentUser } = useUser();
   const searchParams = useSearchParams();
-  const [isMuted, setIsMuted] = useState(false);
+  const [isMuted] = useState(false); // Default to unmuted, button removed
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const reelIdFromUrl = searchParams.get('id');
@@ -64,22 +64,14 @@ export function ReelsClient() {
     <div className="h-[calc(100dvh-64px)] -mt-6 -mx-4 md:-mx-6 bg-black overflow-y-auto snap-y snap-mandatory no-scrollbar rounded-none shadow-2xl relative scroll-smooth">
       
       {/* Floating Global Controls */}
-      <div className="fixed top-24 left-6 right-6 z-[110] flex items-center justify-between pointer-events-none">
+      <div className="fixed top-24 left-6 z-[110] flex items-center pointer-events-none">
           <motion.button 
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.9 }}
             onClick={() => setIsCreateModalOpen(true)}
-            className="pointer-events-auto bg-primary shadow-[0_10px_30px_rgba(59,130,246,0.5)] p-3.5 rounded-2xl text-white ring-1 ring-white/20 transition-all"
+            className="pointer-events-auto bg-white/5 backdrop-blur-2xl border border-white/10 p-3.5 rounded-2xl text-white/60 hover:text-white hover:bg-white/10 transition-all shadow-2xl"
           >
             <Plus className="h-6 w-6" />
-          </motion.button>
-
-          <motion.button 
-            whileTap={{ scale: 0.9 }}
-            onClick={() => setIsMuted(!isMuted)}
-            className="pointer-events-auto bg-black/40 backdrop-blur-xl border border-white/10 p-3.5 rounded-2xl text-white/80 hover:text-white transition-all shadow-2xl"
-          >
-            {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
           </motion.button>
       </div>
 
@@ -90,7 +82,7 @@ export function ReelsClient() {
                 key={reel.id} 
                 reel={reel} 
                 isMuted={isMuted} 
-                onToggleMute={() => setIsMuted(!isMuted)} 
+                onToggleMute={() => {}} // No-op since button is removed
             />
             ))
         ) : (
