@@ -1,6 +1,6 @@
 /**
- * @fileOverview Utilitas unggahan file Elitera yang disederhanakan.
- * Hanya menggunakan Catbox melalui Proxy aman.
+ * @fileOverview Utilitas unggahan file Elitera yang ultra-resilient.
+ * Menggunakan GitHub sebagai Storage Utama dan Catbox sebagai Failover.
  */
 
 /**
@@ -15,7 +15,29 @@ function ensureHttps(url: string): string {
 }
 
 /**
- * Fungsi Unggah Utama ke Catbox via Proxy
+ * PRIORITAS 1: GitHub via API Route Internal
+ */
+async function uploadToGithub(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch('/api/upload/github', {
+    method: 'POST',
+    body: formData,
+  });
+
+  const data = await response.json();
+  
+  if (data.success && data.url) {
+    console.log('[Uploader] Berhasil mengunggah ke GitHub Storage.');
+    return ensureHttps(data.url);
+  }
+  
+  throw new Error(data.error || 'GitHub Storage gagal.');
+}
+
+/**
+ * PRIORITAS 2 (CADANGAN): Catbox via Secure Proxy
  */
 async function uploadToCatbox(file: File): Promise<string> {
   const formData = new FormData();
@@ -42,7 +64,7 @@ async function uploadToCatbox(file: File): Promise<string> {
 }
 
 /**
- * FUNGSI PUBLIK: uploadFile
+ * FUNGSI PUBLIK: uploadFile (Dengan Failover Multi-Storage)
  * Digunakan oleh komponen untuk mengunggah file.
  */
 export async function uploadFile(file: File): Promise<string> {
@@ -50,10 +72,18 @@ export async function uploadFile(file: File): Promise<string> {
     throw new Error('Ukuran file terlalu besar (Maksimal 5MB).');
   }
 
+  // Langkah 1: Coba Unggah ke GitHub (Utama)
+  try {
+    return await uploadToGithub(file);
+  } catch (err: any) {
+    console.warn('[Uploader] GitHub Storage gagal, mencoba cadangan Catbox:', err.message);
+  }
+
+  // Langkah 2: Coba Unggah ke Catbox (Cadangan)
   try {
     return await uploadToCatbox(file);
   } catch (err: any) {
-    console.error('[Uploader] Gagal mengunggah:', err.message);
-    throw new Error('Gagal mengunggah file ke server. Harap periksa koneksi internet Anda.');
+    console.error('[Uploader] Fatal: Seluruh sistem upload gagal!', err.message);
+    throw new Error('Gagal mengunggah file ke server. Harap periksa koneksi internet Anda atau coba lagi nanti.');
   }
 }
