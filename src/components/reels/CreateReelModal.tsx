@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -19,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, X, ArrowLeft, Sparkles, Send, Video, Film, Trash2 } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { User as AppUser } from '@/lib/types';
 import { uploadVideo } from '@/lib/uploader';
 import { motion, AnimatePresence } from 'framer-motion';
