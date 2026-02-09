@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Logo } from '@/components/Logo';
 import { Github, Globe, Mail, Phone, Send, Sparkles, BookOpen, Users, Heart, ArrowRight, Zap, ShieldCheck, Smartphone, Cpu } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 const devPortfolio = "https://www.gunturpadilah.web.id/";
 const devImage = "https://www.gunturpadilah.web.id/pp.jpg";
@@ -114,7 +115,7 @@ export default function AboutPage() {
                         </p>
                     </div>
 
-                    <div className="flex flex-wrap gap-4">
+                    <div className="flex wrap gap-4">
                         <a href={devPortfolio} target="_blank" rel="noopener noreferrer">
                             <Button className="rounded-full px-8 h-12 font-bold bg-white text-zinc-900 hover:bg-zinc-200">
                                 <Globe className="mr-2 h-4 w-4" /> Portofolio
