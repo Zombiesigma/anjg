@@ -2,30 +2,125 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Aturan global untuk memfasilitasi pengembangan cepat
-    match /{allPaths=**} {
-      allow read, write: if request.auth != null;
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
     }
     
-    // Aturan spesifik untuk Reels guna memastikan izin list/get aman
-    match /reels/{reelId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == request.resource.data.authorId;
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Aturan global sebagai fallback untuk menjamin pengembangan lancar
+    match /{allPaths=**} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Profil Pengguna
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId);
+      
+      match /favorites/{bookId} {
+        allow read, write: if isOwner(userId);
+      }
+      
+      match /notifications/{notifId} {
+        allow read, write: if isOwner(userId);
+      }
+      
+      match /followers/{followerId} {
+        allow read: if isAuthenticated();
+        allow write: if isAuthenticated();
+      }
+      
+      match /following/{followedId} {
+        allow read: if isAuthenticated();
+        allow write: if isOwner(userId);
+      }
+    }
+
+    // Buku & Bab
+    match /books/{bookId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+      
+      match /chapters/{chapterId} {
+        allow read: if isAuthenticated();
+        allow write: if isAuthenticated();
+      }
       
       match /comments/{commentId} {
-        allow read: if request.auth != null;
-        allow write: if request.auth != null;
+        allow read: if isAuthenticated();
+        allow write: if isAuthenticated();
+        
+        match /replies/{replyId} {
+          allow read, write: if isAuthenticated();
+        }
+        
+        match /likes/{userId} {
+          allow read: if isAuthenticated();
+          allow write: if isOwner(userId);
+        }
+      }
+    }
+
+    // Reels (Video Permanen)
+    match /reels/{reelId} {
+      allow read: if isAuthenticated();
+      // Mengizinkan penulis edit semua, pembaca hanya update field interaksi lewat increment
+      allow write: if isAuthenticated();
+      
+      match /comments/{commentId} {
+        allow read, write: if isAuthenticated();
       }
       
       match /likes/{userId} {
-        allow read: if request.auth != null;
-        allow write: if request.auth != null && request.auth.uid == userId;
+        allow read: if isAuthenticated();
+        allow write: if isOwner(userId);
       }
       
       match /views/{userId} {
-        allow read: if request.auth != null;
-        allow write: if request.auth != null && request.auth.uid == userId;
+        allow read: if isAuthenticated();
+        allow write: if isOwner(userId);
       }
+    }
+
+    // Cerita (Story 24 Jam)
+    match /stories/{storyId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+      
+      match /comments/{commentId} {
+        allow read, write: if isAuthenticated();
+      }
+      
+      match /likes/{userId} {
+        allow read: if isAuthenticated();
+        allow write: if isOwner(userId);
+      }
+      
+      match /views/{userId} {
+        allow read: if isAuthenticated();
+        allow write: if isOwner(userId);
+      }
+    }
+
+    // Pesan & Obrolan
+    match /chats/{chatId} {
+      allow read: if isAuthenticated() && (request.auth.uid in resource.data.participantUids);
+      allow write: if isAuthenticated();
+      
+      match /messages/{messageId} {
+        allow read: if isAuthenticated();
+        allow write: if isAuthenticated();
+      }
+    }
+    
+    // Permintaan Penulis
+    match /authorRequests/{requestId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
     }
   }
 }

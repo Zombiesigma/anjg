@@ -198,8 +198,8 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["text", "book_share"],
-          "description": "The type of the message. Defaults to 'text'."
+          "enum": ["text", "book_share", "reel_share"],
+          "description": "The type of the message."
         },
         "text": {
           "type": "string",
@@ -214,25 +214,22 @@
         },
         "book": {
           "type": "object",
-          "description": "Information about the shared book, if it's a 'book_share' type.",
+          "description": "Information about the shared book.",
           "properties": {
-            "id": {
-              "type": "string",
-              "description": "The ID of the shared book."
-            },
-            "title": {
-              "type": "string",
-              "description": "The title of the shared book."
-            },
-            "coverUrl": {
-              "type": "string",
-              "format": "uri",
-              "description": "The cover URL of the shared book."
-            },
-            "authorName": {
-              "type": "string",
-              "description": "The author's name of the shared book."
-            }
+            "id": { "type": "string" },
+            "title": { "type": "string" },
+            "coverUrl": { "type": "string", "format": "uri" },
+            "authorName": { "type": "string" }
+          }
+        },
+        "reel": {
+          "type": "object",
+          "description": "Information about the shared reel.",
+          "properties": {
+            "id": { "type": "string" },
+            "authorName": { "type": "string" },
+            "caption": { "type": "string" },
+            "videoUrl": { "type": "string", "format": "uri" }
           }
         }
       },
@@ -254,10 +251,10 @@
     },
     "Follow": {
       "title": "Follow",
-      "description": "Represents a follow relationship, indicating when a user followed another.",
+      "description": "Represents a follow relationship.",
       "type": "object",
       "properties": {
-        "userId": { "type": "string", "description": "The UID of the user who initiated the follow." },
+        "userId": { "type": "string" },
         "followedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["userId", "followedAt"]
@@ -272,7 +269,7 @@
           "enum": ["comment", "follow", "favorite", "author_request", "story_comment", "broadcast", "reel_like", "reel_comment"]
         },
         "text": { "type": "string" },
-        "link": { "type": "string", "description": "The URL to navigate to when the notification is clicked." },
+        "link": { "type": "string" },
         "actor": {
           "type": "object",
           "properties": {
@@ -282,7 +279,7 @@
           },
           "required": ["uid", "displayName"]
         },
-        "read": { "boolean": "boolean" },
+        "read": { "type": "boolean" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["type", "text", "link", "actor", "read", "createdAt"]
@@ -306,6 +303,38 @@
         "viewCount": { "type": "number" }
       },
       "required": ["authorId", "authorName", "authorAvatarUrl", "type", "createdAt"]
+    },
+    "StoryComment": {
+      "title": "Story Comment",
+      "description": "A comment on a story.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userAvatarUrl": { "type": "string", "format": "uri" },
+        "text": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "StoryLike": {
+      "title": "Story Like",
+      "description": "Represents a user's like on a story.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "likedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "StoryView": {
+      "title": "Story View",
+      "description": "Represents a user viewing a story.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userAvatarUrl": { "type": "string", "format": "uri" },
+        "viewedAt": { "type": "string", "format": "date-time" }
+      }
     },
     "Reel": {
       "title": "Reel",
@@ -337,6 +366,24 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["userId", "userName", "text", "createdAt"]
+    },
+    "ReelLike": {
+      "title": "Reel Like",
+      "description": "Represents a user's like on a reel.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "likedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "ReelView": {
+      "title": "Reel View",
+      "description": "Represents a user viewing a reel.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "viewedAt": { "type": "string", "format": "date-time" }
+      }
     }
   },
   "auth": {
@@ -380,7 +427,7 @@
       "description": "Stores replies for a specific comment."
     },
     "/books/{bookId}/comments/{commentId}/likes/{userId}": {
-      "schema": { "type": "object" },
+      "schema": { "$ref": "#/backend/entities/BookCommentLike" },
       "description": "Stores likes for a specific comment."
     },
     "/authorRequests/{requestId}": {
@@ -399,6 +446,18 @@
       "schema": { "$ref": "#/backend/entities/Story" },
       "description": "Stores user stories."
     },
+    "/stories/{storyId}/comments/{commentId}": {
+      "schema": { "$ref": "#/backend/entities/StoryComment" },
+      "description": "Comments on a story."
+    },
+    "/stories/{storyId}/likes/{userId}": {
+      "schema": { "$ref": "#/backend/entities/StoryLike" },
+      "description": "Likes on a story."
+    },
+    "/stories/{storyId}/views/{userId}": {
+      "schema": { "$ref": "#/backend/entities/StoryView" },
+      "description": "Views on a story."
+    },
     "/reels/{reelId}": {
       "schema": { "$ref": "#/backend/entities/Reel" },
       "description": "Stores permanent video reels."
@@ -408,11 +467,11 @@
       "description": "Stores comments for a reel."
     },
     "/reels/{reelId}/likes/{userId}": {
-      "schema": { "type": "object" },
+      "schema": { "$ref": "#/backend/entities/ReelLike" },
       "description": "Stores likes for a reel."
     },
     "/reels/{reelId}/views/{userId}": {
-      "schema": { "type": "object" },
+      "schema": { "$ref": "#/backend/entities/ReelView" },
       "description": "Stores views for a reel."
     }
   }
