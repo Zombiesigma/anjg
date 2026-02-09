@@ -190,7 +190,7 @@ export default function MessagesPage() {
   }, [chatThreads, searchQuery, currentUser?.uid]);
 
   return (
-    <div className="h-[calc(100dvh-theme(spacing.16)-4px)] md:h-[calc(100dvh-theme(spacing.20)-4px)] -mt-6 -mx-4 md:-mx-6 border rounded-lg overflow-hidden flex flex-col bg-background relative shadow-inner">
+    <div className="h-[calc(100dvh-180px)] md:h-[calc(100dvh-theme(spacing.20)-4px)] -mt-6 -mx-4 md:-mx-6 border rounded-lg overflow-hidden flex flex-col bg-background relative shadow-inner">
       <div className="grid grid-cols-12 flex-1 h-full overflow-hidden">
         
         {/* Sidebar: Chat List */}
@@ -458,8 +458,8 @@ export default function MessagesPage() {
                 </ScrollArea>
               </div>
 
-              {/* Input Area - Geser sedikit ke bawah dengan padding yang lebih subtil */}
-              <div className="p-4 md:p-6 border-t bg-background/95 backdrop-blur-md shrink-0 z-30 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.05)]">
+              {/* Input Area - Terangkat di atas Mobile Nav */}
+              <div className="p-4 md:p-6 border-t bg-background/95 backdrop-blur-md shrink-0 z-[60] pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-15px_40px_-15px_rgba(0,0,0,0.1)]">
                   <form onSubmit={handleSendMessage} className="relative flex items-end gap-4 max-w-5xl mx-auto">
                       <div className="relative flex-1 group">
                         <div className="absolute -inset-1 bg-gradient-to-r from-primary/10 to-accent/10 rounded-[2rem] blur opacity-0 group-focus-within:opacity-100 transition-opacity" />

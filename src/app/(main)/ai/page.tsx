@@ -21,9 +21,10 @@ const initialHistory: AiChatMessage[] = [
 ];
 
 export default function AiPage() {
-  // Menggunakan dvh (Dynamic Viewport Height) untuk akurasi di mobile
+  // Menggunakan dvh (Dynamic Viewport Height) dan kalkulasi yang lebih longgar untuk menghindari tabrakan dengan Mobile Nav
+  // 180px dihitung dari: Header (64px) + Mobile Nav Spacer (96px) + Padding Safe Area
   return (
-    <div className="h-[calc(100dvh-124px)] md:h-[calc(100dvh-144px)] -mt-6 -mx-4 md:-mx-6 border rounded-[2rem] overflow-hidden bg-background flex flex-col shadow-2xl relative">
+    <div className="h-[calc(100dvh-180px)] md:h-[calc(100dvh-144px)] -mt-6 -mx-4 md:-mx-6 border rounded-[2rem] overflow-hidden bg-background flex flex-col shadow-2xl relative">
         <SidebarProvider className="h-full overflow-hidden">
             <Sidebar collapsible="icon" className="border-r border-border/40 bg-muted/30">
                 <SidebarHeader className="p-6 border-b border-border/40 bg-background/50 backdrop-blur-sm">

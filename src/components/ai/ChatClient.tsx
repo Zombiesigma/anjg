@@ -224,8 +224,8 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
         </div>
       </ScrollArea>
 
-      {/* Area Input Premium */}
-      <div className="p-4 md:p-8 border-t border-border/40 bg-background/95 backdrop-blur-xl shrink-0 z-40 relative pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-15px_40px_-15px_rgba(0,0,0,0.05)]">
+      {/* Area Input Premium - Terangkat di atas Mobile Nav */}
+      <div className="p-4 md:p-8 border-t border-border/40 bg-background/95 backdrop-blur-xl shrink-0 z-[60] relative pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-[0_-15px_40px_-15px_rgba(0,0,0,0.1)]">
         <div className="max-w-3xl mx-auto relative">
             <form onSubmit={handleSubmit} className="relative flex items-end gap-4">
                 <div className="relative flex-1 group">
