@@ -1,6 +1,7 @@
 'use client';
 
-import { FirebaseProvider, initializeFirebase } from '@/firebase';
+import { FirebaseProvider } from './provider';
+import { initializeFirebase } from './index';
 
 export function FirebaseClientProvider({
   children,
