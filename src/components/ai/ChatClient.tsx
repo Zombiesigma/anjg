@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import type { FormEvent } from 'react';
-import { Bot, Send, Loader2, Sparkles, Lightbulb, HelpCircle, BookOpen } from "lucide-react";
+import { Bot, Send, Loader2, Sparkles, Lightbulb, HelpCircle, BookOpen, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -16,10 +16,10 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
 const SUGGESTIONS = [
-    { label: "Bantu ide plot fantasi", icon: Sparkles },
-    { label: "Cara jadi penulis Elitera", icon: BookOpen },
-    { label: "Tips mengatasi writer's block", icon: Lightbulb },
-    { label: "Cara kerja fitur Story", icon: HelpCircle },
+    { label: "Bantu ide plot fantasi", icon: Sparkles, color: "text-blue-500", bg: "bg-blue-500/5" },
+    { label: "Cara jadi penulis Elitera", icon: BookOpen, color: "text-orange-500", bg: "bg-orange-500/5" },
+    { label: "Tips mengatasi writer's block", icon: Lightbulb, color: "text-yellow-500", bg: "bg-yellow-500/5" },
+    { label: "Cara kerja fitur Story", icon: HelpCircle, color: "text-emerald-500", bg: "bg-emerald-500/5" },
 ];
 
 export function ChatClient({ history }: { history: AiChatMessage[] }) {
@@ -67,7 +67,7 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
       const result = await chatWithEliteraAI({ 
         message: text, 
         chatHistory,
-        userName: currentUser?.displayName || 'Teman Elitera',
+        userName: currentUser?.displayName || 'Pujangga Elitera',
       });
       
       const assistantMessage: AiChatMessage = {
@@ -80,7 +80,7 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
       console.error("Error with Elitera AI:", error);
       const errorMessage: AiChatMessage = {
         role: "model",
-        content: "Maaf, saya sedang mengalami kendala teknis. Bisakah kita coba lagi dalam beberapa saat?",
+        content: "Maaf, saya sedang mengalami gangguan sinyal inspirasi. Bisakah kita coba lagi sejenak?",
       };
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
@@ -93,37 +93,57 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
     handleSend(input);
   };
 
+  useEffect(() => {
+      if (textareaRef.current) {
+          textareaRef.current.style.height = 'auto';
+          textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 160)}px`;
+      }
+  }, [input]);
+
   return (
     <div className="flex flex-col h-full bg-background/50 overflow-hidden relative">
+      {/* Background Glows */}
+      <div className="absolute top-[-10%] left-[-10%] w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-64 h-64 bg-accent/5 rounded-full blur-3xl pointer-events-none" />
+
       {/* Area Pesan */}
-      <ScrollArea className="flex-1 min-h-0" ref={scrollAreaRef}>
-        <div className="max-w-3xl mx-auto p-4 md:p-8 space-y-8 pb-10">
+      <ScrollArea className="flex-1 min-h-0 relative z-10" ref={scrollAreaRef}>
+        <div className="max-w-3xl mx-auto p-6 md:p-10 space-y-10 pb-20">
           {messages.length <= 1 && !isLoading && (
             <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="py-10 text-center space-y-6"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="py-12 text-center space-y-10"
             >
-                <div className="inline-flex p-4 rounded-3xl bg-primary/5 border border-primary/10">
-                    <Bot className="h-12 w-12 text-primary animate-pulse" />
+                <div className="relative inline-flex mb-4">
+                    <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full scale-150 animate-pulse" />
+                    <div className="relative p-6 rounded-[2.5rem] bg-white dark:bg-zinc-900 border border-primary/10 shadow-2xl shadow-primary/10">
+                        <Bot className="h-16 w-16 text-primary" />
+                    </div>
                 </div>
-                <div className="space-y-2">
-                    <h2 className="text-2xl font-headline font-black">Halo, {currentUser?.displayName?.split(' ')[0]}!</h2>
-                    <p className="text-muted-foreground max-w-sm mx-auto text-sm leading-relaxed">
-                        Saya Elitera AI. Saya siap membantu menyusun plot, memberikan inspirasi menulis, atau menjawab pertanyaan Anda tentang Elitera.
+                
+                <div className="space-y-3">
+                    <h2 className="text-3xl md:text-4xl font-headline font-black tracking-tight">Halo, {currentUser?.displayName?.split(' ')[0]}!</h2>
+                    <p className="text-muted-foreground max-w-sm mx-auto text-base leading-relaxed font-medium italic">
+                        "Saya Elitera AI, rekan kreatif Anda. Ingin membangun plot, menghaluskan draf, atau sekadar berdiskusi sastra?"
                     </p>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-w-lg mx-auto">
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-xl mx-auto">
                     {SUGGESTIONS.map((item, i) => (
-                        <Button 
-                            key={i} 
-                            variant="outline" 
-                            className="justify-start h-auto py-3 px-4 rounded-xl hover:bg-primary/5 hover:border-primary/20 transition-all group"
+                        <motion.button 
+                            key={i}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.1 * i }}
                             onClick={() => handleSend(item.label)}
+                            className="flex items-center gap-4 p-4 rounded-2xl bg-card border border-border/50 hover:border-primary/30 hover:bg-primary/5 transition-all shadow-sm group text-left"
                         >
-                            <item.icon className="h-4 w-4 mr-3 text-primary/60 group-hover:text-primary transition-colors" />
-                            <span className="text-xs font-semibold">{item.label}</span>
-                        </Button>
+                            <div className={cn("p-2.5 rounded-xl transition-all group-hover:scale-110", item.bg, item.color)}>
+                                <item.icon className="h-5 w-5" />
+                            </div>
+                            <span className="text-xs font-black uppercase tracking-tight opacity-80 group-hover:opacity-100">{item.label}</span>
+                        </motion.button>
                     ))}
                 </div>
             </motion.div>
@@ -133,9 +153,9 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
             {messages.map((m, i) => (
               <motion.div
                 key={i}
-                initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                initial={{ opacity: 0, y: 20, scale: 0.98 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ duration: 0.3 }}
+                transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
                 className={cn(
                   "flex items-start gap-4",
                   m.role === "user" ? "flex-row-reverse" : "flex-row"
@@ -143,33 +163,41 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
               >
                 <div className="shrink-0 mt-1">
                     {m.role === "model" ? (
-                        <div className="h-9 w-9 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
-                            <Bot className="h-5 w-5 text-white" />
+                        <div className="h-10 w-10 rounded-2xl bg-primary flex items-center justify-center shadow-xl shadow-primary/20 ring-1 ring-white/20">
+                            <Bot className="h-6 w-6 text-white" />
                         </div>
                     ) : (
-                        <Avatar className="h-9 w-9 border-2 border-background shadow-md">
-                            <AvatarImage src={currentUser?.photoURL ?? ''} />
-                            <AvatarFallback className="bg-accent text-white font-bold">{currentUser?.displayName?.charAt(0) ?? 'U'}</AvatarFallback>
+                        <Avatar className="h-10 w-10 border-2 border-background shadow-xl">
+                            <AvatarImage src={currentUser?.photoURL ?? ''} className="object-cover" />
+                            <AvatarFallback className="bg-accent text-white font-black">{currentUser?.displayName?.charAt(0) ?? 'U'}</AvatarFallback>
                         </Avatar>
                     )}
                 </div>
                 
                 <div
                   className={cn(
-                    "max-w-[85%] md:max-w-[70%] p-4 rounded-2xl shadow-sm leading-relaxed",
+                    "max-w-[85%] md:max-w-[75%] p-5 md:p-6 rounded-[2rem] shadow-sm leading-relaxed relative",
                     m.role === "user"
-                      ? "bg-primary text-primary-foreground rounded-tr-none"
-                      : "bg-card border border-border/50 rounded-tl-none font-medium text-foreground/90"
+                      ? "bg-primary text-white rounded-tr-none shadow-primary/20 ring-1 ring-white/10"
+                      : "bg-card border border-border/50 rounded-tl-none font-medium"
                   )}
                 >
                   <div className={cn(
-                    "prose prose-sm max-w-none break-words dark:prose-invert prose-p:leading-relaxed prose-headings:font-headline prose-headings:mb-2 prose-headings:mt-4 first:prose-headings:mt-0 prose-pre:bg-muted prose-pre:text-muted-foreground",
-                    m.role === "user" ? "prose-invert text-primary-foreground" : "text-foreground/90"
+                    "prose prose-sm md:prose-base max-w-none break-words dark:prose-invert prose-p:leading-relaxed prose-headings:font-headline prose-headings:mb-2 prose-headings:mt-4 first:prose-headings:mt-0 prose-pre:bg-muted prose-pre:text-muted-foreground prose-blockquote:border-l-4 prose-blockquote:border-primary/30 prose-blockquote:bg-primary/5 prose-blockquote:py-2 prose-blockquote:px-4 prose-blockquote:rounded-r-xl",
+                    m.role === "user" ? "prose-invert text-white" : "text-foreground/90"
                   )}>
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
                       {m.content}
                     </ReactMarkdown>
                   </div>
+                  
+                  {/* Bubble Tail */}
+                  <div className={cn(
+                      "absolute top-0 w-4 h-4",
+                      m.role === "user" 
+                        ? "-right-1 bg-primary [clip-path:polygon(0_0,100%_0,0_100%)]" 
+                        : "-left-1 bg-card border-l border-t border-border/50 [clip-path:polygon(0_0,100%_0,100%_100%)]"
+                  )} />
                 </div>
               </motion.div>
             ))}
@@ -180,14 +208,14 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
                 animate={{ opacity: 1, x: 0 }}
                 className="flex items-start gap-4"
               >
-                <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <Bot className="h-5 w-5 text-primary animate-bounce" />
+                <div className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20">
+                    <Bot className="h-6 w-6 text-primary animate-bounce" />
                 </div>
-                <div className="bg-card border border-border/50 p-4 rounded-2xl rounded-tl-none shadow-sm">
-                    <div className="flex gap-1.5">
-                        <motion.span animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1 }} className="h-2 w-2 rounded-full bg-primary/40" />
-                        <motion.span animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1, delay: 0.2 }} className="h-2 w-2 rounded-full bg-primary/40" />
-                        <motion.span animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1, delay: 0.4 }} className="h-2 w-2 rounded-full bg-primary/40" />
+                <div className="bg-card border border-border/50 p-5 rounded-3xl rounded-tl-none shadow-sm shadow-black/5">
+                    <div className="flex gap-2">
+                        <motion.span animate={{ scale: [1, 1.5, 1], opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1 }} className="h-2 w-2 rounded-full bg-primary" />
+                        <motion.span animate={{ scale: [1, 1.5, 1], opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1, delay: 0.2 }} className="h-2 w-2 rounded-full bg-primary" />
+                        <motion.span animate={{ scale: [1, 1.5, 1], opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1, delay: 0.4 }} className="h-2 w-2 rounded-full bg-primary" />
                     </div>
                 </div>
               </motion.div>
@@ -196,17 +224,18 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
         </div>
       </ScrollArea>
 
-      {/* Area Input - Menggunakan padding lebih rendah untuk kenyamanan mobile */}
-      <div className="p-4 md:p-6 border-t bg-background shrink-0 z-40 shadow-up relative pb-[max(0.5rem,env(safe-area-inset-bottom))]">
-        <div className="max-w-3xl mx-auto">
-            <form onSubmit={handleSubmit} className="relative flex items-end gap-3">
+      {/* Area Input Premium */}
+      <div className="p-4 md:p-8 border-t border-border/40 bg-background/95 backdrop-blur-xl shrink-0 z-40 relative pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-15px_40px_-15px_rgba(0,0,0,0.05)]">
+        <div className="max-w-3xl mx-auto relative">
+            <form onSubmit={handleSubmit} className="relative flex items-end gap-4">
                 <div className="relative flex-1 group">
+                    <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-accent/20 rounded-[2rem] blur opacity-0 group-focus-within:opacity-100 transition-opacity duration-500" />
                     <Textarea
                         ref={textareaRef}
                         value={input}
                         onChange={handleInputChange}
-                        placeholder="Tanyakan sesuatu pada Elitera AI..."
-                        className="w-full resize-none rounded-2xl border-none bg-muted/50 px-5 py-4 pr-14 min-h-[56px] max-h-40 focus-visible:ring-primary/20 focus-visible:bg-muted/80 transition-all shadow-inner"
+                        placeholder="Tuangkan pertanyaan atau ide Anda..."
+                        className="relative w-full resize-none rounded-[1.75rem] border-none bg-muted/40 px-6 py-4 pr-16 min-h-[60px] max-h-40 focus-visible:ring-primary/20 focus-visible:bg-background transition-all shadow-inner text-base font-medium leading-relaxed"
                         onKeyDown={(e) => {
                             if (e.key === 'Enter' && !e.shiftKey) {
                                 e.preventDefault();
@@ -220,7 +249,7 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
                         <Button 
                             type="submit" 
                             size="icon" 
-                            className="h-10 w-10 rounded-xl shadow-lg transition-all active:scale-90" 
+                            className="h-11 w-11 rounded-[1.25rem] shadow-xl shadow-primary/30 transition-all active:scale-90 bg-primary hover:bg-primary/90" 
                             disabled={isLoading || !input.trim()}
                         >
                             {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
@@ -228,20 +257,19 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
                     </div>
                 </div>
             </form>
-            <div className="flex items-center justify-center gap-4 mt-2 opacity-30 select-none">
+            
+            <div className="flex items-center justify-center gap-4 mt-4 opacity-30 select-none">
                 <div className="h-px bg-border flex-1" />
-                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground whitespace-nowrap">
-                    Elitera Intelligence
-                </p>
+                <div className="flex items-center gap-2">
+                    <Sparkles className="h-2.5 w-2.5 text-primary" />
+                    <p className="text-[8px] font-black uppercase tracking-[0.4em] text-muted-foreground whitespace-nowrap">
+                        Elitera Intelligence v1.5
+                    </p>
+                </div>
                 <div className="h-px bg-border flex-1" />
             </div>
         </div>
       </div>
-      <style jsx global>{`
-        .shadow-up {
-            box-shadow: 0 -8px 20px -4px rgba(0, 0, 0, 0.05);
-        }
-      `}</style>
     </div>
   );
 }
