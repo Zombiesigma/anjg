@@ -48,12 +48,6 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'pixeldrain.com',
-        port: '',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
         hostname: 'up1.fileditch.com',
         port: '',
         pathname: '/**',
