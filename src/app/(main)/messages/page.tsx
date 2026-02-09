@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useFirestore, useUser, useCollection } from '@/firebase';
 import { collection, query, where, orderBy, doc, updateDoc, increment, documentId, writeBatch, serverTimestamp } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -431,12 +432,43 @@ export default function MessagesPage() {
                                 )}
                                 <div className={cn("flex flex-col gap-1.5 max-w-[85%] md:max-w-[70%]", isSender ? "items-end" : "items-start")}>
                                     <div className={cn(
-                                        "px-6 py-4 rounded-[1.75rem] shadow-sm text-[15px] leading-relaxed relative", 
+                                        "rounded-[1.75rem] shadow-sm text-[15px] leading-relaxed relative overflow-hidden", 
+                                        msg.type === 'text' ? "px-6 py-4" : "p-1",
                                         isSender 
                                             ? "bg-primary text-white rounded-br-none shadow-primary/20 ring-1 ring-white/10" 
                                             : "bg-card border border-border/50 rounded-bl-none shadow-black/5"
                                     )}>
-                                        <p className="whitespace-pre-wrap font-medium">{msg.text}</p>
+                                        {msg.type === 'text' && (
+                                            <p className="whitespace-pre-wrap font-medium">{msg.text}</p>
+                                        )}
+                                        {msg.type === 'book_share' && (
+                                            <Link href={`/books/${msg.book.id}`} className="block group/shared">
+                                                <div className={cn(
+                                                    "flex flex-col gap-2 min-w-[180px] sm:min-w-[240px] overflow-hidden rounded-2xl transition-all",
+                                                    isSender ? "bg-white/5 hover:bg-white/10" : "bg-muted/20 hover:bg-muted/40"
+                                                )}>
+                                                    <div className="aspect-[2/3] relative w-full h-40 sm:h-56">
+                                                        <Image 
+                                                            src={msg.book.coverUrl} 
+                                                            alt={msg.book.title} 
+                                                            fill 
+                                                            className="object-cover"
+                                                        />
+                                                        <div className="absolute inset-0 bg-black/40" />
+                                                        <div className="absolute bottom-3 left-3 right-3 text-white">
+                                                            <p className="font-black text-xs sm:text-sm line-clamp-2 leading-tight uppercase tracking-tight">{msg.book.title}</p>
+                                                            <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest mt-1 opacity-80">{msg.book.authorName}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="px-4 py-2 text-center">
+                                                        <span className={cn(
+                                                            "text-[8px] sm:text-[10px] font-black uppercase tracking-widest",
+                                                            isSender ? "text-white/60" : "text-primary"
+                                                        )}>Buka Karya</span>
+                                                    </div>
+                                                </div>
+                                            </Link>
+                                        )}
                                         
                                         {/* Subtle message arrow tail */}
                                         <div className={cn(
