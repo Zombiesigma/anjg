@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 /**
  * API Route untuk mengunggah file ke GitHub Repository (Hardcoded Config).
- * Menyimpan file di folder uploads/ dengan nama unik berbasis timestamp.
+ * Mendukung file hingga 20MB (Limit REST API GitHub).
  */
 
 const GITHUB_TOKEN = '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';
@@ -15,21 +15,28 @@ export async function POST(request: Request) {
     const file = formData.get('file') as File;
 
     if (!file) {
-      return NextResponse.json({ success: false, error: 'File tidak ditemukan.' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'File tidak ditemukan dalam permintaan.' }, { status: 400 });
     }
 
-    // Konversi file ke Base64 untuk GitHub API
+    // Validasi limit keras GitHub REST API
+    if (file.size > 20 * 1024 * 1024) {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'File terlalu besar untuk GitHub API (Maksimal 20MB).' 
+      }, { status: 413 });
+    }
+
+    // Konversi file ke Base64
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     const base64Content = buffer.toString('base64');
 
-    // Buat nama file unik
     const timestamp = Date.now();
     const cleanFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
     const fileName = `${timestamp}-${cleanFileName}`;
     const filePath = `uploads/${fileName}`;
 
-    // Tembak GitHub REST API
+    // Kirim ke GitHub dengan timeout yang panjang
     const response = await fetch(`https://api.github.com/repos/${GITHUB_REPO_OWNER}/${GITHUB_REPO_NAME}/contents/${filePath}`, {
       method: 'PUT',
       headers: {
@@ -43,6 +50,7 @@ export async function POST(request: Request) {
         content: base64Content,
         branch: 'main'
       }),
+      signal: AbortSignal.timeout(110000), // Timeout 110 detik untuk API GitHub
     });
 
     const data = await response.json();
@@ -51,7 +59,7 @@ export async function POST(request: Request) {
       console.error('[GitHub API Error]', data);
       return NextResponse.json({ 
         success: false, 
-        error: data.message || `GitHub gagal merespons (${response.status})` 
+        error: data.message || `GitHub gagal merespons dengan status ${response.status}` 
       }, { status: response.status });
     }
 
@@ -65,9 +73,13 @@ export async function POST(request: Request) {
 
   } catch (error: any) {
     console.error('[GitHub Route Fatal Error]', error.message);
+    let errorMessage = error.message;
+    if (error.name === 'TimeoutError') {
+      errorMessage = 'Koneksi ke GitHub terputus (Timeout). File mungkin terlalu besar untuk koneksi saat ini.';
+    }
     return NextResponse.json({ 
       success: false, 
-      error: `Internal Server Error: ${error.message}` 
+      error: `Kesalahan server internal: ${errorMessage}` 
     }, { status: 500 });
   }
 }

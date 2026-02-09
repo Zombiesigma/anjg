@@ -25,6 +25,7 @@ async function uploadToGithub(file: File): Promise<string> {
   const response = await fetch('/api/upload/github', {
     method: 'POST',
     body: formData,
+    signal: AbortSignal.timeout(120000), // Timeout 120 detik untuk klien
   });
 
   const data = await response.json();
@@ -34,7 +35,7 @@ async function uploadToGithub(file: File): Promise<string> {
     return ensureHttps(data.url);
   }
   
-  throw new Error(data.error || 'GitHub Storage gagal.');
+  throw new Error(data.error || 'GitHub Storage gagal merespons.');
 }
 
 /**
@@ -48,6 +49,7 @@ async function uploadToCatbox(file: File): Promise<string> {
   const response = await fetch('https://uploader.himmel.web.id/api/upload', {
     method: 'POST',
     body: formData,
+    signal: AbortSignal.timeout(60000),
   });
 
   if (!response.ok) {
@@ -65,7 +67,7 @@ async function uploadToCatbox(file: File): Promise<string> {
 }
 
 /**
- * FUNGSI UNGGAL GAMBAR: uploadFile (Dengan Failover GitHub-Catbox)
+ * FUNGSI UNGGAL GAMBAR: uploadFile (Failover GitHub-Catbox)
  */
 export async function uploadFile(file: File): Promise<string> {
   if (file.size > 5 * 1024 * 1024) {
@@ -84,7 +86,7 @@ export async function uploadFile(file: File): Promise<string> {
     return await uploadToCatbox(file);
   } catch (err: any) {
     console.error('[Uploader] Fatal: Seluruh sistem upload gagal!', err.message);
-    throw new Error('Gagal mengunggah file. Harap periksa koneksi internet Anda.');
+    throw new Error(`Gagal mengunggah file: ${err.message}. Harap periksa koneksi Anda.`);
   }
 }
 
@@ -100,6 +102,7 @@ export async function uploadVideo(file: File): Promise<string> {
     return await uploadToGithub(file);
   } catch (err: any) {
     console.error('[Uploader] Gagal mengunggah video ke GitHub:', err.message);
-    throw new Error('Gagal mengunggah video ke server GitHub. Video tidak mendukung failover Catbox.');
+    // Berikan pesan galat yang lebih spesifik ke UI
+    throw new Error(`Unggahan Video Gagal: ${err.message}. Layanan video tidak mendukung failover Catbox.`);
   }
 }
