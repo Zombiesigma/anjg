@@ -22,6 +22,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { User as AppUser } from '@/lib/types';
 import { uploadVideo } from '@/lib/uploader';
 import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 const reelSchema = z.object({
   caption: z.string().max(500, "Caption maksimal 500 karakter.").min(1, "Berikan sedikit deskripsi pada karya Anda."),
@@ -172,7 +173,7 @@ export function CreateReelModal({ isOpen, onClose, currentUserProfile }: CreateR
                             <div className="absolute inset-0 bg-primary/10 blur-3xl rounded-full animate-pulse" />
                             <Film className="h-20 w-20 text-primary relative z-10" />
                         </div>
-                        <div className="text-center space-y-3">
+                        <div className="text-center space-y-3 mb-4">
                             <h2 className="text-white text-4xl font-headline font-black tracking-tight">Karya <span className="text-primary italic">Video.</span></h2>
                             <p className="text-white/40 text-sm font-medium max-w-xs mx-auto">Bagikan rekaman inspiratif atau cuplikan proses kreatif Anda di panggung Reels.</p>
                         </div>
