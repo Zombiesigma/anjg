@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Loader2, Search, Check, Send, MessageSquare } from 'lucide-react';
+import { Loader2, Search, Check, Send, MessageSquare, Sparkles } from 'lucide-react';
 import { useMemo, useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
@@ -28,11 +28,13 @@ export function ShareBookDialog({ book, open, onOpenChange }: ShareBookDialogPro
     const [isSending, setIsSending] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
 
+    // Reset state when dialog closes
     useEffect(() => {
         if (!open) {
             const timer = setTimeout(() => {
                 setSelectedChatId(null);
                 setSearchTerm("");
+                // Fix potential pointer-events lock
                 document.body.style.pointerEvents = '';
             }, 300);
             return () => clearTimeout(timer);
@@ -50,7 +52,8 @@ export function ShareBookDialog({ book, open, onOpenChange }: ShareBookDialogPro
         if (!chatThreads) return [];
         return chatThreads.filter(chat => {
             const otherParticipant = chat.participants.find(p => p.uid !== currentUser?.uid);
-            return otherParticipant?.displayName.toLowerCase().includes(searchTerm.toLowerCase());
+            return otherParticipant?.displayName.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                   otherParticipant?.username.toLowerCase().includes(searchTerm.toLowerCase());
         });
     }, [chatThreads, currentUser, searchTerm]);
     
@@ -85,7 +88,7 @@ export function ShareBookDialog({ book, open, onOpenChange }: ShareBookDialogPro
             const chatDocRef = doc(firestore, 'chats', selectedChatId);
             batch.update(chatDocRef, {
                 lastMessage: {
-                    text: `📖 Membagikan buku: ${book.title}`,
+                    text: `📖 Membagikan karya: ${book.title}`,
                     senderId: currentUser.uid,
                     timestamp: serverTimestamp(),
                 },
@@ -99,14 +102,18 @@ export function ShareBookDialog({ book, open, onOpenChange }: ShareBookDialogPro
             setTimeout(() => {
                 toast({ 
                     variant: 'success',
-                    title: "Buku Berhasil Dikirim", 
+                    title: "Karya Terkirim", 
                     description: `"${book.title}" telah dibagikan ke ${otherParticipant.displayName}.` 
                 });
             }, 100);
 
         } catch (error) {
-            console.error(error);
-            toast({ variant: 'destructive', title: "Gagal membagikan buku." });
+            console.error("Share error:", error);
+            toast({ 
+                variant: 'destructive', 
+                title: "Gagal Membagikan",
+                description: "Terjadi kesalahan sistem saat mengirim pesan."
+            });
         } finally {
             setIsSending(false);
         }
@@ -115,45 +122,57 @@ export function ShareBookDialog({ book, open, onOpenChange }: ShareBookDialogPro
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent 
-                className="max-w-md w-[95vw] rounded-[2.5rem] border-none shadow-2xl p-0 overflow-hidden flex flex-col max-h-[85dvh]"
+                className="max-w-md w-[95vw] rounded-[2.5rem] border-none shadow-2xl p-0 overflow-hidden flex flex-col max-h-[85dvh] bg-background/95 backdrop-blur-xl"
                 onCloseAutoFocus={(e) => {
                     e.preventDefault();
                     document.body.style.pointerEvents = '';
                 }}
             >
-                <div className="p-8 bg-primary/5 border-b border-primary/10 shrink-0">
-                    <DialogHeader>
-                        <div className="flex items-center gap-4 mb-3">
-                            <div className="p-3 rounded-2xl bg-white shadow-sm text-primary">
+                {/* Header Premium */}
+                <div className="p-8 bg-gradient-to-br from-primary/10 via-accent/5 to-transparent border-b border-primary/10 shrink-0 relative overflow-hidden">
+                    <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary/10 rounded-full blur-3xl" />
+                    
+                    <DialogHeader className="relative z-10">
+                        <div className="flex items-center gap-4 mb-4">
+                            <div className="p-3.5 rounded-2xl bg-white dark:bg-zinc-900 shadow-xl shadow-primary/10 text-primary ring-1 ring-primary/20">
                                 <Send className="h-6 w-6" />
                             </div>
-                            <DialogTitle className="font-headline text-2xl font-black tracking-tight uppercase">Kirim Karya</DialogTitle>
+                            <div>
+                                <DialogTitle className="font-headline text-2xl font-black tracking-tight uppercase">Bagikan Karya</DialogTitle>
+                                <div className="flex items-center gap-1.5 mt-1">
+                                    <Sparkles className="h-3 w-3 text-primary animate-pulse" />
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-primary/60">Jalin Koneksi Literasi</span>
+                                </div>
+                            </div>
                         </div>
-                        <DialogDescription className="text-sm font-medium leading-relaxed">
-                            Bagikan <span className="font-black text-foreground">"{book.title}"</span> kepada teman atau penulis pilihan Anda.
+                        <DialogDescription className="text-sm font-medium leading-relaxed text-muted-foreground/80">
+                            Pilih rekan pujangga untuk menerima <span className="font-black text-foreground italic">"{book.title}"</span>.
                         </DialogDescription>
                     </DialogHeader>
                 </div>
 
                 <div className="flex-1 flex flex-col min-h-0 overflow-hidden p-6 space-y-6">
+                    {/* Search Bar */}
                     <div className="relative group shrink-0">
+                         <div className="absolute -inset-1 bg-gradient-to-r from-primary/10 to-accent/10 rounded-2xl blur opacity-0 group-focus-within:opacity-100 transition-opacity" />
                          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors z-10" />
                          <Input 
-                            placeholder="Cari obrolan..." 
-                            className="h-12 pl-11 rounded-2xl bg-muted/30 border-none focus-visible:ring-primary/20 transition-all shadow-inner" 
+                            placeholder="Cari nama atau username..." 
+                            className="relative h-12 pl-11 rounded-2xl bg-muted/30 border-none focus-visible:ring-primary/20 transition-all shadow-inner font-medium" 
                             value={searchTerm} 
                             onChange={(e) => setSearchTerm(e.target.value)} 
                          />
                     </div>
 
+                    {/* Chat List */}
                     <ScrollArea className="flex-1 px-1">
                         {isLoadingThreads ? (
-                            <div className="flex flex-col items-center justify-center py-16 gap-4 opacity-40">
+                            <div className="flex flex-col items-center justify-center py-20 gap-4 opacity-40">
                                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
                                 <p className="text-[10px] font-black uppercase tracking-widest">Sinkronisasi Kontak...</p>
                             </div>
                         ) : (
-                            <div className="flex flex-col gap-2">
+                            <div className="flex flex-col gap-2 pb-10">
                                 <AnimatePresence mode="popLayout">
                                     {filteredChats.map((chat, idx) => {
                                         const otherP = chat.participants.find(p => p.uid !== currentUser?.uid);
@@ -164,61 +183,102 @@ export function ShareBookDialog({ book, open, onOpenChange }: ShareBookDialogPro
                                             <motion.button 
                                                 key={chat.id}
                                                 layout
-                                                initial={{ opacity: 0, y: 10 }}
-                                                animate={{ opacity: 1, y: 0 }}
+                                                initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                exit={{ opacity: 0, scale: 0.95 }}
                                                 transition={{ delay: idx * 0.02 }}
                                                 onClick={() => setSelectedChatId(isSelected ? null : chat.id)} 
                                                 className={cn(
-                                                    "flex items-center gap-4 p-4 text-left rounded-[1.5rem] transition-all group relative",
+                                                    "flex items-center gap-4 p-4 text-left rounded-[1.75rem] transition-all group relative border-2",
                                                     isSelected 
-                                                        ? "bg-primary text-white shadow-xl shadow-primary/20 scale-[1.02]" 
-                                                        : "hover:bg-muted/50"
+                                                        ? "bg-primary text-white border-primary shadow-xl shadow-primary/20 scale-[1.02] z-10" 
+                                                        : "bg-card/50 border-transparent hover:bg-card hover:border-primary/10 hover:shadow-md"
                                                 )}
                                             >
-                                                <Avatar className="h-12 w-12 border-2 border-background shadow-md">
-                                                    <AvatarImage src={otherP.photoURL} alt={otherP.displayName} className="object-cover" />
-                                                    <AvatarFallback className="bg-primary/5 text-primary font-black">
-                                                        {otherP.displayName.charAt(0)}
-                                                    </AvatarFallback>
-                                                </Avatar>
+                                                <div className="relative">
+                                                    <Avatar className={cn(
+                                                        "h-14 w-14 border-2 transition-transform duration-500 group-hover:scale-105",
+                                                        isSelected ? "border-white/20" : "border-background"
+                                                    )}>
+                                                        <AvatarImage src={otherP.photoURL} alt={otherP.displayName} className="object-cover" />
+                                                        <AvatarFallback className="bg-primary/5 text-primary font-black">
+                                                            {otherP.displayName.charAt(0)}
+                                                        </AvatarFallback>
+                                                    </Avatar>
+                                                    {isSelected && (
+                                                        <motion.div 
+                                                            initial={{ scale: 0 }} 
+                                                            animate={{ scale: 1 }}
+                                                            className="absolute -bottom-1 -right-1 bg-white text-primary p-1 rounded-full shadow-lg ring-2 ring-primary"
+                                                        >
+                                                            <Check className="h-3 w-3" />
+                                                        </motion.div>
+                                                    )}
+                                                </div>
+                                                
                                                 <div className="flex-1 min-w-0">
                                                     <p className="font-black text-sm truncate">{otherP.displayName}</p>
                                                     <p className={cn(
-                                                        "text-[10px] font-bold uppercase tracking-widest mt-0.5",
+                                                        "text-[10px] font-bold uppercase tracking-widest mt-1",
                                                         isSelected ? "text-white/60" : "text-muted-foreground"
                                                     )}>@{otherP.username}</p>
                                                 </div>
+
                                                 {isSelected && (
-                                                    <div className="bg-white text-primary p-1 rounded-full shadow-lg">
-                                                        <Check className="h-3 w-3" />
-                                                    </div>
+                                                    <motion.div
+                                                        initial={{ opacity: 0, x: 10 }}
+                                                        animate={{ opacity: 1, x: 0 }}
+                                                        className="bg-white/20 px-3 py-1 rounded-full"
+                                                    >
+                                                        <span className="text-[10px] font-black uppercase">Terpilih</span>
+                                                    </motion.div>
                                                 )}
                                             </motion.button>
                                         )
                                     })}
                                 </AnimatePresence>
+                                
                                 {!isLoadingThreads && filteredChats.length === 0 && (
-                                    <div className="text-center py-20 opacity-30 flex flex-col items-center gap-4">
-                                        <MessageSquare className="h-12 w-12" />
-                                        <p className="text-xs font-bold uppercase tracking-widest">Kontak Kosong</p>
-                                    </div>
+                                    <motion.div 
+                                        initial={{ opacity: 0, scale: 0.9 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        className="text-center py-20 opacity-30 flex flex-col items-center gap-4"
+                                    >
+                                        <div className="p-6 rounded-full bg-muted">
+                                            <MessageSquare className="h-12 w-12" />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="text-sm font-black uppercase tracking-widest">Obrolan Tidak Ditemukan</p>
+                                            <p className="text-xs font-medium">Cari nama atau username lain.</p>
+                                        </div>
+                                    </motion.div>
                                 )}
                             </div>
                         )}
                     </ScrollArea>
                 </div>
 
-                <DialogFooter className="p-6 bg-muted/20 border-t border-border/50 shrink-0 mt-auto">
-                    <Button variant="ghost" onClick={() => onOpenChange(false)} className="rounded-full font-bold h-12 px-6">Batal</Button>
+                {/* Footer Actions */}
+                <DialogFooter className="p-6 bg-muted/20 border-t border-border/50 shrink-0 mt-auto flex flex-col sm:flex-row gap-3">
+                    <Button 
+                        variant="ghost" 
+                        onClick={() => onOpenChange(false)} 
+                        className="rounded-full font-bold h-12 px-8 hover:bg-background/50 transition-all"
+                    >
+                        Batal
+                    </Button>
                     <Button 
                         onClick={handleSend} 
                         disabled={!selectedChatId || isSending}
-                        className="rounded-full px-10 font-black shadow-xl shadow-primary/20 h-12"
+                        className="rounded-full px-10 font-black text-sm uppercase tracking-widest shadow-2xl shadow-primary/20 h-12 transition-all active:scale-95 group"
                     >
                         {isSending ? (
                             <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Mengirim...</>
                         ) : (
-                            <><Send className="mr-2 h-5 w-5" /> Bagikan Sekarang</>
+                            <>
+                                <Send className="mr-2 h-4 w-4 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" /> 
+                                Bagikan Sekarang
+                            </>
                         )}
                     </Button>
                 </DialogFooter>
