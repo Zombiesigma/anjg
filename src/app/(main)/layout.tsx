@@ -16,7 +16,7 @@ export default function MainAppLayout({
             {children}
           </div>
         </main>
-        <div className="h-24 md:hidden shrink-0" /> 
+        <div className="h-20 md:hidden shrink-0" /> 
         <MobileNav />
       </div>
     </ProtectedLayout>

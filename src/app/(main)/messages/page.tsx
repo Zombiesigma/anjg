@@ -191,7 +191,7 @@ export default function MessagesPage() {
   }, [chatThreads, searchQuery, currentUser?.uid]);
 
   return (
-    <div className="h-[calc(100dvh-130px)] md:h-[calc(100dvh-theme(spacing.20)-4px)] -mt-6 -mx-4 md:-mx-6 border rounded-lg overflow-hidden flex flex-col bg-background relative shadow-inner">
+    <div className="h-[calc(100dvh-120px)] md:h-[calc(100dvh-theme(spacing.20)-4px)] -mt-6 -mx-4 md:-mx-6 border rounded-lg overflow-hidden flex flex-col bg-background relative shadow-inner">
       <div className="grid grid-cols-12 flex-1 h-full overflow-hidden">
         
         {/* Sidebar: Chat List */}
@@ -313,8 +313,8 @@ export default function MessagesPage() {
         )}>
           {!selectedChatId ? (
             <div className="flex flex-col items-center justify-center h-full text-center p-12 bg-muted/5 relative">
-                <div className="absolute top-[-10%] left-[-10%] w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
-                <div className="absolute bottom-[-10%] right-[-10%] w-64 h-64 bg-accent/5 rounded-full blur-3xl pointer-events-none" />
+                <div className="absolute top-[-10%] left-[-10%] w-64 h-64 bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-64 h-64 bg-accent/5 rounded-full blur-[120px] pointer-events-none" />
                 
                 <motion.div 
                     initial={{ scale: 0.9, opacity: 0 }} 
@@ -549,7 +549,7 @@ export default function MessagesPage() {
                       </div>
                   </form>
                   <div className="mt-2 flex justify-center opacity-20 pointer-events-none select-none">
-                      <p className="text-[7px] font-black uppercase tracking-[0.4em]">Elitera Secure Chat</p>
+                      <p className="text-[7px] font-black uppercase tracking-0.4em]">Elitera Secure Chat</p>
                   </div>
               </div>
             </div>
