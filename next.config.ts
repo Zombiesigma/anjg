@@ -60,6 +60,12 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'thegumonmyshoe.me',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
         hostname: '**.uguu.se',
         port: '',
         pathname: '/**',

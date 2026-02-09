@@ -26,6 +26,7 @@ function ensureHttps(url: string): string {
 
 /**
  * Mencoba mengunggah ke Fileditch (Limit besar, tanpa API Key).
+ * Tautan Fileditch bersifat permanen dan bertahan selamanya.
  */
 async function uploadToFileditch(file: File): Promise<string> {
   const formData = new FormData();
@@ -46,6 +47,7 @@ async function uploadToFileditch(file: File): Promise<string> {
     const data = await response.json();
     if (data.success && data.files && data.files.length > 0) {
       console.log("[Uploader] Berhasil mengunggah ke Fileditch.");
+      // Fileditch menyediakan link permanen (Lasts Forever)
       return ensureHttps(data.files[0].url);
     }
     throw new Error("Gagal mendapatkan URL dari Fileditch");
