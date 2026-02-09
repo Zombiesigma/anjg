@@ -19,13 +19,17 @@ import {
   MessageCircle,
   Smartphone,
   CheckCircle2,
-  Lock,
-  Layers,
+  Clapperboard,
+  Heart,
+  Share2,
   Zap,
-  Star
+  Bell,
+  Eye,
+  Video
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 export default function GuidePage() {
   const sections = [
@@ -43,15 +47,41 @@ export default function GuidePage() {
         },
         { 
           q: "Personalisasi pengalaman membaca", 
-          a: "Saat berada di dalam halaman baca, klik ikon 'Gear' atau 'Settings' di header. Anda dapat menyesuaikan ukuran huruf agar nyaman di mata dan beralih antara Mode Terang atau Mode Gelap untuk pengalaman membaca yang lebih imersif di malam hari." 
+          a: "Saat berada di dalam halaman baca, klik ikon 'Settings' di header. Anda dapat menyesuaikan ukuran huruf (14px - 32px) agar nyaman di mata dan beralih antara Mode Terang atau Mode Gelap untuk pengalaman membaca yang lebih imersif." 
         },
         { 
           q: "Sistem Favorit & Koleksi", 
-          a: "Menekan ikon 'Hati' pada detail buku tidak hanya memberikan apresiasi kepada penulis, tetapi juga menyimpan buku tersebut ke dalam tab 'Favorit' di profil Anda. Ini memudahkan Anda untuk melanjutkan bacaan kapan saja tanpa harus mencari ulang." 
+          a: "Menekan ikon 'Hati' pada detail buku akan menyimpan karya tersebut ke dalam tab 'Favorit' di profil Anda. Ini memudahkan Anda untuk melanjutkan bacaan kapan saja tanpa harus mencari ulang dari awal." 
         },
         { 
-          q: "Berinteraksi di kolom komentar", 
-          a: "Elitera mendukung format Markdown sederhana di komentar. Gunakan **tebal** untuk penekanan atau > untuk mengutip bagian favorit dari bab tersebut. Pastikan ulasan Anda membangun dan menghargai jerih payah sang pujangga." 
+          q: "Berinteraksi dengan Markdown", 
+          a: "Elitera mendukung format Markdown di komentar. Gunakan **teks tebal** untuk penekanan, > untuk kutipan, atau `kode` untuk referensi teknis. Pastikan ulasan Anda membangun dan menghargai jerih payah sang pujangga." 
+        }
+      ]
+    },
+    {
+      id: "reels",
+      icon: Clapperboard,
+      title: "Ekosistem Elitera Reels",
+      description: "Momen puitis dalam format video pendek yang dinamis.",
+      color: "text-rose-500",
+      bg: "bg-rose-500/5",
+      content: [
+        { 
+          q: "Interaksi Cepat: Double-Tap to Like", 
+          a: "Saat menonton Reels, Anda dapat memberikan 'Like' secara instan dengan mengetuk layar video dua kali secara cepat. Animasi jantung akan muncul sebagai tanda apresiasi Anda telah terkirim." 
+        },
+        { 
+          q: "Diskusi & Balasan Bertingkat", 
+          a: "Kolom komentar Reels mendukung balasan bertingkat (nested replies). Anda bisa membalas komentar pengguna lain untuk membangun diskusi literasi yang lebih hidup. Setiap balasan akan memberikan notifikasi kepada pemilik komentar asli." 
+        },
+        { 
+          q: "Berbagi ke Luar Platform (Rich Cards)", 
+          a: "Gunakan tombol bagikan untuk mengirimkan video ke WhatsApp, Instagram, atau Twitter. Tautan yang Anda bagikan akan otomatis menampilkan 'Rich Card' premium berisi nama penulis dan caption video, sehingga terlihat menarik bagi teman Anda." 
+        },
+        { 
+          q: "Navigasi Snap Scrolling", 
+          a: "Halaman Reels menggunakan sistem 'Snap Scrolling'. Cukup geser ke atas atau bawah, dan layar akan otomatis mengunci pada video berikutnya untuk memastikan fokus penuh pada setiap mahakarya video." 
         }
       ]
     },
@@ -65,19 +95,19 @@ export default function GuidePage() {
       content: [
         { 
           q: "Langkah menjadi Penulis Terverifikasi", 
-          a: "Kunjungi halaman 'Daftar Penulis', lengkapi formulir dengan motivasi dan tautkan portofolio karya Anda (bisa berupa blog pribadi atau tulisan di platform lain). Tim kurasi kami akan meninjau kualitas narasi Anda dalam 1-3 hari kerja sebelum memberikan lencana penulis resmi." 
+          a: "Lengkapi formulir di halaman 'Daftar Penulis' dengan menyertakan motivasi dan tautan portofolio karya Anda. Tim kurasi kami akan meninjau kualitas narasi Anda dalam 1-3 hari kerja sebelum memberikan lencana penulis resmi." 
         },
         { 
-          q: "Manajemen Draf & Bab", 
-          a: "Setelah menjadi penulis, Anda dapat membuat buku baru. Setiap buku dimulai sebagai 'Draf' yang hanya bisa dilihat oleh Anda. Anda dapat menyusun bab demi bab secara bertahap. Gunakan fitur 'Auto-save' kami yang menyimpan progres tulisan Anda setiap 15 detik." 
+          q: "Manajemen Draf & Auto-save", 
+          a: "Setiap bab yang Anda tulis akan disimpan secara otomatis setiap 15 detik ke Cloud. Anda tidak perlu khawatir kehilangan progres tulisan meskipun koneksi internet terputus secara tiba-tiba." 
         },
         { 
-          q: "Proses Publikasi & Moderasi", 
-          a: "Setelah draf selesai, klik tombol 'Publikasi'. Karya Anda akan masuk ke antrean moderasi. Admin Elitera akan memastikan konten tidak melanggar kebijakan komunitas. Setelah disetujui, buku Anda akan tampil secara publik dan pengikut Anda akan mendapatkan notifikasi instan." 
+          q: "Visibilitas: Publik vs Hanya Pengikut", 
+          a: "Anda dapat mengatur karya Anda sebagai 'Hanya Pengikut'. Jika dipilih, hanya pembaca yang mengikuti Anda yang dapat mengakses bab tersebut. Ini adalah cara terbaik untuk memberikan konten eksklusif kepada pendukung setia Anda." 
         },
         { 
-          q: "Memperbarui Karya yang Sudah Terbit", 
-          a: "Anda tetap bisa menambah bab atau mengedit isi buku setelah terbit. Namun, perubahan signifikan pada identitas buku (seperti judul atau sampul) mungkin akan memicu peninjauan ulang singkat untuk menjaga integritas data." 
+          q: "Notifikasi Otomatis untuk Pengikut", 
+          a: "Saat buku dengan status 'Hanya Pengikut' diterbitkan, sistem Elitera akan secara otomatis mengirimkan notifikasi khusus ke seluruh pengikut Anda. Mereka akan mendapatkan akses prioritas melalui tautan langsung di pusat notifikasi." 
         }
       ]
     },
@@ -90,41 +120,41 @@ export default function GuidePage() {
       bg: "bg-emerald-500/5",
       content: [
         { 
-          q: "Fitur Story (Momen Elitera)", 
-          a: "Story adalah tempat untuk membagikan pemikiran singkat, progres menulis, atau kutipan harian. Momen ini hanya bertahan selama 24 jam. Pujangga terverifikasi akan mendapatkan lingkaran gradien berwarna pada avatar mereka sebagai tanda adanya momen aktif." 
+          q: "Fitur Story (Momen 24 Jam)", 
+          a: "Story adalah tempat untuk membagikan pemikiran singkat, progres menulis, atau foto suasana meja kerja Anda. Momen ini hanya bertahan selama 24 jam. Penulis aktif akan memiliki lingkaran cahaya puitis pada avatar profil mereka." 
         },
         { 
-          q: "Pesan Langsung & Diskusi Privat", 
-          a: "Gunakan fitur Pesan untuk berdiskusi lebih mendalam tentang ide cerita secara pribadi. Anda bahkan bisa membagikan kartu buku langsung ke dalam obrolan agar rekan bicara Anda bisa langsung membacanya." 
+          q: "Pesan Langsung & Berbagi Karya", 
+          a: "Anda dapat membagikan 'Kartu Buku' atau 'Kartu Reels' langsung ke dalam obrolan pribadi. Ini memudahkan Anda untuk merekomendasikan bacaan kepada rekan obrolan tanpa harus keluar dari jendela pesan." 
         },
         { 
-          q: "Sistem Pengikut (Following)", 
-          a: "Dengan mengikuti seorang pujangga, Anda memastikan tidak akan ketinggalan karya terbaru mereka. Anda akan mendapatkan notifikasi prioritas setiap kali mereka menerbitkan bab baru atau membuat story." 
+          q: "Status Online & Last Seen", 
+          a: "Anda dapat melihat apakah seorang pujangga sedang aktif atau kapan terakhir kali mereka melihat naskah melalui indikator titik hijau di foto profil mereka." 
         }
       ]
     },
     {
       id: "ai",
       icon: Bot,
-      title: "Elitera AI Intelligence",
-      description: "Asisten kreatif di ujung jari Anda.",
+      title: "Elitera AI Intelligence v1.5",
+      description: "Rekan kreatif puitis di ujung jari Anda.",
       color: "text-primary",
       bg: "bg-primary/5",
       content: [
         { 
           q: "Apa yang bisa dilakukan Elitera AI?", 
-          a: "AI kami dilatih untuk memahami konteks literasi. Ia bisa membantu Anda menyusun kerangka plot, memberikan saran sinonim kata, mengatasi writer's block, hingga menjelaskan cara kerja fitur-fitur teknis di aplikasi Elitera." 
+          a: "AI kami dirancang untuk memahami konteks sastra Indonesia. Ia dapat membantu menyusun kerangka plot (outline), memberikan saran sinonim puitis, hingga merangkum bab yang panjang menjadi sinopsis yang memikat." 
         },
         { 
-          q: "Etika penggunaan AI dalam menulis", 
-          a: "Kami menyarankan penggunaan AI sebagai rekan diskusi (sparring partner) kreatif. Elitera menghargai keaslian suara penulis. Gunakan AI untuk memperkaya ide, namun biarkan 'jiwa' dan emosi tulisan tetap murni berasal dari jemari Anda." 
+          q: "Privasi & Etika Penggunaan AI", 
+          a: "Gunakan AI sebagai mitra diskusi, bukan pengganti suara asli Anda. Elitera menghargai keaslian ide. AI membantu Anda memperluas imajinasi, sementara emosi dan jiwa tulisan tetap berasal dari hati Anda sendiri." 
         }
       ]
     }
   ];
 
   return (
-    <div className="max-w-4xl mx-auto space-y-16 pb-32">
+    <div className="max-w-5xl mx-auto space-y-16 pb-32">
       {/* Hero Section */}
       <motion.section 
         initial={{ opacity: 0, y: 30 }}
@@ -137,31 +167,29 @@ export default function GuidePage() {
                 <HelpCircle className="h-12 w-12" />
             </div>
         </div>
-        <div className="space-y-2">
+        <div className="space-y-3">
             <h1 className="text-4xl md:text-6xl font-headline font-black tracking-tight leading-tight">
                 Pusat <span className="text-primary italic underline decoration-primary/20">Bantuan</span> Elitera
             </h1>
-            <p className="text-muted-foreground font-medium max-w-xl mx-auto text-lg leading-relaxed">
-                Segala hal yang perlu Anda ketahui untuk menavigasi semesta literasi digital modern kami secara profesional.
+            <p className="text-muted-foreground font-medium max-w-2xl mx-auto text-lg leading-relaxed">
+                Panduan lengkap untuk menavigasi ekosistem literasi digital modern—dari teks puitis hingga Reels yang imersif.
             </p>
         </div>
       </motion.section>
 
-      {/* Quick Stats/Features */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 px-2">
+      {/* Quick Access Icons */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-2">
         {[
-            { icon: ShieldCheck, label: "Keamanan Komunitas", desc: "Moderasi 24/7 untuk menjaga kualitas karya.", color: "text-emerald-500" },
-            { icon: Smartphone, label: "Akses Mobile", desc: "Optimal di genggaman untuk bacaan tanpa batas.", color: "text-blue-500" },
-            { icon: CheckCircle2, label: "Sistem Verifikasi", desc: "Pengakuan resmi bagi pujangga berbakat.", color: "text-orange-500" }
-        ].map((stat, i) => (
-            <Card key={i} className="border-none shadow-xl bg-card/50 backdrop-blur-sm rounded-[2rem] p-8 flex flex-col items-center text-center gap-4 group hover:-translate-y-1 transition-all duration-300">
-                <div className={cn("p-4 rounded-2xl bg-white dark:bg-zinc-900 shadow-inner group-hover:scale-110 transition-transform", stat.color)}>
-                    <stat.icon className="h-7 w-7" />
+            { icon: Video, label: "Reels Pro", color: "text-rose-500", bg: "bg-rose-500/5" },
+            { icon: Bell, label: "Notif Cerdas", color: "text-blue-500", bg: "bg-blue-500/5" },
+            { icon: Sparkles, label: "Momen Aktif", color: "text-emerald-500", bg: "bg-emerald-500/5" },
+            { icon: ShieldCheck, label: "Moderasi", color: "text-orange-500", bg: "bg-orange-500/5" }
+        ].map((item, i) => (
+            <Card key={i} className="border-none shadow-xl bg-card/50 backdrop-blur-sm rounded-3xl p-6 flex flex-col items-center gap-3 group hover:scale-[1.02] transition-all">
+                <div className={cn("p-3 rounded-2xl", item.bg, item.color)}>
+                    <item.icon className="h-6 w-6" />
                 </div>
-                <div className="space-y-1">
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60">{stat.label}</p>
-                    <p className="text-sm font-bold leading-relaxed">{stat.desc}</p>
-                </div>
+                <p className="text-[10px] font-black uppercase tracking-widest opacity-60">{item.label}</p>
             </Card>
         ))}
       </div>
@@ -169,7 +197,7 @@ export default function GuidePage() {
       {/* Main Accordion Guide */}
       <section className="space-y-10">
         <div className="flex items-center gap-4 px-4">
-            <h2 className="text-2xl font-headline font-black tracking-tight">Kategori <span className="text-primary">Panduan</span></h2>
+            <h2 className="text-2xl font-headline font-black tracking-tight">Kategori <span className="text-primary">Eksplorasi</span></h2>
             <div className="h-px bg-border flex-1" />
         </div>
 
@@ -217,30 +245,68 @@ export default function GuidePage() {
         </div>
       </section>
 
+      {/* Advanced Features Spotlight */}
+      <section className="space-y-10">
+        <div className="flex items-center gap-4 px-4">
+            <h2 className="text-2xl font-headline font-black tracking-tight">Fitur <span className="text-primary">Lanjutan</span></h2>
+            <div className="h-px bg-border flex-1" />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 px-2">
+            <Card className="bg-indigo-950 text-white rounded-[2.5rem] p-8 border-none shadow-2xl relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-10 opacity-5 group-hover:scale-110 transition-transform"><Share2 className="h-40 w-40" /></div>
+                <h4 className="text-xl font-headline font-black mb-4 flex items-center gap-3">
+                    <Share2 className="h-6 w-6 text-indigo-400" /> Smart Share Link
+                </h4>
+                <p className="text-indigo-200/70 text-sm leading-relaxed mb-6 font-medium">
+                    Tautan yang dibagikan secara eksternal telah dioptimalkan dengan Metadata OpenGraph. Hal ini memungkinkan platform media sosial populer untuk menampilkan karya Anda dengan pratinjau kartu yang elegan dan profesional.
+                </p>
+                <div className="flex items-center gap-2">
+                    <div className="h-1.5 w-1.5 rounded-full bg-indigo-400 animate-pulse" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400">Teknologi SEO Aktif</span>
+                </div>
+            </Card>
+
+            <Card className="bg-zinc-900 text-white rounded-[2.5rem] p-8 border-none shadow-2xl relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-10 opacity-5 group-hover:scale-110 transition-transform"><Zap className="h-40 w-40" /></div>
+                <h4 className="text-xl font-headline font-black mb-4 flex items-center gap-3">
+                    <Zap className="h-6 w-6 text-yellow-400" /> Real-time Sync
+                </h4>
+                <p className="text-zinc-400 text-sm leading-relaxed mb-6 font-medium">
+                    Elitera dibangun di atas infrastruktur real-time. Setiap 'Like', 'Komentar', atau 'Update Bab' akan tersinkronisasi dalam hitungan milidetik ke seluruh pengguna tanpa perlu memuat ulang halaman.
+                </p>
+                <div className="flex items-center gap-2">
+                    <div className="h-1.5 w-1.5 rounded-full bg-yellow-400 animate-pulse" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-yellow-400">Infrastruktur Elitera v2.0</span>
+                </div>
+            </Card>
+        </div>
+      </section>
+
       {/* Help Footer */}
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         whileInView={{ opacity: 1, scale: 1 }}
         viewport={{ once: true }}
       >
-        <Card className="bg-zinc-900 text-white border-none rounded-[3rem] p-10 md:p-16 text-center space-y-10 overflow-hidden relative shadow-2xl">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 rounded-full blur-[100px] pointer-events-none" />
-            <div className="absolute bottom-0 left-0 w-64 h-64 bg-accent/20 rounded-full blur-[100px] pointer-events-none" />
+        <Card className="bg-background border-2 border-primary/10 rounded-[3rem] p-10 md:p-16 text-center space-y-10 overflow-hidden relative shadow-2xl">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-64 h-64 bg-accent/5 rounded-full blur-[100px] pointer-events-none" />
             
             <div className="relative z-10 space-y-4">
-                <div className="bg-white/10 backdrop-blur-xl p-4 rounded-2xl w-fit mx-auto mb-6">
+                <div className="bg-primary/10 p-4 rounded-2xl w-fit mx-auto mb-6">
                     <MessageCircle className="h-8 w-8 text-primary" />
                 </div>
                 <h3 className="font-headline text-3xl md:text-4xl font-black">Masih Punya Pertanyaan?</h3>
-                <p className="text-zinc-400 max-w-xl mx-auto text-lg font-medium">Tim moderasi dan asisten AI kami selalu siap sedia membantu perjalanan sastra Anda.</p>
+                <p className="text-muted-foreground max-w-xl mx-auto text-lg font-medium">Tim moderasi dan asisten AI kami selalu siap sedia membantu perjalanan sastra Anda setiap harinya.</p>
             </div>
 
             <div className="relative z-10 flex flex-col sm:flex-row gap-4 justify-center items-center">
-                <Button asChild size="lg" variant="outline" className="rounded-full px-10 h-14 font-black text-sm uppercase tracking-widest border-white/20 hover:bg-white/10 hover:border-white/40 w-full sm:w-auto text-white">
-                    <a href="/about"><Users className="mr-2 h-5 w-5" /> Hubungi Tim</a>
+                <Button asChild size="lg" variant="outline" className="rounded-full px-10 h-14 font-black text-sm uppercase tracking-widest border-2 hover:bg-primary/5 w-full sm:w-auto">
+                    <Link href="/about"><Users className="mr-2 h-5 w-5" /> Hubungi Tim</Link>
                 </Button>
-                <Button asChild size="lg" className="rounded-full px-10 h-14 font-black text-sm uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all w-full sm:w-auto bg-primary">
-                    <a href="/ai"><Sparkles className="mr-2 h-5 w-5" /> Tanya Elitera AI</a>
+                <Button asChild size="lg" className="rounded-full px-10 h-14 font-black text-sm uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all w-full sm:w-auto">
+                    <Link href="/ai"><Bot className="mr-2 h-5 w-5" /> Tanya Elitera AI</Link>
                 </Button>
             </div>
         </Card>
