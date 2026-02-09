@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo, useState, Suspense } from 'react';
@@ -85,29 +84,29 @@ function UserListPageContent() {
     }, [allUsers]);
 
     return (
-        <div className="max-w-6xl mx-auto space-y-10 pb-20">
+        <div className="max-w-6xl mx-auto space-y-8 md:space-y-10 pb-20 px-1 overflow-x-hidden">
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
                     <div className="flex items-center gap-4 mb-4">
-                        <Button variant="outline" size="icon" className="rounded-full h-10 w-10 border-2 shadow-sm" asChild>
+                        <Button variant="outline" size="icon" className="rounded-full h-10 w-10 border-2 shadow-sm shrink-0" asChild>
                             <Link href="/admin"><ArrowLeft className="h-4 w-4" /></Link>
                         </Button>
                         <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
                             <Zap className="h-3 w-3 fill-current" />
-                            <span className="text-[10px] font-black uppercase tracking-widest">Otoritas Pusat</span>
+                            <span className="text-[9px] font-black uppercase tracking-widest">Otoritas</span>
                         </div>
                     </div>
-                    <h1 className="text-4xl md:text-5xl font-headline font-black tracking-tight leading-none">
+                    <h1 className="text-3xl md:text-5xl font-headline font-black tracking-tight leading-none">
                         Daftar <span className="text-primary italic">Pujangga</span>
                     </h1>
-                    <p className="text-muted-foreground mt-3 font-medium">Monitoring dan manajemen hak akses seluruh anggota Elitera.</p>
+                    <p className="text-sm text-muted-foreground mt-3 font-medium">Monitoring hak akses anggota Elitera.</p>
                 </motion.div>
 
                 <div className="relative w-full md:w-80 group">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors z-10" />
                     <Input 
-                        placeholder="Cari nama atau username..." 
-                        className="pl-11 h-12 rounded-2xl bg-card border-none ring-1 ring-border focus-visible:ring-2 focus-visible:ring-primary/20 transition-all shadow-sm"
+                        placeholder="Cari pujangga..." 
+                        className="pl-11 h-11 md:h-12 rounded-xl md:rounded-2xl bg-card border-none ring-1 ring-border focus-visible:ring-2 focus-visible:ring-primary/20 transition-all shadow-sm text-sm"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
@@ -116,20 +115,20 @@ function UserListPageContent() {
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
                 {[
-                    { label: 'Total Jiwa', value: stats.total, icon: Users, color: 'text-indigo-500', bg: 'bg-indigo-500/5' },
-                    { label: 'Tim Moderator', value: stats.admin, icon: ShieldCheck, color: 'text-rose-500', bg: 'bg-rose-500/5' },
-                    { label: 'Para Penulis', value: stats.penulis, icon: ExternalLink, color: 'text-emerald-500', bg: 'bg-emerald-500/5' },
+                    { label: 'Total', value: stats.total, icon: Users, color: 'text-indigo-500', bg: 'bg-indigo-500/5' },
+                    { label: 'Moderator', value: stats.admin, icon: ShieldCheck, color: 'text-rose-500', bg: 'bg-rose-500/5' },
+                    { label: 'Penulis', value: stats.penulis, icon: ExternalLink, color: 'text-emerald-500', bg: 'bg-emerald-500/5' },
                     { label: 'Pembaca', value: stats.pembaca, icon: UserCircle, color: 'text-blue-500', bg: 'bg-blue-500/5' },
                 ].map((item, i) => (
-                    <Card key={i} className="border-none shadow-xl rounded-[2.5rem] overflow-hidden bg-card/50 backdrop-blur-sm group hover:scale-[1.02] transition-all">
-                        <CardContent className="p-6">
+                    <Card key={i} className="border-none shadow-lg rounded-[1.5rem] md:rounded-[2.5rem] overflow-hidden bg-card/50 backdrop-blur-sm group active:scale-95 transition-all">
+                        <CardContent className="p-4 md:p-6">
                             <div className="flex items-start justify-between">
-                                <div className="space-y-1">
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{item.label}</p>
-                                    <p className="text-3xl font-black tracking-tighter">{isLoading ? '...' : item.value}</p>
+                                <div className="space-y-0.5 md:space-y-1">
+                                    <p className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-muted-foreground/60">{item.label}</p>
+                                    <p className="text-xl md:text-3xl font-black tracking-tighter">{isLoading ? '...' : item.value}</p>
                                 </div>
-                                <div className={cn("p-3 rounded-2xl shadow-inner transition-transform group-hover:rotate-6", item.bg, item.color)}>
-                                    <item.icon className="h-5 w-5" />
+                                <div className={cn("p-2 md:p-3 rounded-xl md:rounded-2xl shadow-inner", item.bg, item.color)}>
+                                    <item.icon className="h-4 w-4 md:h-5 md:w-5" />
                                 </div>
                             </div>
                         </CardContent>
@@ -137,14 +136,14 @@ function UserListPageContent() {
                 ))}
             </div>
 
-            <Card className="border-none shadow-2xl rounded-[2.5rem] overflow-hidden bg-card">
-                <CardHeader className="p-8 border-b bg-muted/30 flex flex-row items-center justify-between space-y-0">
+            <Card className="border-none shadow-xl rounded-[2rem] md:rounded-[2.5rem] overflow-hidden bg-card">
+                <CardHeader className="p-6 md:p-8 border-b bg-muted/30 flex flex-row items-center justify-between space-y-0">
                     <div>
-                        <CardTitle className="font-headline text-2xl font-black tracking-tight">Anggota Aktif</CardTitle>
-                        <CardDescription className="font-medium">Menampilkan {filteredUsers.length} profil terpilih.</CardDescription>
+                        <CardTitle className="font-headline text-xl md:text-2xl font-black tracking-tight">Anggota Aktif</CardTitle>
+                        <CardDescription className="font-medium text-xs md:text-sm">Menampilkan {filteredUsers.length} profil.</CardDescription>
                     </div>
-                    <Button variant="outline" className="rounded-full font-bold border-2 gap-2 h-10 px-5">
-                        <Filter className="h-4 w-4" /> Filter Peran
+                    <Button variant="outline" className="rounded-full font-bold border-2 gap-2 h-9 px-4 text-xs hidden sm:flex">
+                        <Filter className="h-4 w-4" /> Filter
                     </Button>
                 </CardHeader>
                 <CardContent className="p-0">
@@ -152,36 +151,36 @@ function UserListPageContent() {
                         <Table>
                             <TableHeader className="bg-muted/10">
                                 <TableRow className="hover:bg-transparent border-b-2">
-                                    <TableHead className="px-8 h-14 font-black uppercase text-[10px] tracking-widest text-muted-foreground/70">Identitas Publik</TableHead>
-                                    <TableHead className="h-14 font-black uppercase text-[10px] tracking-widest text-muted-foreground/70">Kontak Resmi</TableHead>
-                                    <TableHead className="h-14 font-black uppercase text-[10px] tracking-widest text-muted-foreground/70">Status & Peran</TableHead>
-                                    <TableHead className="h-14 font-black uppercase text-[10px] tracking-widest text-muted-foreground/70 text-right px-8">Aksi Cepat</TableHead>
+                                    <TableHead className="px-6 h-12 md:h-14 font-black uppercase text-[9px] tracking-widest text-muted-foreground/70 whitespace-nowrap">Identitas Publik</TableHead>
+                                    <TableHead className="h-12 md:h-14 font-black uppercase text-[9px] tracking-widest text-muted-foreground/70 whitespace-nowrap">Email</TableHead>
+                                    <TableHead className="h-12 md:h-14 font-black uppercase text-[9px] tracking-widest text-muted-foreground/70 whitespace-nowrap">Status</TableHead>
+                                    <TableHead className="h-12 md:h-14 font-black uppercase text-[9px] tracking-widest text-muted-foreground/70 text-right px-6 whitespace-nowrap">Kontrol</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {isLoading ? (
                                     Array.from({ length: 5 }).map((_, i) => (
                                         <TableRow key={i}>
-                                            <TableCell className="px-8 py-6">
-                                                <div className="flex items-center gap-4">
-                                                    <Skeleton className="h-12 w-12 rounded-full" />
-                                                    <div className="space-y-2">
-                                                        <Skeleton className="h-4 w-32 rounded-full" />
-                                                        <Skeleton className="h-3 w-20 rounded-full" />
+                                            <TableCell className="px-6 py-4">
+                                                <div className="flex items-center gap-3">
+                                                    <Skeleton className="h-10 w-10 rounded-full" />
+                                                    <div className="space-y-1.5">
+                                                        <Skeleton className="h-3 w-24 rounded-full" />
+                                                        <Skeleton className="h-2 w-16 rounded-full" />
                                                     </div>
                                                 </div>
                                             </TableCell>
-                                            <TableCell><Skeleton className="h-4 w-48 rounded-full" /></TableCell>
-                                            <TableCell><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
-                                            <TableCell className="text-right px-8"><Skeleton className="h-10 w-24 rounded-full ml-auto" /></TableCell>
+                                            <TableCell><Skeleton className="h-3 w-32 rounded-full" /></TableCell>
+                                            <TableCell><Skeleton className="h-5 w-16 rounded-full" /></TableCell>
+                                            <TableCell className="text-right px-6"><Skeleton className="h-8 w-20 rounded-full ml-auto" /></TableCell>
                                         </TableRow>
                                     ))
                                 ) : filteredUsers.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={4} className="h-80 text-center">
-                                            <div className="flex flex-col items-center gap-4 opacity-20">
-                                                <Users className="h-16 w-16" />
-                                                <p className="font-headline text-2xl font-bold">Data Tidak Tersedia</p>
+                                        <TableCell colSpan={4} className="h-64 text-center">
+                                            <div className="opacity-20 flex flex-col items-center gap-3">
+                                                <Users className="h-12 w-12" />
+                                                <p className="font-headline text-xl font-bold">Data Kosong</p>
                                             </div>
                                         </TableCell>
                                     </TableRow>
@@ -196,32 +195,32 @@ function UserListPageContent() {
                                                 transition={{ delay: index * 0.02 }}
                                                 className="hover:bg-muted/30 transition-all border-b last:border-0 group"
                                             >
-                                                <TableCell className="px-8 py-6">
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="relative">
-                                                            <Avatar className="h-12 w-12 border-2 border-background shadow-md transition-all group-hover:scale-110">
-                                                                <AvatarImage src={user.photoURL} alt={user.displayName} className="object-cover" />
-                                                                <AvatarFallback className="bg-primary/5 text-primary font-black">
+                                                <TableCell className="px-6 py-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="relative shrink-0">
+                                                            <Avatar className="h-10 w-10 border shadow-sm">
+                                                                <AvatarImage src={user.photoURL} className="object-cover" />
+                                                                <AvatarFallback className="bg-primary/5 text-primary font-black text-xs">
                                                                     {user.displayName.charAt(0)}
                                                                 </AvatarFallback>
                                                             </Avatar>
                                                             {user.status === 'online' && (
-                                                                <span className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full bg-green-500 border-2 border-card shadow-sm animate-pulse" />
+                                                                <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-card animate-pulse" />
                                                             )}
                                                         </div>
                                                         <div className="min-w-0">
-                                                            <p className="font-black text-sm group-hover:text-primary transition-colors truncate">{user.displayName}</p>
-                                                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">@{user.username}</p>
+                                                            <p className="font-black text-xs group-hover:text-primary transition-colors truncate">{user.displayName}</p>
+                                                            <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest">@{user.username}</p>
                                                         </div>
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>
-                                                    <p className="text-xs font-bold text-foreground/70">{user.email}</p>
+                                                    <p className="text-[10px] font-bold text-foreground/70 truncate max-w-[100px]">{user.email}</p>
                                                 </TableCell>
                                                 <TableCell>
                                                     <Badge 
                                                         className={cn(
-                                                            "rounded-full px-3 py-1 font-black text-[9px] uppercase tracking-tighter shadow-sm border-none",
+                                                            "rounded-full px-2 py-0.5 font-black text-[8px] uppercase tracking-tighter shadow-none border-none",
                                                             user.role === 'admin' ? "bg-rose-500 text-white" : 
                                                             user.role === 'penulis' ? "bg-primary text-white" : 
                                                             "bg-muted text-muted-foreground"
@@ -230,17 +229,12 @@ function UserListPageContent() {
                                                         {user.role}
                                                     </Badge>
                                                 </TableCell>
-                                                <TableCell className="text-right px-8">
-                                                    <div className="flex items-center justify-end gap-2">
-                                                        <Button variant="outline" size="sm" className="rounded-full font-black text-[10px] uppercase h-9 px-5 border-2 hover:bg-primary hover:text-white transition-all group/btn" asChild>
-                                                            <Link href={`/profile/${user.username.toLowerCase()}`}>
-                                                                Lihat Profil <ExternalLink className="ml-2 h-3 w-3 transition-transform group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5" />
-                                                            </Link>
-                                                        </Button>
-                                                        <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-muted-foreground hover:text-foreground">
-                                                            <MoreHorizontal className="h-4 w-4" />
-                                                        </Button>
-                                                    </div>
+                                                <TableCell className="text-right px-6">
+                                                    <Button variant="outline" size="sm" className="rounded-full font-black text-[9px] h-8 px-3 border-2 hover:bg-primary hover:text-white transition-all whitespace-nowrap" asChild>
+                                                        <Link href={`/profile/${user.username.toLowerCase()}`}>
+                                                            Profil <ChevronRight className="ml-1 h-2.5 w-2.5" />
+                                                        </Link>
+                                                    </Button>
                                                 </TableCell>
                                             </motion.tr>
                                         ))}
@@ -259,8 +253,8 @@ export default function UserListPage() {
   return (
     <Suspense fallback={
         <div className="flex flex-col items-center justify-center py-32 gap-6">
-            <Loader2 className="h-12 w-12 animate-spin text-primary/40" />
-            <p className="font-black uppercase text-xs tracking-[0.3em] text-muted-foreground/60 animate-pulse">Menghubungkan Otoritas...</p>
+            <Loader2 className="h-10 w-10 animate-spin text-primary/40" />
+            <p className="font-black uppercase text-[10px] tracking-[0.3em] text-muted-foreground/60">Menghubungkan Otoritas...</p>
         </div>
     }>
         <UserListPageContent />
