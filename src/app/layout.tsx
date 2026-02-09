@@ -5,7 +5,7 @@ import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 
 const productionUrl = 'https://www.litera.my.id/';
-const brandIcon = 'https://files.catbox.moe/arh8ho.jpg';
+const brandIcon = 'https://raw.githubusercontent.com/Zombiesigma/elitera-asset/main/uploads/1770617037724-WhatsApp_Image_2026-02-07_at_13.45.35.jpeg';
 
 export const metadata: Metadata = {
   metadataBase: new URL(productionUrl),

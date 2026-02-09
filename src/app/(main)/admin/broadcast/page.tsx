@@ -72,7 +72,7 @@ export default function BroadcastPage() {
         actor: {
           uid: currentUser.uid,
           displayName: 'Sistem Elitera',
-          photoURL: 'https://files.catbox.moe/arh8ho.jpg',
+          photoURL: 'https://raw.githubusercontent.com/Zombiesigma/elitera-asset/main/uploads/1770617037724-WhatsApp_Image_2026-02-07_at_13.45.35.jpeg',
         },
         read: false,
         createdAt: serverTimestamp(),
