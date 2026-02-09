@@ -17,14 +17,11 @@ import {
   ShieldCheck, 
   HelpCircle,
   MessageCircle,
-  Smartphone,
-  CheckCircle2,
   Clapperboard,
   Heart,
   Share2,
   Zap,
   Bell,
-  Eye,
   Video
 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -154,54 +151,54 @@ export default function GuidePage() {
   ];
 
   return (
-    <div className="max-w-5xl mx-auto space-y-16 pb-32">
+    <div className="max-w-5xl mx-auto space-y-12 md:space-y-16 pb-32 overflow-x-hidden">
       {/* Hero Section */}
       <motion.section 
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-center space-y-6 pt-10"
+        className="text-center space-y-6 pt-6 px-4"
       >
         <div className="mx-auto relative mb-6">
-            <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full scale-150 animate-pulse" />
-            <div className="relative bg-white dark:bg-zinc-900 p-6 rounded-[2.5rem] shadow-2xl text-primary w-fit mx-auto ring-1 ring-primary/10">
-                <HelpCircle className="h-12 w-12" />
+            <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full scale-150 animate-pulse pointer-events-none" />
+            <div className="relative bg-white dark:bg-zinc-900 p-5 md:p-6 rounded-[2rem] md:rounded-[2.5rem] shadow-2xl text-primary w-fit mx-auto ring-1 ring-primary/10">
+                <HelpCircle className="h-10 w-10 md:h-12 md:w-12" />
             </div>
         </div>
         <div className="space-y-3">
-            <h1 className="text-4xl md:text-6xl font-headline font-black tracking-tight leading-tight">
+            <h1 className="text-3xl md:text-6xl font-headline font-black tracking-tight leading-tight">
                 Pusat <span className="text-primary italic underline decoration-primary/20">Bantuan</span> Elitera
             </h1>
-            <p className="text-muted-foreground font-medium max-w-2xl mx-auto text-lg leading-relaxed">
+            <p className="text-muted-foreground font-medium max-w-2xl mx-auto text-sm md:text-lg leading-relaxed px-2">
                 Panduan lengkap untuk menavigasi ekosistem literasi digital modern—dari teks puitis hingga Reels yang imersif.
             </p>
         </div>
       </motion.section>
 
       {/* Quick Access Icons */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-2">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 px-4">
         {[
             { icon: Video, label: "Reels Pro", color: "text-rose-500", bg: "bg-rose-500/5" },
             { icon: Bell, label: "Notif Cerdas", color: "text-blue-500", bg: "bg-blue-500/5" },
             { icon: Sparkles, label: "Momen Aktif", color: "text-emerald-500", bg: "bg-emerald-500/5" },
             { icon: ShieldCheck, label: "Moderasi", color: "text-orange-500", bg: "bg-orange-500/5" }
         ].map((item, i) => (
-            <Card key={i} className="border-none shadow-xl bg-card/50 backdrop-blur-sm rounded-3xl p-6 flex flex-col items-center gap-3 group hover:scale-[1.02] transition-all">
-                <div className={cn("p-3 rounded-2xl", item.bg, item.color)}>
-                    <item.icon className="h-6 w-6" />
+            <Card key={i} className="border-none shadow-xl bg-card/50 backdrop-blur-sm rounded-[1.5rem] md:rounded-3xl p-4 md:p-6 flex flex-col items-center gap-3 group hover:scale-[1.02] transition-all">
+                <div className={cn("p-3 rounded-xl md:rounded-2xl", item.bg, item.color)}>
+                    <item.icon className="h-5 w-5 md:h-6 md:w-6" />
                 </div>
-                <p className="text-[10px] font-black uppercase tracking-widest opacity-60">{item.label}</p>
+                <p className="text-[8px] md:text-[10px] font-black uppercase tracking-widest opacity-60 text-center">{item.label}</p>
             </Card>
         ))}
       </div>
 
       {/* Main Accordion Guide */}
-      <section className="space-y-10">
-        <div className="flex items-center gap-4 px-4">
-            <h2 className="text-2xl font-headline font-black tracking-tight">Kategori <span className="text-primary">Eksplorasi</span></h2>
+      <section className="space-y-8 md:space-y-10">
+        <div className="flex items-center gap-4 px-6">
+            <h2 className="text-lg md:text-2xl font-headline font-black tracking-tight whitespace-nowrap">Kategori <span className="text-primary">Eksplorasi</span></h2>
             <div className="h-px bg-border flex-1" />
         </div>
 
-        <div className="grid gap-8">
+        <div className="grid gap-6 px-4">
             {sections.map((section, idx) => (
             <motion.div 
                 key={section.id}
@@ -210,29 +207,29 @@ export default function GuidePage() {
                 viewport={{ once: true }}
                 transition={{ delay: idx * 0.1 }}
             >
-                <Card className="border-none shadow-2xl overflow-hidden rounded-[2.5rem] bg-card/50 backdrop-blur-md border border-white/10">
-                    <CardHeader className="pb-4 bg-muted/20 border-b">
-                        <div className="flex items-center gap-5">
-                            <div className={cn("p-4 rounded-[1.5rem] shadow-xl", section.bg, section.color)}>
-                                <section.icon className="h-7 w-7" />
+                <Card className="border-none shadow-2xl overflow-hidden rounded-[2rem] md:rounded-[2.5rem] bg-card/50 backdrop-blur-md border border-white/10">
+                    <CardHeader className="p-5 md:p-8 bg-muted/20 border-b">
+                        <div className="flex items-center gap-4 md:gap-5">
+                            <div className={cn("p-3.5 md:p-4 rounded-[1.25rem] md:rounded-[1.5rem] shadow-xl shrink-0", section.bg, section.color)}>
+                                <section.icon className="h-6 w-6 md:h-7 md:w-7" />
                             </div>
                             <div>
-                                <CardTitle className="font-headline text-2xl font-black">{section.title}</CardTitle>
-                                <CardDescription className="font-medium text-sm mt-1">{section.description}</CardDescription>
+                                <CardTitle className="font-headline text-lg md:text-2xl font-black">{section.title}</CardTitle>
+                                <CardDescription className="font-medium text-[11px] md:text-sm mt-0.5 md:mt-1">{section.description}</CardDescription>
                             </div>
                         </div>
                     </CardHeader>
-                    <CardContent className="p-6 md:p-10">
+                    <CardContent className="p-4 md:p-10">
                         <Accordion type="single" collapsible className="w-full">
                             {section.content.map((item, i) => (
-                                <AccordionItem key={i} value={`item-${i}`} className="border-b-border/30 last:border-0 py-2">
-                                    <AccordionTrigger className="text-left font-black text-base md:text-lg hover:no-underline group py-4">
-                                        <span className="group-hover:text-primary transition-colors flex items-center gap-3">
-                                            <div className="h-1.5 w-1.5 rounded-full bg-primary/30 group-hover:bg-primary transition-colors" />
+                                <AccordionItem key={i} value={`item-${i}`} className="border-b-border/30 last:border-0">
+                                    <AccordionTrigger className="text-left font-black text-sm md:text-lg hover:no-underline group py-4 px-2">
+                                        <span className="group-hover:text-primary transition-colors flex items-center gap-2.5">
+                                            <div className="h-1 w-1 md:h-1.5 md:w-1.5 rounded-full bg-primary/30 group-hover:bg-primary transition-colors shrink-0" />
                                             {item.q}
                                         </span>
                                     </AccordionTrigger>
-                                    <AccordionContent className="text-muted-foreground leading-relaxed text-base font-medium pt-2 pb-6 pl-4 md:pl-6 border-l-2 border-primary/10 ml-0.5 italic">
+                                    <AccordionContent className="text-muted-foreground leading-relaxed text-[13px] md:text-base font-medium pt-2 pb-6 pl-5 md:pl-6 border-l-2 border-primary/10 ml-2 italic">
                                         {item.a}
                                     </AccordionContent>
                                 </AccordionItem>
@@ -246,38 +243,38 @@ export default function GuidePage() {
       </section>
 
       {/* Advanced Features Spotlight */}
-      <section className="space-y-10">
-        <div className="flex items-center gap-4 px-4">
-            <h2 className="text-2xl font-headline font-black tracking-tight">Fitur <span className="text-primary">Lanjutan</span></h2>
+      <section className="space-y-8 md:space-y-10">
+        <div className="flex items-center gap-4 px-6">
+            <h2 className="text-lg md:text-2xl font-headline font-black tracking-tight whitespace-nowrap">Fitur <span className="text-primary">Lanjutan</span></h2>
             <div className="h-px bg-border flex-1" />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 px-2">
-            <Card className="bg-indigo-950 text-white rounded-[2.5rem] p-8 border-none shadow-2xl relative overflow-hidden group">
-                <div className="absolute top-0 right-0 p-10 opacity-5 group-hover:scale-110 transition-transform"><Share2 className="h-40 w-40" /></div>
-                <h4 className="text-xl font-headline font-black mb-4 flex items-center gap-3">
-                    <Share2 className="h-6 w-6 text-indigo-400" /> Smart Share Link
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 px-4">
+            <Card className="bg-indigo-950 text-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 border-none shadow-2xl relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-6 md:p-10 opacity-5 group-hover:scale-110 transition-transform pointer-events-none"><Share2 className="h-32 w-32 md:h-40 md:w-40" /></div>
+                <h4 className="text-lg md:text-xl font-headline font-black mb-3 md:mb-4 flex items-center gap-3">
+                    <Share2 className="h-5 w-5 md:h-6 md:w-6 text-indigo-400" /> Smart Share Link
                 </h4>
-                <p className="text-indigo-200/70 text-sm leading-relaxed mb-6 font-medium">
+                <p className="text-indigo-200/70 text-[13px] md:text-sm leading-relaxed mb-6 font-medium">
                     Tautan yang dibagikan secara eksternal telah dioptimalkan dengan Metadata OpenGraph. Hal ini memungkinkan platform media sosial populer untuk menampilkan karya Anda dengan pratinjau kartu yang elegan dan profesional.
                 </p>
                 <div className="flex items-center gap-2">
                     <div className="h-1.5 w-1.5 rounded-full bg-indigo-400 animate-pulse" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400">Teknologi SEO Aktif</span>
+                    <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-indigo-400">Teknologi SEO Aktif</span>
                 </div>
             </Card>
 
-            <Card className="bg-zinc-900 text-white rounded-[2.5rem] p-8 border-none shadow-2xl relative overflow-hidden group">
-                <div className="absolute top-0 right-0 p-10 opacity-5 group-hover:scale-110 transition-transform"><Zap className="h-40 w-40" /></div>
-                <h4 className="text-xl font-headline font-black mb-4 flex items-center gap-3">
-                    <Zap className="h-6 w-6 text-yellow-400" /> Real-time Sync
+            <Card className="bg-zinc-900 text-white rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 border-none shadow-2xl relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-6 md:p-10 opacity-5 group-hover:scale-110 transition-transform pointer-events-none"><Zap className="h-32 w-32 md:h-40 md:w-40" /></div>
+                <h4 className="text-lg md:text-xl font-headline font-black mb-3 md:mb-4 flex items-center gap-3">
+                    <Zap className="h-5 w-5 md:h-6 md:w-6 text-yellow-400" /> Real-time Sync
                 </h4>
-                <p className="text-zinc-400 text-sm leading-relaxed mb-6 font-medium">
+                <p className="text-zinc-400 text-[13px] md:text-sm leading-relaxed mb-6 font-medium">
                     Elitera dibangun di atas infrastruktur real-time. Setiap 'Like', 'Komentar', atau 'Update Bab' akan tersinkronisasi dalam hitungan milidetik ke seluruh pengguna tanpa perlu memuat ulang halaman.
                 </p>
                 <div className="flex items-center gap-2">
                     <div className="h-1.5 w-1.5 rounded-full bg-yellow-400 animate-pulse" />
-                    <span className="text-[10px] font-black uppercase tracking-widest text-yellow-400">Infrastruktur Elitera v2.0</span>
+                    <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-yellow-400">Infrastruktur Elitera v2.0</span>
                 </div>
             </Card>
         </div>
@@ -288,25 +285,26 @@ export default function GuidePage() {
         initial={{ opacity: 0, scale: 0.95 }}
         whileInView={{ opacity: 1, scale: 1 }}
         viewport={{ once: true }}
+        className="px-4"
       >
-        <Card className="bg-background border-2 border-primary/10 rounded-[3rem] p-10 md:p-16 text-center space-y-10 overflow-hidden relative shadow-2xl">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px] pointer-events-none" />
-            <div className="absolute bottom-0 left-0 w-64 h-64 bg-accent/5 rounded-full blur-[100px] pointer-events-none" />
+        <Card className="bg-background border-2 border-primary/10 rounded-[2.5rem] md:rounded-[3rem] p-8 md:p-16 text-center space-y-8 md:space-y-10 overflow-hidden relative shadow-2xl">
+            <div className="absolute top-0 right-0 w-48 md:w-64 h-48 md:h-64 bg-primary/5 rounded-full blur-[80px] md:blur-[100px] pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-48 md:w-64 h-48 md:h-64 bg-accent/5 rounded-full blur-[80px] md:blur-[100px] pointer-events-none" />
             
             <div className="relative z-10 space-y-4">
-                <div className="bg-primary/10 p-4 rounded-2xl w-fit mx-auto mb-6">
-                    <MessageCircle className="h-8 w-8 text-primary" />
+                <div className="bg-primary/10 p-4 rounded-2xl w-fit mx-auto mb-4 md:mb-6">
+                    <MessageCircle className="h-7 w-7 md:h-8 md:w-8 text-primary" />
                 </div>
-                <h3 className="font-headline text-3xl md:text-4xl font-black">Masih Punya Pertanyaan?</h3>
-                <p className="text-muted-foreground max-w-xl mx-auto text-lg font-medium">Tim moderasi dan asisten AI kami selalu siap sedia membantu perjalanan sastra Anda setiap harinya.</p>
+                <h3 className="font-headline text-2xl md:text-4xl font-black leading-tight">Masih Punya Pertanyaan?</h3>
+                <p className="text-muted-foreground max-w-xl mx-auto text-sm md:text-lg font-medium px-2">Tim moderasi dan asisten AI kami selalu siap sedia membantu perjalanan sastra Anda setiap harinya.</p>
             </div>
 
-            <div className="relative z-10 flex flex-col sm:flex-row gap-4 justify-center items-center">
-                <Button asChild size="lg" variant="outline" className="rounded-full px-10 h-14 font-black text-sm uppercase tracking-widest border-2 hover:bg-primary/5 w-full sm:w-auto">
-                    <Link href="/about"><Users className="mr-2 h-5 w-5" /> Hubungi Tim</Link>
+            <div className="relative z-10 flex flex-col sm:flex-row gap-3 md:gap-4 justify-center items-center">
+                <Button asChild size="lg" variant="outline" className="rounded-full px-8 md:px-10 h-12 md:h-14 font-black text-[11px] md:text-sm uppercase tracking-widest border-2 hover:bg-primary/5 w-full sm:w-auto">
+                    <Link href="/about"><Users className="mr-2 h-4 w-4 md:h-5 md:w-5" /> Hubungi Tim</Link>
                 </Button>
-                <Button asChild size="lg" className="rounded-full px-10 h-14 font-black text-sm uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all w-full sm:w-auto">
-                    <Link href="/ai"><Bot className="mr-2 h-5 w-5" /> Tanya Elitera AI</Link>
+                <Button asChild size="lg" className="rounded-full px-8 md:px-10 h-12 md:h-14 font-black text-[11px] md:text-sm uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all w-full sm:w-auto">
+                    <Link href="/ai"><Bot className="mr-2 h-4 w-4 md:h-5 md:w-5" /> Tanya Elitera AI</Link>
                 </Button>
             </div>
         </Card>
