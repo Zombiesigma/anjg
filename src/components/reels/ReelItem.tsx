@@ -136,7 +136,7 @@ export function ReelItem({ reel, isMuted, onToggleMute }: ReelItemProps) {
   };
 
   return (
-    <div className="h-full w-full snap-start snap-always relative bg-zinc-950 flex flex-col items-center justify-center overflow-hidden">
+    <div className="h-full w-full snap-start snap-always relative bg-zinc-950 flex flex-col items-center justify-center overflow-hidden shrink-0">
       {/* Video Element */}
       <video
         ref={videoRef}

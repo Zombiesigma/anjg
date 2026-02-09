@@ -31,7 +31,7 @@ export default function ReelsPage() {
 
   if (isLoading) {
     return (
-      <div className="h-[calc(100dvh-144px)] flex flex-col items-center justify-center gap-4 bg-black/5 rounded-[2.5rem]">
+      <div className="h-[calc(100dvh-180px)] md:h-[calc(100dvh-144px)] flex flex-col items-center justify-center gap-4 bg-black/5 rounded-[2.5rem]">
         <Loader2 className="h-10 w-10 animate-spin text-primary/40" />
         <p className="text-muted-foreground font-black uppercase text-[10px] tracking-widest">Menyiapkan Panggung...</p>
       </div>
@@ -39,7 +39,7 @@ export default function ReelsPage() {
   }
 
   return (
-    <div className="h-[calc(100dvh-180px)] md:h-[calc(100dvh-144px)] -mt-6 -mx-4 md:-mx-6 bg-black overflow-y-scroll snap-y snap-mandatory no-scrollbar rounded-none md:rounded-[2.5rem] shadow-2xl relative">
+    <div className="h-[calc(100dvh-180px)] md:h-[calc(100dvh-144px)] -mt-6 -mx-4 md:-mx-6 bg-black overflow-y-scroll snap-y snap-mandatory no-scrollbar rounded-none md:rounded-[2.5rem] shadow-2xl relative scroll-smooth">
       
       {/* Floating Global Controls */}
       <div className="fixed top-24 left-8 right-8 z-[110] flex items-center justify-between pointer-events-none">
