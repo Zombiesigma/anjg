@@ -135,7 +135,7 @@ export function UserNav() {
         </SheetTrigger>
         <SheetContent 
             side="right" 
-            className="w-full max-w-xs flex flex-col p-0 border-l bg-background/95 backdrop-blur-2xl z-[150]"
+            className="w-[85vw] max-w-sm flex flex-col p-0 border-l bg-background/95 backdrop-blur-2xl z-[150] shadow-2xl"
             onCloseAutoFocus={(e) => {
                 e.preventDefault();
                 document.body.style.pointerEvents = '';
