@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
@@ -14,7 +13,7 @@ import {
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, MessageSquare, Send, Sparkles } from 'lucide-react';
+import { Loader2, MessageSquare, Send, Sparkles, MessageCircle } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
@@ -75,7 +74,6 @@ export function ReelCommentsSheet({ reelId, reelAuthorId, isOpen, onOpenChange }
 
       await batch.commit();
 
-      // Notification Logic
       if (currentUser.uid !== reelAuthorId) {
           const authorDoc = await getDoc(doc(firestore, 'users', reelAuthorId));
           if (authorDoc.exists()) {
@@ -84,7 +82,7 @@ export function ReelCommentsSheet({ reelId, reelAuthorId, isOpen, onOpenChange }
                   addDoc(collection(firestore, 'users', reelAuthorId, 'notifications'), {
                       type: 'reel_comment',
                       text: `${currentUser.displayName} mengomentari video Reel Anda.`,
-                      link: `/reels`,
+                      link: `/reels?id=${reelId}`,
                       actor: {
                           uid: currentUser.uid,
                           displayName: currentUser.displayName!,
@@ -92,7 +90,7 @@ export function ReelCommentsSheet({ reelId, reelAuthorId, isOpen, onOpenChange }
                       },
                       read: false,
                       createdAt: serverTimestamp()
-                  }).catch(err => console.warn("Failed to send reel_comment notification", err));
+                  }).catch(err => console.warn("Notif failed", err));
               }
           }
       }
@@ -120,15 +118,17 @@ export function ReelCommentsSheet({ reelId, reelAuthorId, isOpen, onOpenChange }
         <SheetHeader className="px-8 pt-6 pb-6 text-left shrink-0">
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-                <div className="flex items-center gap-2 text-primary">
-                    <MessageSquare className="h-6 w-6" />
+                <div className="flex items-center gap-3 text-primary">
+                    <div className="p-2.5 bg-primary/10 rounded-2xl">
+                        <MessageCircle className="h-6 w-6" />
+                    </div>
                     <SheetTitle className="text-2xl font-headline font-black tracking-tight">Diskusi Karya</SheetTitle>
                 </div>
-                <SheetDescription className="text-xs font-bold uppercase tracking-[0.1em] text-muted-foreground">
-                    {isLoading ? 'Menghubungkan pikiran...' : `${comments?.length || 0} suara pujangga`}
+                <SheetDescription className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">
+                    {isLoading ? 'Menghubungkan pikiran...' : `${comments?.length || 0} Ulasan Pujangga`}
                 </SheetDescription>
             </div>
-            <div className="bg-primary/5 p-3 rounded-2xl">
+            <div className="bg-primary/5 p-3 rounded-2xl hidden sm:block">
                 <Sparkles className="h-5 w-5 text-primary animate-pulse" />
             </div>
           </div>
@@ -136,23 +136,27 @@ export function ReelCommentsSheet({ reelId, reelAuthorId, isOpen, onOpenChange }
 
         <Separator className="opacity-50" />
 
-        <div className="flex-1 overflow-y-auto custom-scrollbar bg-muted/5 p-6">
+        <div className="flex-1 overflow-y-auto custom-scrollbar bg-muted/5 p-6 md:p-8">
           <AnimatePresence mode="wait">
             {isLoading ? (
                 <div className="flex flex-col items-center justify-center h-full gap-4 opacity-40">
                     <Loader2 className="w-10 h-10 animate-spin text-primary" />
-                    <p className="text-[10px] font-black uppercase tracking-[0.3em]">Memuat Diskusi...</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.3em]">Memuat Suara...</p>
                 </div>
             ) : !comments || comments.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-center p-12 opacity-30">
-                    <div className="bg-muted p-8 rounded-[2rem] mb-6">
+                <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex flex-col items-center justify-center h-full text-center p-12 opacity-30"
+                >
+                    <div className="bg-muted p-10 rounded-[2.5rem] mb-6 shadow-inner">
                         <MessageSquare className="h-16 w-16 text-muted-foreground" />
                     </div>
-                    <h3 className="font-headline text-xl font-bold">Belum Ada Suara</h3>
-                    <p className="text-sm max-w-[240px] mx-auto mt-2 leading-relaxed">Jadilah yang pertama mengapresiasi karya video ini.</p>
-                </div>
+                    <h3 className="font-headline text-xl font-bold italic">Belum Ada Suara</h3>
+                    <p className="text-sm max-w-[240px] mx-auto mt-2 leading-relaxed font-medium">Jadilah yang pertama memberikan apresiasi puitis pada video ini.</p>
+                </motion.div>
             ) : (
-                <div className="space-y-8 pb-20">
+                <div className="space-y-10 pb-24">
                 {comments.map((comment) => (
                     <ReelCommentItem key={comment.id} reelId={reelId} comment={comment} />
                 ))}
@@ -161,21 +165,21 @@ export function ReelCommentsSheet({ reelId, reelAuthorId, isOpen, onOpenChange }
           </AnimatePresence>
         </div>
 
-        {/* Comment Input */}
-        <div className="p-6 border-t bg-background/95 backdrop-blur-md relative z-10">
-            <form onSubmit={handleSendComment} className="flex items-center gap-3 relative group">
-                <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-accent/20 rounded-2xl blur opacity-0 group-focus-within:opacity-100 transition-opacity" />
+        {/* Floating Input Area */}
+        <div className="p-6 pb-10 border-t bg-background/95 backdrop-blur-xl relative z-10">
+            <form onSubmit={handleSendComment} className="flex items-center gap-3 relative max-w-4xl mx-auto group">
+                <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 via-accent/10 to-primary/20 rounded-[1.5rem] blur opacity-0 group-focus-within:opacity-100 transition-opacity duration-500" />
                 <Input 
                     value={commentText} 
                     onChange={(e) => setCommentText(e.target.value)} 
-                    placeholder="Tulis ulasan Anda..." 
-                    className="relative flex-1 h-14 rounded-2xl bg-muted/30 border-none px-6 font-medium focus-visible:ring-primary/20"
+                    placeholder="Tulis ulasan Anda yang memikat..." 
+                    className="relative flex-1 h-14 rounded-2xl bg-muted/40 border-none px-6 font-medium text-sm focus-visible:ring-primary/20 focus-visible:bg-background transition-all shadow-inner"
                     disabled={isSubmitting}
                 />
                 <Button 
                     type="submit" 
                     size="icon" 
-                    className="relative h-14 w-14 rounded-2xl bg-primary shadow-xl shadow-primary/20 transition-all active:scale-90"
+                    className="relative h-14 w-14 rounded-2xl bg-primary shadow-xl shadow-primary/30 transition-all active:scale-90"
                     disabled={isSubmitting || !commentText.trim()}
                 >
                     {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}

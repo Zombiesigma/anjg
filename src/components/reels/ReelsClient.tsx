@@ -5,10 +5,11 @@ import { collection, query, orderBy, doc } from 'firebase/firestore';
 import { useMemo, useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import type { Reel, User as AppUser } from '@/lib/types';
-import { Loader2, Plus, Music2, Volume2, VolumeX } from 'lucide-react';
+import { Loader2, Plus, Volume2, VolumeX, Sparkles, Film } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CreateReelModal } from '@/components/reels/CreateReelModal';
 import { ReelItem } from '@/components/reels/ReelItem';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export function ReelsClient() {
   const firestore = useFirestore();
@@ -32,7 +33,6 @@ export function ReelsClient() {
 
   const { data: reels, isLoading } = useCollection<Reel>(reelsQuery);
 
-  // Auto-scroll to shared reel if ID is present
   useEffect(() => {
     if (reelIdFromUrl && !isLoading && reels) {
       const timer = setTimeout(() => {
@@ -40,63 +40,85 @@ export function ReelsClient() {
         if (element) {
           element.scrollIntoView({ behavior: 'auto' });
         }
-      }, 500); // Small delay to ensure rendering is complete
+      }, 500);
       return () => clearTimeout(timer);
     }
   }, [reelIdFromUrl, isLoading, reels]);
 
   if (isLoading) {
     return (
-      <div className="h-[calc(100dvh-180px)] md:h-[calc(100dvh-144px)] flex flex-col items-center justify-center gap-4 bg-black/5 rounded-[2.5rem]">
-        <Loader2 className="h-10 w-10 animate-spin text-primary/40" />
-        <p className="text-muted-foreground font-black uppercase text-[10px] tracking-widest">Menyiapkan Panggung...</p>
+      <div className="h-[calc(100dvh-180px)] md:h-[calc(100dvh-144px)] flex flex-col items-center justify-center gap-6 bg-zinc-950 md:rounded-[2.5rem] overflow-hidden">
+        <div className="relative">
+            <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full scale-150 animate-pulse" />
+            <Loader2 className="h-12 w-12 animate-spin text-primary relative z-10" />
+        </div>
+        <div className="text-center space-y-2">
+            <p className="text-white font-black uppercase text-[10px] tracking-[0.3em] animate-pulse">Menyiapkan Panggung...</p>
+            <p className="text-white/20 text-[8px] font-bold uppercase tracking-widest italic">Sinkronisasi Imajinasi</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="h-[calc(100dvh-180px)] md:h-[calc(100dvh-144px)] -mt-6 -mx-4 md:-mx-6 bg-black overflow-y-auto snap-y snap-mandatory no-scrollbar rounded-none md:rounded-[2.5rem] shadow-2xl relative">
+    <div className="h-[calc(100dvh-180px)] md:h-[calc(100dvh-144px)] -mt-6 -mx-4 md:-mx-6 bg-black overflow-y-auto snap-y snap-mandatory no-scrollbar rounded-none md:rounded-[2.5rem] shadow-2xl relative scroll-smooth">
       
       {/* Floating Global Controls */}
-      <div className="fixed top-24 left-8 right-8 z-[110] flex items-center justify-between pointer-events-none">
-          <button 
+      <div className="fixed top-24 left-6 right-6 z-[110] flex items-center justify-between pointer-events-none">
+          <motion.button 
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
             onClick={() => setIsCreateModalOpen(true)}
-            className="pointer-events-auto bg-primary shadow-[0_0_20px_rgba(59,130,246,0.5)] p-3 rounded-full text-white hover:scale-110 transition-all active:scale-95"
+            className="pointer-events-auto bg-primary shadow-[0_10px_30px_rgba(59,130,246,0.5)] p-3.5 rounded-2xl text-white ring-1 ring-white/20 transition-all"
           >
             <Plus className="h-6 w-6" />
-          </button>
+          </motion.button>
 
-          <button 
+          <motion.button 
+            whileTap={{ scale: 0.9 }}
             onClick={() => setIsMuted(!isMuted)}
-            className="pointer-events-auto bg-black/20 backdrop-blur-md border border-white/10 p-3 rounded-full text-white/80 hover:text-white transition-all shadow-xl"
+            className="pointer-events-auto bg-black/40 backdrop-blur-xl border border-white/10 p-3.5 rounded-2xl text-white/80 hover:text-white transition-all shadow-2xl"
           >
             {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
-          </button>
+          </motion.button>
       </div>
 
-      {reels && reels.length > 0 ? (
-        reels.map((reel) => (
-          <ReelItem 
-            key={reel.id} 
-            reel={reel} 
-            isMuted={isMuted} 
-            onToggleMute={() => setIsMuted(!isMuted)} 
-          />
-        ))
-      ) : (
-        <div className="h-full flex flex-col items-center justify-center text-center p-8 gap-6 bg-zinc-950">
-            <div className="p-6 bg-white/5 rounded-[2rem] shadow-xl">
-                <Music2 className="h-16 w-16 text-primary/20" />
-            </div>
-            <div className="space-y-2">
-                <h2 className="text-2xl font-headline font-black text-white">Panggung Kosong.</h2>
-                <p className="text-white/40 max-w-xs mx-auto text-sm leading-relaxed">Belum ada karya video yang diterbitkan di sini. Jadilah yang pertama!</p>
-            </div>
-            <Button onClick={() => setIsCreateModalOpen(true)} className="rounded-full px-8 font-bold shadow-lg shadow-primary/20">
-                Buat Reel Sekarang
-            </Button>
-        </div>
-      )}
+      <AnimatePresence>
+        {reels && reels.length > 0 ? (
+            reels.map((reel) => (
+            <ReelItem 
+                key={reel.id} 
+                reel={reel} 
+                isMuted={isMuted} 
+                onToggleMute={() => setIsMuted(!isMuted)} 
+            />
+            ))
+        ) : (
+            <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="h-full flex flex-col items-center justify-center text-center p-8 gap-8 bg-zinc-950"
+            >
+                <div className="relative">
+                    <div className="absolute inset-0 bg-primary/10 blur-3xl rounded-full scale-150 animate-pulse" />
+                    <div className="p-10 rounded-[3.5rem] bg-white/5 border border-white/10 shadow-2xl relative z-10">
+                        <Film className="h-20 w-20 text-primary/20" />
+                    </div>
+                </div>
+                <div className="space-y-3">
+                    <h2 className="text-3xl font-headline font-black text-white uppercase tracking-tight">Panggung <span className="text-primary italic">Hening.</span></h2>
+                    <p className="text-white/40 max-w-xs mx-auto text-sm leading-relaxed font-medium">Belum ada mahakarya video yang diterbitkan. Jadilah pujangga pertama yang tampil di sini!</p>
+                </div>
+                <Button 
+                    onClick={() => setIsCreateModalOpen(true)} 
+                    size="lg"
+                    className="rounded-2xl px-10 h-14 font-black text-sm uppercase tracking-widest shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95"
+                >
+                    Mulai Berkarya <Sparkles className="ml-2 h-4 w-4" />
+                </Button>
+            </motion.div>
+        )}
+      </AnimatePresence>
 
       <CreateReelModal 
         isOpen={isCreateModalOpen} 
