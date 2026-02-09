@@ -1,0 +1,531 @@
+
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Represents a user's profile in the system.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "The user's unique ID from Firebase Auth."
+        },
+        "username": {
+            "type": "string",
+            "description": "The user's unique username."
+        },
+        "displayName": {
+          "type": "string",
+          "description": "The user's display name."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "The user's email address."
+        },
+        "photoURL": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL of the user's profile picture."
+        },
+        "role": {
+            "type": "string",
+            "enum": ["pembaca", "penulis", "admin"],
+            "description": "The role of the user."
+        },
+        "bio": {
+            "type": "string",
+            "description": "A short bio of the user."
+        },
+        "followers": {
+            "type": "number",
+            "description": "Number of followers."
+        },
+        "following": {
+            "type": "number",
+            "description": "Number of users being followed."
+        },
+        "status": {
+            "type": "string",
+            "enum": ["online", "offline"],
+            "description": "The user's online status."
+        },
+        "lastSeen": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The last time the user was seen online."
+        },
+        "notificationPreferences": {
+          "type": "object",
+          "description": "User's notification settings.",
+          "properties": {
+            "onNewFollower": {
+              "type": "boolean",
+              "description": "Receive notification on new follower."
+            },
+            "onBookComment": {
+              "type": "boolean",
+              "description": "Receive notification on book comments."
+            },
+            "onBookFavorite": {
+              "type": "boolean",
+              "description": "Receive notification on book favorites."
+            },
+            "onStoryComment": {
+              "type": "boolean",
+              "description": "Receive notification on story comments."
+            },
+            "onReelLike": {
+              "type": "boolean",
+              "description": "Receive notification on reel likes."
+            },
+            "onReelComment": {
+              "type": "boolean",
+              "description": "Receive notification on reel comments."
+            }
+          }
+        }
+      },
+      "required": ["uid", "email", "displayName", "username"]
+    },
+    "Book": {
+      "title": "Book",
+      "description": "Represents a book in the system.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "synopsis": { "type": "string" },
+        "genre": { "type": "string" },
+        "coverUrl": { "type": "string", "format": "uri" },
+        "viewCount": { "type": "number" },
+        "favoriteCount": { "type": "number" },
+        "chapterCount": { "type": "number", "description": "Number of chapters in the book." },
+        "authorId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "authorAvatarUrl": { "type": "string", "format": "uri" },
+        "status": { "type": "string", "enum": ["draft", "pending_review", "published", "rejected"] },
+        "visibility": { "type": "string", "enum": ["public", "followers_only"], "description": "The visibility of the book." },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "authorId", "authorName", "status", "visibility", "createdAt"]
+    },
+    "Chapter": {
+        "title": "Chapter",
+        "description": "A chapter of a book.",
+        "type": "object",
+        "properties": {
+            "title": { "type": "string" },
+            "content": { "type": "string" },
+            "order": { "type": "number" },
+            "createdAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["title", "content", "order", "createdAt"]
+    },
+    "Comment": {
+        "title": "Comment",
+        "description": "A comment on a book or a reply to another comment.",
+        "type": "object",
+        "properties": {
+            "text": { "type": "string" },
+            "userId": { "type": "string" },
+            "userName": { "type": "string" },
+            "userAvatarUrl": { "type": "string", "format": "uri" },
+            "username": { "type": "string", "description": "The user's unique username for profile linking." },
+            "likeCount": { "type": "number" },
+            "replyCount": { "type": "number" },
+            "createdAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["text", "userId", "userName", "username", "createdAt", "likeCount", "replyCount"]
+    },
+    "BookCommentLike": {
+      "title": "Book Comment Like",
+      "description": "Represents a user's like on a book comment.",
+      "type": "object",
+      "properties": {
+          "userId": { "type": "string" },
+          "likedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "likedAt"]
+    },
+    "AuthorRequest": {
+      "title": "Author Request",
+      "description": "Represents a user's request to become an author.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "portfolio": { "type": "string", "format": "uri" },
+        "motivation": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "requestedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "name", "email", "motivation", "status", "requestedAt"]
+    },
+    "Chat": {
+      "title": "Chat",
+      "description": "Represents a chat thread between two or more users.",
+      "type": "object",
+      "properties": {
+        "participantUids": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "participants": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "uid": { "type": "string" },
+              "displayName": { "type": "string" },
+              "photoURL": { "type": "string", "format": "uri" },
+              "username": { "type": "string" }
+            }
+          }
+        },
+        "lastMessage": {
+          "type": "object",
+          "properties": {
+            "text": { "type": "string" },
+            "timestamp": { "type": "string", "format": "date-time" },
+            "senderId": { "type": "string" }
+          }
+        },
+        "unreadCounts": {
+            "type": "object",
+            "description": "Map of userId to their unread message count in this chat.",
+            "additionalProperties": { "type": "number" }
+        }
+      },
+      "required": ["participantUids", "participants"]
+    },
+    "ChatMessage": {
+      "title": "Chat Message",
+      "description": "Represents a single message within a chat thread. Can be text, book share, reel share, image, or voice note.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["text", "book_share", "reel_share", "image", "voice_note"],
+          "description": "The type of the message."
+        },
+        "text": {
+          "type": "string",
+          "description": "The content of the message, if it's a 'text' type."
+        },
+        "senderId": {
+          "type": "string"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "imageUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL of the image if type is 'image'."
+        },
+        "audioUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL of the audio if type is 'voice_note'."
+        },
+        "book": {
+          "type": "object",
+          "description": "Information about the shared book.",
+          "properties": {
+            "id": { "type": "string" },
+            "title": { "type": "string" },
+            "coverUrl": { "type": "string", "format": "uri" },
+            "authorName": { "type": "string" }
+          }
+        },
+        "reel": {
+          "type": "object",
+          "description": "Information about the shared reel.",
+          "properties": {
+            "id": { "type": "string" },
+            "authorName": { "type": "string" },
+            "caption": { "type": "string" },
+            "videoUrl": { "type": "string", "format": "uri" }
+          }
+        }
+      },
+      "required": [
+        "senderId",
+        "createdAt",
+        "type"
+      ]
+    },
+    "AiMessage": {
+      "title": "AI Message",
+      "description": "A single message in the persistent AI chat history.",
+      "type": "object",
+      "properties": {
+        "role": { "type": "string", "enum": ["user", "model"] },
+        "content": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["role", "content", "createdAt"]
+    },
+    "FavoriteBook": {
+        "title": "Favorite Book",
+        "description": "Marks a book as a favorite for a user. The document ID is the book ID.",
+        "type": "object",
+        "properties": {
+            "userId": { "type": "string" },
+            "addedAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["userId", "addedAt"]
+    },
+    "Follow": {
+      "title": "Follow",
+      "description": "Represents a follow relationship.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "followedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "followedAt"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "Represents a user notification for various events.",
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["comment", "follow", "favorite", "author_request", "story_comment", "broadcast", "reel_like", "reel_comment"]
+        },
+        "text": { "type": "string" },
+        "link": { "type": "string" },
+        "actor": {
+          "type": "object",
+          "properties": {
+            "uid": { "type": "string" },
+            "displayName": { "type": "string" },
+            "photoURL": { "type": "string", "format": "uri" }
+          },
+          "required": ["uid", "displayName"]
+        },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["type", "text", "link", "actor", "read", "createdAt"]
+    },
+    "Story": {
+      "title": "Story",
+      "description": "A temporary story that disappears after 24 hours.",
+      "type": "object",
+      "properties": {
+        "authorId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "authorAvatarUrl": { "type": "string", "format": "uri" },
+        "authorRole": { "type": "string" },
+        "type": { "type": "string", "enum": ["text", "image", "video"] },
+        "content": { "type": "string" },
+        "mediaUrl": { "type": "string", "format": "uri" },
+        "background": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "likes": { "type": "number" },
+        "commentCount": { "type": "number" },
+        "viewCount": { "type": "number" }
+      },
+      "required": ["authorId", "authorName", "authorAvatarUrl", "type", "createdAt"]
+    },
+    "StoryComment": {
+      "title": "Story Comment",
+      "description": "A comment on a story.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userAvatarUrl": { "type": "string", "format": "uri" },
+        "text": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "StoryLike": {
+      "title": "Story Like",
+      "description": "Represents a user's like on a story.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "likedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "StoryView": {
+      "title": "Story View",
+      "description": "Represents a user viewing a story.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userAvatarUrl": { "type": "string", "format": "uri" },
+        "viewedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "Reel": {
+      "title": "Reel",
+      "description": "A permanent short video post.",
+      "type": "object",
+      "properties": {
+        "authorId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "authorAvatarUrl": { "type": "string", "format": "uri" },
+        "authorRole": { "type": "string" },
+        "caption": { "type": "string" },
+        "videoUrl": { "type": "string", "format": "uri" },
+        "likes": { "type": "number" },
+        "commentCount": { "type": "number" },
+        "viewCount": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["authorId", "authorName", "authorAvatarUrl", "videoUrl", "createdAt"]
+    },
+    "ReelComment": {
+      "title": "Reel Comment",
+      "description": "A comment on a reel.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userAvatarUrl": { "type": "string", "format": "uri" },
+        "text": { "type": "string" },
+        "likeCount": { "type": "number" },
+        "replyCount": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "userName", "text", "createdAt", "likeCount", "replyCount"]
+    },
+    "ReelLike": {
+      "title": "Reel Like",
+      "description": "Represents a user's like on a reel.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "likedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "ReelView": {
+      "title": "Reel View",
+      "description": "Represents a user viewing a reel.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "viewedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "ReelCommentLike": {
+      "title": "Reel Comment Like",
+      "description": "Represents a user's like on a reel comment.",
+      "type": "object",
+      "properties": {
+          "userId": { "type": "string" },
+          "likedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "likedAt"]
+    }
+  },
+  "auth": {
+    "providers": ["password", "google.com"]
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/backend/entities/UserProfile" },
+      "description": "Stores user profile information."
+    },
+    "/users/{userId}/aiMessages/{messageId}": {
+      "schema": { "$ref": "#/backend/entities/AiMessage" },
+      "description": "Stores persistent AI chat history for a user."
+    },
+    "/users/{userId}/favorites/{bookId}": {
+        "schema": { "$ref": "#/backend/entities/FavoriteBook" },
+        "description": "Stores a user's favorite books."
+    },
+    "/users/{userId}/followers/{followerId}": {
+      "schema": { "$ref": "#/backend/entities/Follow" },
+      "description": "A list of users that follow this user."
+    },
+    "/users/{userId}/following/{followedUserId}": {
+      "schema": { "$ref": "#/backend/entities/Follow" },
+      "description": "A list of users that this user follows."
+    },
+    "/users/{userId}/notifications/{notificationId}": {
+      "schema": { "$ref": "#/backend/entities/Notification" },
+      "description": "Stores notifications for a user."
+    },
+    "/books/{bookId}": {
+      "schema": { "$ref": "#/backend/entities/Book" },
+      "description": "Stores book information."
+    },
+    "/books/{bookId}/chapters/{chapterId}": {
+        "schema": { "$ref": "#/backend/entities/Chapter" },
+        "description": "Stores chapters for a specific book."
+    },
+    "/books/{bookId}/comments/{commentId}": {
+      "schema": { "$ref": "#/backend/entities/Comment" },
+      "description": "Stores comments for a specific book."
+    },
+    "/books/{bookId}/comments/{commentId}/replies/{replyId}": {
+      "schema": { "$ref": "#/backend/entities/Comment" },
+      "description": "Stores replies for a specific comment."
+    },
+    "/books/{bookId}/comments/{commentId}/likes/{userId}": {
+      "schema": { "$ref": "#/backend/entities/BookCommentLike" },
+      "description": "Stores likes for a specific comment."
+    },
+    "/authorRequests/{requestId}": {
+      "schema": { "$ref": "#/backend/entities/AuthorRequest" },
+      "description": "Stores user requests to become an author."
+    },
+    "/chats/{chatId}": {
+      "schema": { "$ref": "#/backend/entities/Chat" },
+      "description": "Stores chat thread metadata."
+    },
+    "/chats/{chatId}/messages/{messageId}": {
+      "schema": { "$ref": "#/backend/entities/ChatMessage" },
+      "description": "Stores messages for a specific chat."
+    },
+    "/stories/{storyId}": {
+      "schema": { "$ref": "#/backend/entities/Story" },
+      "description": "Stores user stories."
+    },
+    "/stories/{storyId}/comments/{commentId}": {
+      "schema": { "$ref": "#/backend/entities/StoryComment" },
+      "description": "Comments on a story."
+    },
+    "/stories/{storyId}/likes/{userId}": {
+      "schema": { "$ref": "#/backend/entities/StoryLike" },
+      "description": "Likes on a story."
+    },
+    "/stories/{storyId}/views/{userId}": {
+      "schema": { "$ref": "#/backend/entities/StoryView" },
+      "description": "Views on a story."
+    },
+    "/reels/{reelId}": {
+      "schema": { "$ref": "#/backend/entities/Reel" },
+      "description": "Stores permanent video reels."
+    },
+    "/reels/{reelId}/comments/{commentId}": {
+      "schema": { "$ref": "#/backend/entities/ReelComment" },
+      "description": "Stores comments for a reel."
+    },
+    "/reels/{reelId}/comments/{commentId}/replies/{replyId}": {
+      "schema": { "$ref": "#/backend/entities/ReelComment" },
+      "description": "Stores replies for a reel comment."
+    },
+    "/reels/{reelId}/comments/{commentId}/likes/{userId}": {
+      "schema": { "$ref": "#/backend/entities/ReelCommentLike" },
+      "description": "Stores likes for a reel comment."
+    },
+    "/reels/{reelId}/likes/{userId}": {
+      "schema": { "$ref": "#/backend/entities/ReelLike" },
+      "description": "Stores likes for a reel."
+    },
+    "/reels/{reelId}/views/{userId}": {
+      "schema": { "$ref": "#/backend/entities/ReelView" },
+      "description": "Stores views for a reel."
+    }
+  }
+}
