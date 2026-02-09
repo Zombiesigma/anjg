@@ -116,7 +116,20 @@ export type BookShareMessage = {
   };
 };
 
-export type ChatMessage = (TextMessage | BookShareMessage) & {
+export type ReelShareMessage = {
+  id: string;
+  type: 'reel_share';
+  senderId: string;
+  createdAt: Timestamp;
+  reel: {
+    id: string;
+    authorName: string;
+    caption: string;
+    videoUrl: string;
+  };
+};
+
+export type ChatMessage = (TextMessage | BookShareMessage | ReelShareMessage) & {
   id: string;
   senderId: string;
   createdAt: Timestamp;
@@ -214,4 +227,10 @@ export type ReelComment = {
   userAvatarUrl: string;
   text: string;
   createdAt: Timestamp;
+};
+
+export type ReelLike = {
+  id: string; // userId
+  userId: string;
+  likedAt: Timestamp;
 };
