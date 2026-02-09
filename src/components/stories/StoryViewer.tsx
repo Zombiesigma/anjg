@@ -55,11 +55,9 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
       }
       groups[story.authorId].stories.push(story);
     });
-    // Sort groups by the date of their latest story
     return Object.values(groups).sort((a,b) => b.stories[0].createdAt.toMillis() - a.stories[0].createdAt.toMillis());
   }, [stories]);
   
-  // Initialize to the requested author
   useEffect(() => {
     if (isOpen) {
       const initialIndex = storyGroups.findIndex(g => g.authorId === initialAuthorId);
@@ -97,7 +95,6 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
 
   const handleContainerClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement;
-    // Don't navigate if clicking on interactive elements
     if (target.closest('button') || target.closest('form') || target.closest('input')) return;
 
     const rect = e.currentTarget.getBoundingClientRect();
@@ -111,11 +108,8 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
     }
   };
   
-  // Auto-progression logic (Extended for videos)
   useEffect(() => {
     if (!isOpen || isPaused || showViews || showComments) return;
-
-    // Videos manage their own timing based on duration, but we fallback to 7s if not playing
     if (currentStory?.type === 'video') return;
 
     const timer = setTimeout(() => {
@@ -125,7 +119,6 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
     return () => clearTimeout(timer);
   }, [storyIndex, authorIndex, isOpen, isPaused, showViews, showComments, nextStory, currentStory?.type]);
   
-  // Track view logic
   useEffect(() => {
     if (!currentStory || !currentUser || !firestore || !isOpen) return;
 
@@ -151,7 +144,6 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
     }
   }, [currentStory, currentUser, firestore, isOpen]);
 
-  // Video duration management
   useEffect(() => {
     if (currentStory?.type === 'video' && videoRef.current) {
         const video = videoRef.current;
@@ -224,22 +216,12 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
     }
   }
 
-  // Prevent background scroll when open
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => { document.body.style.overflow = ''; };
-  }, [isOpen]);
-
   if (!isOpen || !currentGroup || !currentStory) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent 
-        className="bg-black text-white border-0 p-0 m-0 w-screen h-screen max-w-none rounded-none overflow-hidden flex flex-col items-center justify-center z-[250] focus:outline-none"
+        className="bg-black text-white border-0 p-0 m-0 w-screen h-[100dvh] max-w-none rounded-none overflow-hidden flex flex-col items-center justify-center z-[250] focus:outline-none"
         onInteractOutside={(e) => e.preventDefault()}
         onPointerDownOutside={(e) => e.preventDefault()}
         onCloseAutoFocus={(e) => {
@@ -262,13 +244,13 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
             </div>
 
             {/* Exit Button */}
-            <button onClick={onClose} className="absolute top-6 right-6 z-[280] text-white/60 hover:text-white rounded-full h-12 w-12 flex items-center justify-center transition-colors bg-black/20 backdrop-blur-md border border-white/10">
+            <button onClick={onClose} className="absolute top-10 right-6 z-[280] text-white/60 hover:text-white rounded-full h-12 w-12 flex items-center justify-center transition-colors bg-black/20 backdrop-blur-md border border-white/10">
                 <X className="h-7 w-7" />
             </button>
             
             {/* Story Container */}
             <div 
-                className="relative w-full md:w-[450px] h-full md:h-[90vh] md:max-h-[800px] md:rounded-3xl overflow-hidden flex flex-col shadow-2xl bg-zinc-950"
+                className="relative w-full md:w-[420px] h-full md:h-[90vh] md:max-h-[850px] md:rounded-[2.5rem] overflow-hidden flex flex-col shadow-2xl bg-zinc-950"
                 onClick={handleContainerClick}
                 onTouchStart={() => setIsPaused(true)}
                 onTouchEnd={() => setIsPaused(false)}
@@ -276,7 +258,7 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
                 onMouseUp={() => setIsPaused(false)}
             >
                 {/* Progress Bars */}
-                <div className="absolute top-4 left-4 right-4 flex items-center gap-1.5 z-[260]">
+                <div className="absolute top-6 left-4 right-4 flex items-center gap-1 z-[260] pt-[max(0rem,env(safe-area-inset-top))]">
                     {currentGroup.stories.map((s, i) => (
                         <div key={i} className="h-1 flex-1 bg-white/20 rounded-full overflow-hidden">
                             {i < storyIndex ? (
@@ -287,7 +269,7 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
                                     initial={{ scaleX: 0 }}
                                     animate={(isPaused || showViews || showComments) ? { scaleX: 1 } : { scaleX: 1 }}
                                     transition={{ 
-                                        duration: s.type === 'video' ? 15 : 7, // Placeholder duration for video, will be managed by events
+                                        duration: s.type === 'video' ? 15 : 7, 
                                         ease: 'linear' 
                                     }}
                                     key={`${authorIndex}-${i}`}
@@ -300,19 +282,19 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
                 </div>
                 
                 {/* Header Profile Info */}
-                <div className="absolute top-8 left-0 right-0 px-4 z-[260] flex items-center pointer-events-none">
+                <div className="absolute top-12 left-0 right-0 px-4 z-[260] flex items-center pointer-events-none">
                     <motion.div 
                         initial={{ opacity: 0, x: -10 }} 
                         animate={{ opacity: 1, x: 0 }}
                         className="flex items-center gap-3 bg-black/30 backdrop-blur-xl p-1.5 pr-5 rounded-full border border-white/10 pointer-events-auto shadow-xl"
                     >
-                        <Avatar className="h-10 w-10 ring-2 ring-primary/30">
+                        <Avatar className="h-9 w-9 ring-2 ring-primary/30">
                             <AvatarImage src={currentGroup.authorAvatarUrl} className="object-cover" />
                             <AvatarFallback className="bg-primary text-white font-black">{currentGroup.authorName.charAt(0)}</AvatarFallback>
                         </Avatar>
                         <div>
                             <p className="font-black text-sm text-white truncate max-w-[120px]">{currentGroup.authorName}</p>
-                            <p className="text-[9px] uppercase font-black text-white/60 tracking-widest">
+                            <p className="text-[8px] uppercase font-black text-white/60 tracking-widest">
                                 {formatDistanceToNow(currentStory.createdAt.toDate(), { locale: id, addSuffix: true })}
                             </p>
                         </div>
@@ -321,9 +303,9 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
                     <div className="ml-auto pointer-events-auto">
                         <button 
                             onClick={(e) => { e.stopPropagation(); setIsMuted(!isMuted); }}
-                            className="h-10 w-10 rounded-full bg-black/30 backdrop-blur-xl border border-white/10 flex items-center justify-center text-white/80 hover:text-white transition-all"
+                            className="h-9 w-9 rounded-full bg-black/30 backdrop-blur-xl border border-white/10 flex items-center justify-center text-white/80 hover:text-white transition-all"
                         >
-                            {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+                            {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
                         </button>
                     </div>
                 </div>
@@ -364,7 +346,7 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
                                 )}
                                 
                                 {currentStory.content && (
-                                    <div className="absolute bottom-24 left-0 right-0 p-8 bg-gradient-to-t from-black/90 via-black/40 to-transparent">
+                                    <div className="absolute bottom-28 left-0 right-0 p-8 bg-gradient-to-t from-black via-black/40 to-transparent">
                                         <p className="text-white text-lg font-bold drop-shadow-lg leading-relaxed">{currentStory.content}</p>
                                     </div>
                                 )}
@@ -392,7 +374,7 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
                             isLiked ? "text-rose-500 scale-110" : "text-white/80 hover:text-white"
                         )}
                      >
-                        <Heart className={cn("h-8 w-8", isLiked && "fill-current")}/> 
+                        <Heart className={cn("h-7 w-7", isLiked && "fill-current")}/> 
                         <span className="text-[10px] font-black tracking-widest">{currentStory.likes}</span>
                      </button>
                      
@@ -400,7 +382,7 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
                         onClick={() => setShowComments(true)} 
                         className="flex flex-col items-center gap-1.5 text-white/80 hover:text-white transition-all active:scale-75"
                      >
-                        <MessageSquare className="h-8 w-8"/> 
+                        <MessageSquare className="h-7 w-7"/> 
                         <span className="text-[10px] font-black tracking-widest">{currentStory.commentCount}</span>
                      </button>
                      
@@ -437,7 +419,6 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
                 </div>
             </div>
 
-            {/* Viewers & Comments Sheets */}
             {isAuthor && <StoryViewersSheet storyId={currentStory.id} isOpen={showViews} onOpenChange={setShowViews} />}
             <StoryCommentsSheet storyId={currentStory.id} isOpen={showComments} onOpenChange={setShowComments} />
         </div>

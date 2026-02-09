@@ -54,10 +54,10 @@ export function StoriesReel({ stories, isLoading, currentUserProfile }: StoriesR
 
   if (isLoading) {
     return (
-      <div className="flex items-center gap-5 pb-6 overflow-x-auto no-scrollbar">
+      <div className="flex items-center gap-4 md:gap-5 pb-6 overflow-x-auto no-scrollbar px-1">
         {Array.from({ length: 6 }).map((_, i) => (
           <div key={i} className="flex flex-col items-center gap-2 flex-shrink-0">
-            <Skeleton className="h-16 w-16 rounded-full" />
+            <Skeleton className="h-16 w-16 md:h-20 md:w-20 rounded-full" />
             <Skeleton className="h-2 w-12 rounded-full" />
           </div>
         ))}
@@ -82,7 +82,7 @@ export function StoriesReel({ stories, isLoading, currentUserProfile }: StoriesR
         />
       )}
 
-      <div className="flex items-center gap-5 pb-6 border-b border-border/50 overflow-x-auto no-scrollbar relative">
+      <div className="flex items-center gap-4 md:gap-5 pb-6 border-b border-border/50 overflow-x-auto no-scrollbar relative px-1">
         {currentUserProfile && (
           <motion.div 
             whileHover={{ scale: 1.05 }}
@@ -91,7 +91,7 @@ export function StoriesReel({ stories, isLoading, currentUserProfile }: StoriesR
           >
             <button
               onClick={() => setCreateModalOpen(true)}
-              className="w-16 h-16 rounded-full bg-primary/5 border-2 border-dashed border-primary/30 flex items-center justify-center hover:bg-primary/10 transition-all group overflow-hidden"
+              className="w-16 h-16 md:w-20 md:w-20 rounded-full bg-primary/5 border-2 border-dashed border-primary/30 flex items-center justify-center hover:bg-primary/10 transition-all group overflow-hidden shadow-inner"
             >
               <Plus className="h-7 w-7 text-primary group-hover:scale-110 transition-transform" />
             </button>
@@ -106,12 +106,12 @@ export function StoriesReel({ stories, isLoading, currentUserProfile }: StoriesR
               <button 
                   onClick={() => openViewer(group.authorId)} 
                   className={cn(
-                    "relative w-16 h-16 p-0.5 rounded-full transition-all active:scale-90 shadow-md",
+                    "relative w-16 h-16 md:w-20 md:h-20 p-0.5 rounded-full transition-all active:scale-90 shadow-md",
                     isOfficial ? "bg-gradient-to-tr from-primary via-accent to-indigo-500" : "bg-muted-foreground/20"
                   )}
               >
                 <div className="rounded-full bg-background p-0.5 h-full w-full">
-                    <Avatar className="w-full h-full border border-border/50">
+                    <Avatar className="w-full h-full border border-border/50 shadow-inner">
                         <AvatarImage src={group.authorAvatarUrl} alt={group.authorName} className="object-cover" />
                         <AvatarFallback className="bg-primary/5 text-primary font-black uppercase">
                             {group.authorName.charAt(0)}
@@ -119,12 +119,12 @@ export function StoriesReel({ stories, isLoading, currentUserProfile }: StoriesR
                     </Avatar>
                 </div>
                 {isOfficial && (
-                    <div className="absolute -bottom-1 -right-1 bg-white p-0.5 rounded-full shadow-lg">
-                        <Sparkles className="h-3 w-3 text-primary" />
+                    <div className="absolute -bottom-1 -right-1 bg-white p-1 rounded-full shadow-lg ring-1 ring-border">
+                        <Sparkles className="h-3.5 w-3.5 text-primary" />
                     </div>
                 )}
               </button>
-              <p className="text-[9px] font-black w-16 truncate text-center text-muted-foreground uppercase tracking-tighter">
+              <p className="text-[9px] font-black w-16 md:w-20 truncate text-center text-muted-foreground uppercase tracking-tighter">
                 {group.authorId === currentUserProfile?.uid ? "Anda" : group.authorName.split(' ')[0]}
               </p>
             </motion.div>

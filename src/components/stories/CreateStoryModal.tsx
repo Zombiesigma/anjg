@@ -234,7 +234,7 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent 
-        className="max-w-none w-screen h-screen p-0 border-0 m-0 bg-black overflow-hidden flex flex-col rounded-none z-[200] focus:outline-none"
+        className="max-w-none w-screen h-[100dvh] p-0 border-0 m-0 bg-black overflow-hidden flex flex-col rounded-none z-[200] focus:outline-none"
         onCloseAutoFocus={(e) => { e.preventDefault(); document.body.style.pointerEvents = ''; }}
       >
         <DialogHeader className="sr-only">
@@ -284,8 +284,8 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
                         <div className="absolute inset-0 bg-primary/5 rounded-full blur-[120px] -z-10" />
                         
                         <div className="text-center space-y-3 mb-4">
-                            <h2 className="text-white text-4xl font-headline font-black tracking-tight leading-tight">Ukir <span className="text-primary italic">Momen.</span></h2>
-                            <p className="text-white/40 text-sm font-medium tracking-wide">Pilih medium untuk karyamu hari ini.</p>
+                            <h2 className="text-white text-4xl font-headline font-black tracking-tight leading-tight uppercase">Mahakarya <br/> <span className="text-primary italic">Momen.</span></h2>
+                            <p className="text-white/40 text-sm font-medium tracking-wide">Medium apa yang mencerminkan hatimu hari ini?</p>
                         </div>
 
                         <div className="grid gap-4 w-full max-w-xs">
@@ -405,12 +405,12 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
                     >
                         <div className="flex-1 relative flex items-center justify-center p-2">
                             {mode === 'preview_video' ? (
-                                <video src={capturedMedia} className="w-full h-full object-contain rounded-3xl" autoPlay loop playsInline />
+                                <video src={capturedMedia} className="w-full h-full object-contain rounded-[2.5rem]" autoPlay loop playsInline />
                             ) : (
-                                <img src={capturedMedia} alt="Captured" className="w-full h-full object-contain rounded-3xl" />
+                                <img src={capturedMedia} alt="Captured" className="w-full h-full object-contain rounded-[2.5rem]" />
                             )}
                             
-                            <div className="absolute top-6 left-6">
+                            <div className="absolute top-10 left-6">
                                 <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
                                     {mode === 'preview_video' ? <Film className="h-3 w-3 text-indigo-400" /> : <ImageIcon className="h-3 w-3 text-emerald-400" />}
                                     <span className="text-[8px] font-black text-white uppercase tracking-widest">{mode === 'preview_video' ? 'Video' : 'Gambar'}</span>
@@ -420,14 +420,15 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
                         
                         <div className="p-6 bg-gradient-to-t from-black via-black/80 to-transparent pb-[max(2rem,env(safe-area-inset-bottom))] relative z-20">
                             <Form {...form}>
-                                <form onSubmit={(e) => e.preventDefault()} className="relative">
+                                <form onSubmit={(e) => e.preventDefault()} className="relative group">
+                                    <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-accent/20 rounded-[1.5rem] blur opacity-0 group-focus-within:opacity-100 transition-opacity" />
                                     <FormField control={form.control} name="content" render={({ field }) => (
                                         <FormItem>
                                             <FormControl>
-                                                <div className="relative group">
+                                                <div className="relative">
                                                     <Input 
-                                                        placeholder="Tambahkan keterangan cerita..." 
-                                                        className="bg-white/10 border-white/10 text-white placeholder:text-white/30 h-16 rounded-[1.5rem] px-6 text-base font-medium focus-visible:ring-primary/50 focus-visible:bg-white/20 transition-all pr-16"
+                                                        placeholder="Tambahkan keterangan momen..." 
+                                                        className="bg-white/10 border-none text-white placeholder:text-white/30 h-16 rounded-[1.5rem] px-6 text-base font-medium focus-visible:ring-primary/50 focus-visible:bg-white/20 transition-all pr-16 shadow-inner"
                                                         {...field}
                                                     />
                                                     <div className="absolute right-4 top-1/2 -translate-y-1/2">
