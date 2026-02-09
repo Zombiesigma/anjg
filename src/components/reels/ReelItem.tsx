@@ -96,7 +96,7 @@ export function ReelItem({ reel, isMuted, onToggleMute }: ReelItemProps) {
                   addDoc(collection(firestore, 'users', reel.authorId, 'notifications'), {
                       type: 'reel_like',
                       text: `${currentUser.displayName} menyukai video Reel Anda.`,
-                      link: `/reels`,
+                      link: `/reels?id=${reel.id}`,
                       actor: {
                           uid: currentUser.uid,
                           displayName: currentUser.displayName!,
@@ -116,26 +116,44 @@ export function ReelItem({ reel, isMuted, onToggleMute }: ReelItemProps) {
   };
 
   const handleExternalShare = async () => {
+    const shareUrl = `${window.location.origin}/reels?id=${reel.id}`;
     const shareData = {
-      title: `Reel oleh ${reel.authorName} di Elitera`,
-      text: reel.caption || 'Lihat video keren ini di Elitera!',
-      url: window.location.href,
+      title: `Karya Video ${reel.authorName} di Elitera`,
+      text: reel.caption || 'Lihat momen puitis ini di Elitera!',
+      url: shareUrl,
     };
 
     if (navigator.share) {
       try {
         await navigator.share(shareData);
       } catch (err) {
-        console.log(err);
+        if ((err as Error).name !== 'AbortError') {
+          console.error('Share failed:', err);
+        }
       }
     } else {
-      await navigator.clipboard.writeText(window.location.href);
-      toast({ title: 'Tautan Disalin', description: 'Tautan video berhasil disalin ke papan klip.' });
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        toast({
+          variant: 'success',
+          title: 'Tautan Disalin',
+          description: 'Tautan video berhasil disalin ke papan klip Anda.',
+        });
+      } catch (err) {
+        toast({
+          variant: 'destructive',
+          title: 'Gagal Menyalin',
+          description: 'Perangkat Anda tidak mendukung fitur ini.',
+        });
+      }
     }
   };
 
   return (
-    <div className="h-full w-full snap-start snap-always relative bg-zinc-950 flex flex-col items-center justify-center overflow-hidden shrink-0">
+    <div 
+      id={`reel-${reel.id}`}
+      className="h-full w-full snap-start snap-always relative bg-zinc-950 flex flex-col items-center justify-center overflow-hidden shrink-0"
+    >
       {/* Video Element */}
       <video
         ref={videoRef}
@@ -179,13 +197,15 @@ export function ReelItem({ reel, isMuted, onToggleMute }: ReelItemProps) {
         <div className="flex flex-col items-center gap-4">
             <button 
                 onClick={() => setShowShare(true)}
-                className="h-12 w-12 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center text-white active:scale-75 transition-all"
+                className="h-12 w-12 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center text-white active:scale-75 transition-all hover:bg-primary/80"
+                title="Kirim ke Obrolan"
             >
                 <SendIcon className="h-5 w-5" />
             </button>
             <button 
                 onClick={handleExternalShare}
-                className="h-12 w-12 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center text-white active:scale-75 transition-all"
+                className="h-12 w-12 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center text-white active:scale-75 transition-all hover:bg-emerald-500/80"
+                title="Bagikan ke Luar"
             >
                 <Share2 className="h-5 w-5" />
             </button>

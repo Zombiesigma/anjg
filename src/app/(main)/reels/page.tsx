@@ -2,18 +2,22 @@
 
 import { useFirestore, useCollection, useUser, useDoc } from '@/firebase';
 import { collection, query, orderBy, doc } from 'firebase/firestore';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import type { Reel, User as AppUser } from '@/lib/types';
 import { Loader2, Plus, Music2, Volume2, VolumeX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CreateReelModal } from '@/components/reels/CreateReelModal';
 import { ReelItem } from '@/components/reels/ReelItem';
 
-export default function ReelsPage() {
+function ReelsPageContent() {
   const firestore = useFirestore();
   const { user: currentUser } = useUser();
+  const searchParams = useSearchParams();
   const [isMuted, setIsMuted] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+  const reelIdFromUrl = searchParams.get('id');
 
   const { data: userProfile } = useDoc<AppUser>(
     (firestore && currentUser) ? doc(firestore, 'users', currentUser.uid) : null
@@ -27,6 +31,19 @@ export default function ReelsPage() {
   ), [firestore, currentUser]);
 
   const { data: reels, isLoading } = useCollection<Reel>(reelsQuery);
+
+  // Auto-scroll to shared reel if ID is present
+  useEffect(() => {
+    if (reelIdFromUrl && !isLoading && reels) {
+      const timer = setTimeout(() => {
+        const element = document.getElementById(`reel-${reelIdFromUrl}`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'auto' });
+        }
+      }, 500); // Small delay to ensure rendering is complete
+      return () => clearTimeout(timer);
+    }
+  }, [reelIdFromUrl, isLoading, reels]);
 
   if (isLoading) {
     return (
@@ -87,5 +104,17 @@ export default function ReelsPage() {
         currentUserProfile={userProfile}
       />
     </div>
+  );
+}
+
+export default function ReelsPage() {
+  return (
+    <Suspense fallback={
+      <div className="h-[calc(100dvh-180px)] flex items-center justify-center">
+        <Loader2 className="h-10 w-10 animate-spin text-primary/40" />
+      </div>
+    }>
+      <ReelsPageContent />
+    </Suspense>
   );
 }

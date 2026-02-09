@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
@@ -471,7 +470,7 @@ export default function MessagesPage() {
                                             </Link>
                                         )}
                                         {msg.type === 'reel_share' && (
-                                            <Link href={`/reels`} className="block group/shared">
+                                            <Link href={`/reels?id=${msg.reel.id}`} className="block group/shared">
                                                 <div className={cn(
                                                     "flex flex-col gap-3 min-w-[200px] sm:min-w-[260px] p-4 overflow-hidden rounded-2xl transition-all",
                                                     isSender ? "bg-white/5 hover:bg-white/10" : "bg-muted/20 hover:bg-muted/40"
