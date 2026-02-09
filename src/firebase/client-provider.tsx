@@ -1,8 +1,12 @@
 'use client';
 
 import { FirebaseProvider } from './provider';
-import { initializeFirebase } from './index';
+import { initializeFirebase } from './init';
 
+/**
+ * FirebaseClientProvider membungkus aplikasi dengan konteks Firebase
+ * yang diinisialisasi sekali di sisi klien.
+ */
 export function FirebaseClientProvider({
   children,
 }: {
