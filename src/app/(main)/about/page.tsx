@@ -17,6 +17,49 @@ const devImage = "https://www.gunturpadilah.web.id/pp.jpg";
 const devName = "Guntur P.";
 const devBio = "Seorang antusias literasi dan pengembang tumpukan penuh (full-stack) yang berdedikasi menciptakan ruang digital yang inklusif bagi semua orang untuk berkarya.";
 
+const technologies = [
+    { 
+        title: "Next.js 15", 
+        desc: "Framework web masa depan yang menjamin kecepatan akses luar biasa dan optimasi SEO terbaik.",
+        icon: "https://svgl.app/library/nextjs_icon_dark.svg",
+    },
+    { 
+        title: "Firebase", 
+        desc: "Infrastruktur Cloud dari Google yang menjaga keamanan akun dan sinkronisasi data real-time.",
+        icon: "https://svgl.app/library/firebase.svg",
+    },
+    { 
+        title: "Firebase Studio", 
+        desc: "Lingkungan pengembangan mutakhir untuk iterasi produk yang sangat cepat dan terintegrasi.",
+        icon: "https://svgl.app/library/firebase.svg",
+    },
+    { 
+        title: "Expo Native", 
+        desc: "Teknologi inti aplikasi mobile kami, menghadirkan performa native yang mulus di Android & iOS.",
+        icon: "https://svgl.app/library/expo.svg",
+    },
+    { 
+        title: "Tailwind CSS", 
+        desc: "Sistem desain utilitas untuk menciptakan antarmuka yang modern, presisi, dan responsif.",
+        icon: "https://svgl.app/library/tailwindcss.svg",
+    },
+    { 
+        title: "Shadcn UI", 
+        desc: "Koleksi komponen visual berkualitas tinggi untuk pengalaman pengguna yang premium dan konsisten.",
+        icon: "https://raw.githubusercontent.com/shadcn-ui/ui/main/apps/www/public/logo.png",
+    },
+    { 
+        title: "Google Genkit", 
+        desc: "Mesin kecerdasan buatan di balik Elitera AI, dirancang untuk diskusi kreatif yang cerdas.",
+        icon: "https://avatars.githubusercontent.com/u/161543431?s=200&v=4",
+    },
+    { 
+        title: "Sentuhan AI", 
+        desc: "Aplikasi ini dibangun dengan kolaborasi asisten AI untuk efisiensi kode dan ideasi puitis.",
+        icon: "https://svgl.app/library/anthropic_icon.svg",
+    }
+];
+
 export default function AboutPage() {
   return (
     <div className="max-w-5xl mx-auto space-y-24 pb-32 relative">
@@ -142,44 +185,20 @@ export default function AboutPage() {
         <div className="text-center space-y-4">
             <h2 className="text-4xl font-headline font-black tracking-tight">Keajaiban di Balik <span className="text-primary italic">Kata</span></h2>
             <p className="text-muted-foreground max-w-2xl mx-auto font-medium">
-                Elitera dibangun di atas pondasi teknologi mutakhir untuk memastikan setiap imajinasi tersimpan abadi, aman, dan dapat diakses dengan secepat kilat.
+                Elitera dibangun dengan kejujuran menggunakan pondasi teknologi mutakhir untuk memastikan setiap imajinasi tersimpan abadi dan aman.
             </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-                { 
-                    icon: Zap, 
-                    title: "Next.js 15", 
-                    desc: "Framework web masa depan yang menjamin kecepatan akses luar biasa dan optimasi SEO terbaik bagi para penulis.",
-                    color: "text-blue-500",
-                    bg: "bg-blue-500/5"
-                },
-                { 
-                    icon: ShieldCheck, 
-                    title: "Firebase", 
-                    desc: "Infrastruktur Cloud dari Google yang menjaga keamanan akun dan menyinkronkan obrolan antar pujangga secara real-time.",
-                    color: "text-orange-500",
-                    bg: "bg-orange-500/5"
-                },
-                { 
-                    icon: Smartphone, 
-                    title: "Expo Native", 
-                    desc: "Teknologi inti aplikasi mobile kami, menghadirkan performa native yang mulus di genggaman Android maupun iOS Anda.",
-                    color: "text-indigo-500",
-                    bg: "bg-indigo-500/5"
-                },
-                { 
-                    icon: Cpu, 
-                    title: "Google Genkit", 
-                    desc: "Mesin kecerdasan buatan di balik Elitera AI, dirancang untuk menjadi rekan diskusi kreatif yang cerdas dan suportif.",
-                    color: "text-emerald-500",
-                    bg: "bg-emerald-500/5"
-                }
-            ].map((tech, i) => (
-                <Card key={i} className="border-none shadow-lg bg-card/50 backdrop-blur-sm rounded-[2rem] p-6 hover:shadow-xl transition-all duration-300">
-                    <div className={cn("p-3 rounded-2xl w-fit mb-4", tech.bg, tech.color)}>
-                        <tech.icon className="h-6 w-6" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {technologies.map((tech, i) => (
+                <Card key={i} className="border-none shadow-lg bg-card/50 backdrop-blur-sm rounded-[2rem] p-8 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
+                    <div className="h-12 w-12 relative mb-6 grayscale group-hover:grayscale-0 transition-all duration-500">
+                        <Image 
+                            src={tech.icon} 
+                            alt={tech.title} 
+                            fill 
+                            className="object-contain"
+                        />
                     </div>
                     <h4 className="font-black text-lg mb-2">{tech.title}</h4>
                     <p className="text-xs text-muted-foreground leading-relaxed font-medium">{tech.desc}</p>
