@@ -1,6 +1,6 @@
 /**
- * @fileOverview Utilitas unggahan file Elitera dengan sistem Failover Dual-CDN.
- * Urutan: Catbox (Proxy) -> Pomf Multi-Mirror (Internal API).
+ * @fileOverview Utilitas unggahan file Elitera dengan sistem Failover 4-Lapis.
+ * Urutan: Catbox (Proxy) -> ImgBB (API Route) -> Pomf (Multi-Mirror API Route) -> Fileditch (Permanent Link).
  */
 
 /**
@@ -12,6 +12,30 @@ function ensureHttps(url: string): string {
   if (url.startsWith('http://')) return url.replace('http://', 'https://');
   if (!url.startsWith('http')) return `https://${url}`;
   return url;
+}
+
+/**
+ * Logika untuk mengubah link preview Fileditch menjadi link mentah permanen.
+ */
+function getFileditchPermanentLink(rawUrl: string): string {
+  try {
+    if (rawUrl.includes("file.php")) {
+      const urlParams = new URL(rawUrl);
+      const filePath = urlParams.searchParams.get('f');
+      if (filePath) {
+        return `https://up1.fileditch.com${filePath.startsWith('/') ? '' : '/'}${filePath}`;
+      }
+    }
+    // Bersihkan parameter jika itu mirror ber-token
+    const cleanUrl = rawUrl.split('?')[0];
+    if (cleanUrl.includes('thegumonmyshoe.me') || cleanUrl.includes('fileditchfiles.me')) {
+        const path = new URL(cleanUrl).pathname;
+        return `https://up1.fileditch.com${path}`;
+    }
+    return ensureHttps(rawUrl);
+  } catch (e) {
+    return ensureHttps(rawUrl);
+  }
 }
 
 /**
@@ -27,10 +51,7 @@ async function uploadToCatbox(file: File): Promise<string> {
     body: formData,
   });
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Catbox Proxy Error: ${response.status} ${errorText}`);
-  }
+  if (!response.ok) throw new Error(`Catbox Proxy Error: ${response.status}`);
   
   const data = await response.json();
   const url = data.result || data.url;
@@ -40,7 +61,28 @@ async function uploadToCatbox(file: File): Promise<string> {
 }
 
 /**
- * LAYANAN 2: Pomf Multi-Mirror via Internal API Route (Failover)
+ * LAYANAN 2: ImgBB via Internal API Route (Stabil & Terpercaya)
+ */
+async function uploadToImgBB(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch('/api/upload/imgbb', {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ error: 'ImgBB Route tidak merespons.' }));
+    throw new Error(errorData.error || 'Gagal mengunggah ke ImgBB');
+  }
+  
+  const data = await response.json();
+  return ensureHttps(data.url);
+}
+
+/**
+ * LAYANAN 3: Pomf Multi-Mirror via Internal API Route
  */
 async function uploadToPomf(file: File): Promise<string> {
   const formData = new FormData();
@@ -52,42 +94,77 @@ async function uploadToPomf(file: File): Promise<string> {
   });
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ error: 'Jalur Pomf internal tidak merespons.' }));
-    throw new Error(errorData.error || `Server cadangan gagal dengan status: ${response.status}`);
+    const errorData = await response.json().catch(() => ({ error: 'Pomf Route tidak merespons.' }));
+    throw new Error(errorData.error || 'Gagal mengunggah ke Pomf');
   }
   
   const data = await response.json();
   if (data.success && data.files && data.files.length > 0) {
     return ensureHttps(data.files[0].url);
   }
+  throw new Error('Pomf gagal memberikan URL file.');
+}
+
+/**
+ * LAYANAN 4: Fileditch (Cadangan Akhir - Direct Link Only)
+ */
+async function uploadToFileditch(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append('files[]', file);
+
+  const response = await fetch('https://up1.fileditch.com/upload.php', {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) throw new Error(`Fileditch Error: ${response.status}`);
   
-  throw new Error('Gagal mendapatkan URL permanen dari sistem cadangan.');
+  const data = await response.json();
+  if (data.success && data.files && data.files.length > 0) {
+    return getFileditchPermanentLink(data.files[0].url);
+  }
+  throw new Error('Fileditch gagal memberikan URL file.');
 }
 
 /**
  * FUNGSI UTAMA: uploadFile
- * Mengorkestrasi failover otomatis antara dua penyedia layanan permanen terbaik.
+ * Mengorkestrasi failover otomatis antara 4 CDN permanen.
  */
 export async function uploadFile(file: File): Promise<string> {
-  // Validasi ukuran file (5MB)
   if (file.size > 5 * 1024 * 1024) {
     throw new Error('Ukuran file terlalu besar (Maksimal 5MB).');
   }
 
-  // 1. Coba Catbox (Utama)
+  // 1. Coba Catbox
   try {
-    console.log('[Uploader] Mencoba layanan utama (Catbox)...');
+    console.log('[Uploader] Mencoba Prioritas 1: Catbox...');
     return await uploadToCatbox(file);
   } catch (err: any) {
-    console.warn('[Uploader] Layanan utama gagal:', err.message);
-    console.log('[Uploader] Beralih ke sistem cadangan multi-mirror (Pomf)...');
+    console.warn('[Uploader] Catbox gagal:', err.message);
   }
 
-  // 2. Coba Pomf Multi-Mirror (Cadangan)
+  // 2. Coba ImgBB
   try {
+    console.log('[Uploader] Mencoba Prioritas 2: ImgBB...');
+    return await uploadToImgBB(file);
+  } catch (err: any) {
+    console.warn('[Uploader] ImgBB gagal:', err.message);
+  }
+
+  // 3. Coba Pomf
+  try {
+    console.log('[Uploader] Mencoba Prioritas 3: Pomf...');
     return await uploadToPomf(file);
   } catch (err: any) {
+    console.warn('[Uploader] Pomf gagal:', err.message);
+  }
+
+  // 4. Coba Fileditch
+  try {
+    console.log('[Uploader] Mencoba Prioritas 4: Fileditch...');
+    return await uploadToFileditch(file);
+  } catch (err: any) {
     console.error('[Uploader] Fatal: Seluruh sistem unggahan gagal!', err.message);
-    throw new Error(`Gagal mengunggah file. Detail: ${err.message}. Harap coba perkecil ukuran file atau periksa koneksi internet Anda.`);
+    throw new Error('Gagal mengunggah file ke semua layanan. Harap periksa koneksi atau coba file lain.');
   }
 }
