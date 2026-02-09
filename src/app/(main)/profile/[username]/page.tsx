@@ -99,15 +99,24 @@ export default function ProfilePage() {
   
   const publishedBooksQuery = useMemo(() => {
     if (!firestore || !user || !currentUser) return null;
-    
     const baseQuery = query(collection(firestore, 'books'), where('authorId', '==', user.uid), where('status', '==', 'published'));
-    if (isOwnProfile) return baseQuery;
-    if (isFollowing) {
-        return query(baseQuery, where('visibility', 'in', ['public', 'followers_only']));
+    return baseQuery;
+  }, [firestore, user, currentUser]);
+  
+  const { data: rawPublishedBooks, isLoading: arePublishedBooksLoading } = useCollection<Book>(publishedBooksQuery);
+
+  const publishedBooks = useMemo(() => {
+    if (!rawPublishedBooks) return [];
+    let books = rawPublishedBooks;
+    if (!isOwnProfile) {
+        if (isFollowing) {
+            books = books.filter(b => b.visibility === 'public' || b.visibility === 'followers_only');
+        } else {
+            books = books.filter(b => b.visibility === 'public');
+        }
     }
-    return query(baseQuery, where('visibility', '==', 'public'));
-  }, [firestore, user, currentUser, isOwnProfile, isFollowing]);
-  const { data: publishedBooks, isLoading: arePublishedBooksLoading } = useCollection<Book>(publishedBooksQuery);
+    return books;
+  }, [rawPublishedBooks, isOwnProfile, isFollowing]);
 
   const userReelsQuery = useMemo(() => (
     (firestore && user && currentUser)
@@ -319,16 +328,16 @@ export default function ProfilePage() {
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="space-y-10 pb-20"
+        className="space-y-8 md:space-y-10 pb-20 w-full overflow-x-hidden"
       >
-        <Card className="overflow-hidden border-none shadow-2xl bg-card/50 backdrop-blur-md rounded-[2.5rem] relative">
-          <div className="h-40 md:h-64 bg-gradient-to-br from-primary via-accent to-indigo-600 relative overflow-hidden">
+        <Card className="overflow-hidden border-none shadow-2xl bg-card/50 backdrop-blur-md rounded-[2rem] md:rounded-[2.5rem] relative">
+          <div className="h-32 md:h-64 bg-gradient-to-br from-primary via-accent to-indigo-600 relative overflow-hidden">
               <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
           </div>
 
-          <CardContent className="p-6 md:p-10 relative">
-              <div className="flex flex-col md:flex-row items-center md:items-end gap-6 -mt-20 md:-mt-32">
+          <CardContent className="p-5 md:p-10 relative">
+              <div className="flex flex-col md:flex-row items-center md:items-end gap-5 md:gap-6 -mt-16 md:-mt-32">
                   <div className="relative group">
                     <button
                         disabled={!userHasActiveStory}
@@ -338,36 +347,36 @@ export default function ProfilePage() {
                             userHasActiveStory && "bg-gradient-to-tr from-yellow-400 via-rose-500 to-primary animate-pulse"
                         )}
                     >
-                        <div className="rounded-full bg-background p-1">
-                            <Avatar className="w-28 h-28 md:w-40 md:h-40 border-4 border-background shadow-2xl">
+                        <div className="rounded-full bg-background p-0.5 md:p-1">
+                            <Avatar className="w-24 h-24 md:w-40 md:h-40 border-2 md:border-4 border-background shadow-2xl">
                                 <AvatarImage src={user.photoURL} alt={user.displayName} className="object-cover" />
-                                <AvatarFallback className="text-5xl font-black bg-primary/5 text-primary">
+                                <AvatarFallback className="text-4xl font-black bg-primary/5 text-primary">
                                     {user.displayName?.charAt(0)}
                                 </AvatarFallback>
                             </Avatar>
                         </div>
                     </button>
                     {isOnline && (
-                        <span className="absolute bottom-4 right-4 block h-6 w-6 rounded-full bg-green-500 border-4 border-card shadow-lg" title="Online" />
+                        <span className="absolute bottom-3 right-3 md:bottom-4 md:right-4 block h-4 w-4 md:h-6 md:w-6 rounded-full bg-green-500 border-2 md:border-4 border-card shadow-lg" title="Online" />
                     )}
                   </div>
 
-                  <div className="flex-1 text-center md:text-left space-y-2">
-                      <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
-                          <h1 className="text-3xl md:text-4xl font-black font-headline text-foreground tracking-tight">{user.displayName}</h1>
-                          <Badge variant={user.role === 'penulis' ? 'default' : 'secondary'} className="rounded-full px-4 py-1 font-bold shadow-sm capitalize">
+                  <div className="flex-1 text-center md:text-left space-y-1 md:space-y-2 w-full min-w-0">
+                      <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 md:gap-3">
+                          <h1 className="text-2xl md:text-4xl font-black font-headline text-foreground tracking-tight truncate">{user.displayName}</h1>
+                          <Badge variant={user.role === 'penulis' ? 'default' : 'secondary'} className="rounded-full px-3 md:px-4 py-0.5 md:py-1 font-bold shadow-sm capitalize text-[10px] md:text-xs">
                             {user.role}
                           </Badge>
                           {user.role === 'admin' && (
-                              <CheckCircle2 className="h-6 w-6 text-primary fill-primary/10" />
+                              <CheckCircle2 className="h-5 w-5 md:h-6 md:w-6 text-primary" />
                           )}
                       </div>
-                      <p className="text-muted-foreground font-bold tracking-widest uppercase text-xs">@{user.username}</p>
+                      <p className="text-muted-foreground font-bold tracking-widest uppercase text-[10px] md:text-xs">@{user.username}</p>
                   </div>
 
-                  <div className="flex gap-2 w-full md:w-auto shrink-0 pt-4 md:pt-0">
+                  <div className="flex gap-2 w-full md:w-auto shrink-0 pt-2 md:pt-0">
                       {isOwnProfile ? (
-                          <Button asChild className="rounded-full px-8 h-12 font-bold shadow-xl shadow-primary/20 w-full md:w-auto">
+                          <Button asChild className="rounded-full px-8 h-11 md:h-12 font-bold shadow-xl shadow-primary/20 w-full md:w-auto text-sm">
                             <Link href="/settings">
                                 <Edit className="mr-2 h-4 w-4"/> Edit Profil
                             </Link>
@@ -379,7 +388,7 @@ export default function ProfilePage() {
                                 disabled={isTogglingFollow || isFollowingLoading || isCurrentUserProfileLoading || isFollowerLoading} 
                                 variant={isFollowing ? "outline" : "default"}
                                 className={cn(
-                                    "rounded-full px-8 h-12 font-bold flex-1 md:flex-none",
+                                    "rounded-full px-6 h-11 md:h-12 font-bold flex-1 md:flex-none text-sm",
                                     !isFollowing && "shadow-xl shadow-primary/20"
                                 )}
                               >
@@ -394,14 +403,14 @@ export default function ProfilePage() {
                                 variant="outline" 
                                 onClick={handleStartChat} 
                                 disabled={isCreatingChat || areChatsLoading || isCurrentUserProfileLoading}
-                                className="rounded-full h-12 w-12 md:w-auto md:px-6 border-2 font-bold"
+                                className="rounded-full h-11 w-11 md:h-12 md:w-auto md:px-6 border-2 font-bold"
                               >
                                   {(isCreatingChat || areChatsLoading || isCurrentUserProfileLoading) ? (
                                       <Loader2 className="h-4 w-4 animate-spin"/>
                                   ) : (
                                       <>
                                         <MessageSquare className="md:mr-2 h-4 w-4"/>
-                                        <span className="hidden md:inline">Pesan</span>
+                                        <span className="hidden md:inline text-sm">Pesan</span>
                                       </>
                                   )}
                               </Button>
@@ -410,29 +419,29 @@ export default function ProfilePage() {
                   </div>
               </div>
 
-              <div className="mt-8 flex flex-col md:flex-row gap-8 items-start md:items-center">
-                  <div className="flex-1">
-                    <p className="text-foreground/80 leading-relaxed max-w-2xl text-lg italic font-serif">
+              <div className="mt-6 md:mt-8 flex flex-col md:flex-row gap-6 md:gap-8 items-start md:items-center">
+                  <div className="flex-1 w-full text-center md:text-left">
+                    <p className="text-foreground/80 leading-relaxed max-w-2xl text-base md:text-lg italic font-serif">
                         {user.bio || "Pujangga inspiratif di komunitas Elitera yang berbagi cerita lewat kata."}
                     </p>
                   </div>
                   
-                  <div className="grid grid-cols-3 gap-10 md:gap-12 w-full md:w-auto pt-6 md:pt-0 border-t md:border-t-0 md:border-l border-border/50 md:pl-12">
+                  <div className="grid grid-cols-3 gap-4 md:gap-12 w-full md:w-auto pt-6 md:pt-0 border-t md:border-t-0 md:border-l border-border/50 md:pl-12">
                       <div className="text-center space-y-1">
-                          <p className="font-black text-2xl text-primary">{areBooksLoading ? '...' : (publishedBooks?.length ?? 0)}</p>
-                          <div className="flex items-center justify-center gap-1.5 text-[10px] uppercase font-black tracking-widest text-muted-foreground">
+                          <p className="font-black text-xl md:text-2xl text-primary">{areBooksLoading ? '...' : (publishedBooks?.length ?? 0)}</p>
+                          <div className="flex items-center justify-center gap-1 text-[8px] md:text-[10px] uppercase font-black tracking-widest text-muted-foreground">
                               <BookOpen className="h-3 w-3" /> Karya
                           </div>
                       </div>
                       <button className="text-center space-y-1 group disabled:cursor-default" onClick={() => openFollowsSheet('followers')} disabled={!user.followers}>
-                          <p className="font-black text-2xl text-foreground group-hover:text-primary transition-colors">{new Intl.NumberFormat('id-ID', { notation: 'compact' }).format(user.followers || 0)}</p>
-                          <div className="flex items-center justify-center gap-1.5 text-[10px] uppercase font-black tracking-widest text-muted-foreground group-hover:text-primary transition-colors">
+                          <p className="font-black text-xl md:text-2xl text-foreground group-hover:text-primary transition-colors">{new Intl.NumberFormat('id-ID', { notation: 'compact' }).format(user.followers || 0)}</p>
+                          <div className="flex items-center justify-center gap-1 text-[8px] md:text-[10px] uppercase font-black tracking-widest text-muted-foreground group-hover:text-primary transition-colors">
                               <Users className="h-3 w-3" /> Pengikut
                           </div>
                       </button>
                       <button className="text-center space-y-1 group disabled:cursor-default" onClick={() => openFollowsSheet('following')} disabled={!user.following}>
-                          <p className="font-black text-2xl text-foreground group-hover:text-primary transition-colors">{user.following || 0}</p>
-                          <div className="flex items-center justify-center gap-1.5 text-[10px] uppercase font-black tracking-widest text-muted-foreground group-hover:text-primary transition-colors">
+                          <p className="font-black text-xl md:text-2xl text-foreground group-hover:text-primary transition-colors">{user.following || 0}</p>
+                          <div className="flex items-center justify-center gap-1 text-[8px] md:text-[10px] uppercase font-black tracking-widest text-muted-foreground group-hover:text-primary transition-colors">
                               <Sparkles className="h-3 w-3" /> Mengikuti
                           </div>
                       </button>
@@ -441,29 +450,28 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        <Tabs defaultValue="published-books" className="space-y-8">
-          <div className="flex items-center justify-center">
-            <TabsList className="bg-muted/50 p-1.5 rounded-full h-auto flex-wrap justify-center">
-                <TabsTrigger value="published-books" className="rounded-full px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-white font-bold transition-all">Buku Terbitan</TabsTrigger>
-                <TabsTrigger value="reels" className="rounded-full px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-white font-bold transition-all">Reels</TabsTrigger>
-                {isOwnProfile && <TabsTrigger value="drafts" className="rounded-full px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-white font-bold transition-all">Draf</TabsTrigger>}
-                {isOwnProfile && <TabsTrigger value="favorites" className="rounded-full px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-white font-bold transition-all">Favorit</TabsTrigger>}
+        <Tabs defaultValue="published-books" className="space-y-6 md:space-y-8">
+          <div className="flex items-center justify-center px-2">
+            <TabsList className="bg-muted/50 p-1 rounded-full h-auto flex-wrap justify-center max-w-full">
+                <TabsTrigger value="published-books" className="rounded-full px-4 md:px-6 py-2 text-xs md:text-sm font-bold transition-all">Karya</TabsTrigger>
+                <TabsTrigger value="reels" className="rounded-full px-4 md:px-6 py-2 text-xs md:text-sm font-bold transition-all">Reels</TabsTrigger>
+                {isOwnProfile && <TabsTrigger value="drafts" className="rounded-full px-4 md:px-6 py-2 text-xs md:text-sm font-bold transition-all">Draf</TabsTrigger>}
+                {isOwnProfile && <TabsTrigger value="favorites" className="rounded-full px-4 md:px-6 py-2 text-xs md:text-sm font-bold transition-all">Favorit</TabsTrigger>}
             </TabsList>
           </div>
 
-          <TabsContent value="published-books" className="mt-0">
+          <TabsContent value="published-books" className="mt-0 outline-none">
                {arePublishedBooksLoading && (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6 px-1">
                       {Array.from({ length: 4 }).map((_, i) => (
                         <div key={i} className="space-y-3">
                           <Skeleton className="aspect-[2/3] w-full rounded-2xl" />
                           <Skeleton className="h-5 w-3/4" />
-                          <Skeleton className="h-4 w-1/2" />
                         </div>
                       ))}
                   </div>
               )}
-              <motion.div layout className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+              <motion.div layout className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6 px-1">
                   {publishedBooks?.map(book => (
                       <motion.div key={book.id} layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
                         <BookCard book={book} />
@@ -471,89 +479,69 @@ export default function ProfilePage() {
                   ))}
               </motion.div>
               {!arePublishedBooksLoading && publishedBooks?.length === 0 && (
-                  <div className="text-center py-20 bg-muted/20 rounded-[2rem] border-2 border-dashed">
-                      <BookOpen className="h-12 w-12 text-muted-foreground/20 mx-auto mb-4" />
-                      <p className="text-muted-foreground font-headline font-bold text-lg">{isOwnProfile ? "Anda" : "Pengguna ini"} belum menerbitkan karya.</p>
+                  <div className="text-center py-16 md:py-20 bg-muted/20 rounded-[2rem] border-2 border-dashed mx-1">
+                      <BookOpen className="h-10 w-10 md:h-12 md:w-12 text-muted-foreground/20 mx-auto mb-4" />
+                      <p className="text-muted-foreground font-headline font-bold text-base md:text-lg">{isOwnProfile ? "Anda" : "Pengguna ini"} belum menerbitkan karya.</p>
                   </div>
               )}
           </TabsContent>
 
-          <TabsContent value="reels" className="mt-0">
+          <TabsContent value="reels" className="mt-0 outline-none">
                 {areUserReelsLoading && (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4 px-1">
                         {Array.from({ length: 4 }).map((_, i) => (
                             <Skeleton key={i} className="aspect-[9/16] w-full rounded-2xl" />
                         ))}
                     </div>
                 )}
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4 px-1">
                     {userReels?.map(reel => (
                         <motion.div key={reel.id} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
-                            <Link href={`/reels`} className="group relative aspect-[9/16] block overflow-hidden rounded-2xl bg-zinc-900 border border-white/5 shadow-lg active:scale-95 transition-transform">
-                                <video src={reel.videoUrl} className="h-full w-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" muted loop onMouseEnter={(e) => e.currentTarget.play()} onMouseLeave={(e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }} />
+                            <Link href={`/reels?id=${reel.id}`} className="group relative aspect-[9/16] block overflow-hidden rounded-2xl bg-zinc-900 border border-white/5 shadow-lg active:scale-95 transition-transform">
+                                <video src={reel.videoUrl} className="h-full w-full object-cover opacity-80" muted playsInline />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
-                                <div className="absolute bottom-3 left-3 right-3 text-white pointer-events-none">
+                                <div className="absolute bottom-2 left-2 right-2 md:bottom-3 md:left-3 md:right-3 text-white pointer-events-none">
                                     <div className="flex items-center gap-1.5 mb-1">
-                                        <Play className="h-2.5 w-2.5 fill-current text-primary" />
-                                        <span className="text-[9px] font-black uppercase tracking-widest">{new Intl.NumberFormat('id-ID', { notation: 'compact' }).format(reel.viewCount || 0)}</span>
+                                        <Play className="h-2 w-2 md:h-2.5 md:w-2.5 fill-current text-primary" />
+                                        <span className="text-[8px] md:text-[9px] font-black uppercase tracking-widest">{new Intl.NumberFormat('id-ID', { notation: 'compact' }).format(reel.viewCount || 0)}</span>
                                     </div>
-                                    <p className="text-[9px] font-medium line-clamp-2 italic opacity-80 leading-relaxed">"{reel.caption || 'Video Elitera'}"</p>
+                                    <p className="text-[8px] md:text-[9px] font-medium line-clamp-2 italic opacity-80 leading-tight">"{reel.caption || 'Video Elitera'}"</p>
                                 </div>
                             </Link>
                         </motion.div>
                     ))}
                 </div>
                 {!areUserReelsLoading && userReels?.length === 0 && (
-                    <div className="text-center py-20 bg-muted/20 rounded-[2rem] border-2 border-dashed">
-                        <Clapperboard className="h-12 w-12 text-muted-foreground/20 mx-auto mb-4" />
-                        <p className="text-muted-foreground font-headline font-bold text-lg">{isOwnProfile ? "Anda" : "Pengguna ini"} belum menerbitkan Reel.</p>
+                    <div className="text-center py-16 md:py-20 bg-muted/20 rounded-[2rem] border-2 border-dashed mx-1">
+                        <Clapperboard className="h-10 w-10 md:h-12 md:w-12 text-muted-foreground/20 mx-auto mb-4" />
+                        <p className="text-muted-foreground font-headline font-bold text-base md:text-lg">{isOwnProfile ? "Anda" : "Pengguna ini"} belum menerbitkan Reel.</p>
                     </div>
                 )}
           </TabsContent>
 
           {isOwnProfile && (
-            <TabsContent value="drafts" className="mt-0">
-                 {areOtherBooksLoading && (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
-                        {Array.from({ length: 2 }).map((_, i) => (
-                          <div key={i} className="space-y-3">
-                            <Skeleton className="aspect-[2/3] w-full rounded-2xl" />
-                            <Skeleton className="h-5 w-3/4" />
-                          </div>
-                        ))}
-                    </div>
-                )}
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+            <TabsContent value="drafts" className="mt-0 outline-none">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6 px-1">
                     {otherBooks?.map(book => <BookCard key={book.id} book={book} />)}
                 </div>
                 {!areOtherBooksLoading && otherBooks?.length === 0 && (
-                    <div className="text-center py-20 bg-muted/20 rounded-[2rem] border-2 border-dashed">
-                        <Edit className="h-12 w-12 text-muted-foreground/20 mx-auto mb-4" />
-                        <p className="text-muted-foreground font-headline font-bold text-lg">Anda tidak memiliki draf buku.</p>
+                    <div className="text-center py-16 md:py-20 bg-muted/20 rounded-[2rem] border-2 border-dashed mx-1">
+                        <Edit className="h-10 w-10 md:h-12 md:w-12 text-muted-foreground/20 mx-auto mb-4" />
+                        <p className="text-muted-foreground font-headline font-bold text-base md:text-lg">Anda tidak memiliki draf buku.</p>
                     </div>
                 )}
             </TabsContent>
           )}
 
           {isOwnProfile && (
-              <TabsContent value="favorites" className="mt-0">
-                  {(areFavoritesLoading || areFavoriteBooksLoading) && (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
-                          {Array.from({ length: 4 }).map((_, i) => (
-                              <div key={i} className="space-y-3">
-                                <Skeleton className="aspect-[2/3] w-full rounded-2xl" />
-                                <Skeleton className="h-5 w-3/4" />
-                              </div>
-                          ))}
-                      </div>
-                  )}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+              <TabsContent value="favorites" className="mt-0 outline-none">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6 px-1">
                       {favoriteBooks?.map(book => <BookCard key={book.id} book={book} />)}
                   </div>
                   {!(areFavoritesLoading || areFavoriteBooksLoading) && favoriteBooks?.length === 0 && (
-                      <div className="text-center py-20 bg-muted/20 rounded-[2rem] border-2 border-dashed">
-                        <HeartIcon className="h-12 w-12 text-muted-foreground/20 mx-auto mb-4" />
-                        <p className="text-muted-foreground font-headline font-bold text-lg">Belum ada buku favorit.</p>
+                      <div className="text-center py-16 md:py-20 bg-muted/20 rounded-[2rem] border-2 border-dashed mx-1">
+                        <HeartIcon className="h-10 w-10 md:h-12 md:w-12 text-muted-foreground/20 mx-auto mb-4" />
+                        <p className="text-muted-foreground font-headline font-bold text-base md:text-lg">Belum ada buku favorit.</p>
                     </div>
                   )}
               </TabsContent>
@@ -567,37 +555,25 @@ export default function ProfilePage() {
 
 function ProfileSkeleton() {
     return (
-        <div className="space-y-10 animate-pulse pb-20">
-            <Card className="overflow-hidden border-none rounded-[2.5rem]">
-                <Skeleton className="h-40 md:h-64 w-full" />
-                <CardContent className="p-6 md:p-10 -mt-20 md:-mt-32">
+        <div className="space-y-10 animate-pulse pb-20 w-full overflow-hidden">
+            <Card className="overflow-hidden border-none rounded-[2rem] md:rounded-[2.5rem]">
+                <Skeleton className="h-32 md:h-64 w-full" />
+                <CardContent className="p-5 md:p-10 -mt-16 md:-mt-32">
                      <div className="flex flex-col md:flex-row items-center md:items-end gap-6">
-                        <Skeleton className="w-28 h-28 md:w-40 md:h-40 rounded-full border-4 border-background" />
+                        <Skeleton className="w-24 h-24 md:w-40 md:h-40 rounded-full border-4 border-background" />
                         <div className="flex-1 text-center md:text-left space-y-3">
-                             <Skeleton className="h-10 w-64 mx-auto md:mx-0" />
-                             <Skeleton className="h-4 w-32 mx-auto md:mx-0" />
-                        </div>
-                         <div className="flex gap-2 w-full md:w-auto">
-                             <Skeleton className="h-12 w-full md:w-32 rounded-full" />
+                             <Skeleton className="h-8 w-48 mx-auto md:mx-0" />
+                             <Skeleton className="h-3 w-24 mx-auto md:mx-0" />
                         </div>
                     </div>
-                     <Skeleton className="h-6 w-full max-w-lg mt-8 rounded-full" />
-                     <div className="flex justify-center md:justify-start gap-10 mt-8 pt-8 border-t">
-                        <Skeleton className="h-12 w-20" />
-                        <Skeleton className="h-12 w-20" />
-                        <Skeleton className="h-12 w-20" />
+                     <Skeleton className="h-4 w-full max-w-lg mt-8 rounded-full" />
+                     <div className="flex justify-center md:justify-start gap-8 mt-8 pt-8 border-t">
+                        <Skeleton className="h-10 w-16" />
+                        <Skeleton className="h-10 w-16" />
+                        <Skeleton className="h-10 w-16" />
                     </div>
                 </CardContent>
             </Card>
-            <div className="flex justify-center"><Skeleton className="h-12 w-96 rounded-full" /></div>
-             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
-                {Array.from({ length: 6 }).map((_, i) => (
-                    <div key={i} className="space-y-3">
-                        <Skeleton className="aspect-[2/3] w-full rounded-2xl" />
-                        <Skeleton className="h-5 w-3/4" />
-                    </div>
-                ))}
-            </div>
         </div>
     )
 }
