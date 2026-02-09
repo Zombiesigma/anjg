@@ -9,14 +9,13 @@ export default function MainAppLayout({
 }) {
   return (
     <ProtectedLayout>
-      <div className="relative flex min-h-screen flex-col bg-background overflow-x-hidden">
+      <div className="relative flex min-h-screen flex-col bg-background overflow-x-hidden w-full max-w-full">
         <Header />
-        <main className="flex-1 flex flex-col relative overflow-x-hidden">
-          <div className="flex-1 container px-4 py-6 md:px-6 relative">
+        <main className="flex-1 flex flex-col relative overflow-x-hidden w-full">
+          <div className="flex-1 container px-4 py-6 md:px-6 relative mx-auto overflow-x-hidden w-full max-w-full">
             {children}
           </div>
         </main>
-        {/* Padding bawah untuk Mobile Nav agar konten tidak tertutup */}
         <div className="h-24 md:hidden shrink-0" /> 
         <MobileNav />
       </div>

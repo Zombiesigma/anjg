@@ -4,12 +4,11 @@ import Link from 'next/link';
 import { Logo } from '@/components/Logo';
 import { HeaderActions } from './HeaderActions';
 import { GlobalSearch } from './GlobalSearch';
-import { motion } from 'framer-motion';
 
 export function Header() {
   return (
-    <header className="sticky top-0 z-[100] w-full border-b border-border/40 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 shadow-sm transition-all duration-300">
-      <div className="container flex h-16 items-center px-4 md:px-6">
+    <header className="sticky top-0 z-[100] w-full border-b border-border/40 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 shadow-sm transition-all duration-300 overflow-x-hidden">
+      <div className="container flex h-16 items-center px-4 md:px-6 mx-auto w-full max-w-full">
         <div className="mr-2 flex items-center shrink-0">
           <Link href="/" className="flex items-center space-x-2 group transition-transform active:scale-95">
             <Logo className="h-8 w-8 shadow-lg shadow-primary/10 transition-transform group-hover:rotate-3" />
@@ -19,7 +18,7 @@ export function Header() {
           </Link>
         </div>
         
-        <div className="flex-1 mx-2 min-w-0 max-w-full">
+        <div className="flex-1 mx-2 min-w-0">
            <GlobalSearch />
         </div>
         

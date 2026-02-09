@@ -2,15 +2,10 @@
 
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import { Logo } from '@/components/Logo';
-import { Github, Globe, Mail, Phone, Send, Sparkles, BookOpen, Users, Heart, ArrowRight, Zap, ShieldCheck, Smartphone, Cpu } from 'lucide-react';
+import { Github, Globe, Mail, Phone, Send, Sparkles, BookOpen, Users, Heart, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
 
 const devPortfolio = "https://www.gunturpadilah.web.id/";
 const devImage = "https://www.gunturpadilah.web.id/pp.jpg";
@@ -67,10 +62,10 @@ const technologies = [
 
 export default function AboutPage() {
   return (
-    <div className="max-w-5xl mx-auto space-y-24 pb-32 relative overflow-x-hidden">
-      {/* Decorative Background */}
-      <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-[120px] -z-10 pointer-events-none" />
-      <div className="absolute bottom-40 left-0 w-72 h-72 bg-accent/5 rounded-full blur-[100px] -z-10 pointer-events-none" />
+    <div className="max-w-5xl mx-auto space-y-24 pb-32 relative overflow-x-hidden w-full px-4 md:px-0">
+      {/* Decorative Background - Constrained */}
+      <div className="absolute top-0 right-0 w-64 md:w-96 h-64 md:h-96 bg-primary/5 rounded-full blur-[120px] -z-10 pointer-events-none" />
+      <div className="absolute bottom-40 left-0 w-48 md:w-72 h-48 md:h-72 bg-accent/5 rounded-full blur-[100px] -z-10 pointer-events-none" />
 
       {/* Hero Section */}
       <motion.section 
@@ -94,10 +89,10 @@ export default function AboutPage() {
             >
                 <Sparkles className="h-3.5 w-3.5" /> Jembatan Pujangga Modern
             </motion.div>
-            <h1 className="text-5xl md:text-7xl font-headline font-black text-foreground leading-tight tracking-tight">
+            <h1 className="text-4xl md:text-7xl font-headline font-black text-foreground leading-tight tracking-tight">
                 Misi Kami Adalah <span className="text-primary italic">Menghubungkan.</span>
             </h1>
-            <p className="text-xl text-muted-foreground leading-relaxed font-medium italic">
+            <p className="text-lg md:text-xl text-muted-foreground leading-relaxed font-medium italic">
                 "Di Elitera, kami percaya setiap orang memiliki cerita yang layak untuk didengar. Kami membangun panggung digital di mana kata-kata menemukan rumahnya dan penulis menemukan pembacanya."
             </p>
         </div>
@@ -122,7 +117,7 @@ export default function AboutPage() {
                         <item.icon className="h-8 w-8" />
                     </div>
                     <h3 className="text-xl font-bold mb-3">{item.title}</h3>
-                    <p className="text-muted-foreground leading-relaxed">{item.desc}</p>
+                    <p className="text-muted-foreground leading-relaxed text-sm md:text-base">{item.desc}</p>
                 </Card>
             </motion.div>
         ))}
@@ -136,13 +131,13 @@ export default function AboutPage() {
         className="space-y-10"
       >
         <div className="flex items-center gap-4 px-4">
-            <h2 className="text-3xl font-headline font-black tracking-tight">Sosok di Balik <span className="text-primary">Layar</span></h2>
+            <h2 className="text-2xl md:text-3xl font-headline font-black tracking-tight">Sosok di Balik <span className="text-primary">Layar</span></h2>
             <div className="h-px bg-border flex-1" />
         </div>
 
         <Card className="overflow-hidden border-none shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] rounded-[3rem] bg-zinc-900 text-white group">
             <div className="flex flex-col md:flex-row">
-                <div className="md:w-1/3 relative h-[400px] md:h-auto overflow-hidden">
+                <div className="md:w-1/3 relative h-[300px] md:h-auto overflow-hidden">
                     <Image 
                         src={devImage} 
                         alt={devName} 
@@ -152,25 +147,25 @@ export default function AboutPage() {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-zinc-900 via-transparent to-transparent opacity-60" />
                 </div>
-                <div className="md:w-2/3 p-10 md:p-16 space-y-8 flex flex-col justify-center">
+                <div className="md:w-2/3 p-8 md:p-16 space-y-6 md:space-y-8 flex flex-col justify-center">
                     <div className="space-y-4">
                         <div className="flex items-center gap-3">
-                            <h3 className="text-4xl font-headline font-black tracking-tight">{devName}</h3>
+                            <h3 className="text-3xl md:text-4xl font-headline font-black tracking-tight">{devName}</h3>
                             <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
                         </div>
-                        <p className="text-xl text-zinc-400 font-medium leading-relaxed italic">
+                        <p className="text-lg md:text-xl text-zinc-400 font-medium leading-relaxed italic">
                             "{devBio}"
                         </p>
                     </div>
 
-                    <div className="flex wrap gap-4">
+                    <div className="flex flex-wrap gap-4">
                         <a href={devPortfolio} target="_blank" rel="noopener noreferrer">
-                            <Button className="rounded-full px-8 h-12 font-bold bg-white text-zinc-900 hover:bg-zinc-200">
+                            <Button className="rounded-full px-8 h-12 font-bold bg-white text-zinc-900 hover:bg-zinc-200 text-xs md:text-sm">
                                 <Globe className="mr-2 h-4 w-4" /> Portofolio
                             </Button>
                         </a>
                         <a href="https://github.com/Zombiesigma" target="_blank" rel="noopener noreferrer">
-                            <Button variant="outline" className="rounded-full px-8 h-12 font-bold border-zinc-700 hover:bg-zinc-800 hover:border-zinc-600">
+                            <Button variant="outline" className="rounded-full px-8 h-12 font-bold border-zinc-700 hover:bg-zinc-800 hover:border-zinc-600 text-xs md:text-sm">
                                 <Github className="mr-2 h-4 w-4" /> GitHub
                             </Button>
                         </a>
@@ -187,14 +182,14 @@ export default function AboutPage() {
         viewport={{ once: true }}
         className="space-y-12"
       >
-        <div className="text-center space-y-4">
-            <h2 className="text-4xl font-headline font-black tracking-tight">Keajaiban di Balik <span className="text-primary italic">Kata</span></h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto font-medium">
+        <div className="text-center space-y-4 px-4">
+            <h2 className="text-3xl md:text-4xl font-headline font-black tracking-tight">Keajaiban di Balik <span className="text-primary italic">Kata</span></h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto font-medium text-sm md:text-base">
                 Elitera dibangun dengan kejujuran menggunakan pondasi teknologi mutakhir untuk memastikan setiap imajinasi tersimpan abadi dan aman.
             </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 px-4">
             {technologies.map((tech, i) => (
                 <Card key={i} className="border-none shadow-lg bg-card/50 backdrop-blur-sm rounded-[2rem] p-8 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group">
                     <div className="h-12 w-12 relative mb-6 grayscale group-hover:grayscale-0 transition-all duration-500">
@@ -212,12 +207,12 @@ export default function AboutPage() {
         </div>
       </motion.section>
 
-      {/* Contact Section */}
-      <section className="grid lg:grid-cols-12 gap-12 items-start">
+      {/* Download/Contact Section */}
+      <section className="grid lg:grid-cols-12 gap-12 items-start px-4">
         <div className="lg:col-span-5 space-y-8 pt-6">
             <div className="space-y-4">
-                <h2 className="text-4xl font-headline font-black leading-tight">Terhubung <br/> Dengan <span className="text-primary underline decoration-primary/20">Komunitas</span></h2>
-                <p className="text-muted-foreground text-lg leading-relaxed">
+                <h2 className="text-3xl md:text-4xl font-headline font-black leading-tight">Terhubung <br/> Dengan <span className="text-primary underline decoration-primary/20">Komunitas</span></h2>
+                <p className="text-muted-foreground text-base md:text-lg leading-relaxed">
                     Punya ide fitur menarik, menemukan kendala, atau hanya ingin menyapa? Kami selalu terbuka untuk diskusi hangat.
                 </p>
             </div>
@@ -229,7 +224,7 @@ export default function AboutPage() {
                     </div>
                     <div className="min-w-0">
                         <p className="text-[10px] uppercase font-black tracking-widest text-muted-foreground">Email</p>
-                        <p className="font-bold truncate text-sm">gunturfadilah140@gmail.com</p>
+                        <p className="font-bold truncate text-xs md:text-sm">gunturfadilah140@gmail.com</p>
                     </div>
                 </a>
                 
@@ -239,17 +234,17 @@ export default function AboutPage() {
                     </div>
                     <div className="min-w-0">
                         <p className="text-[10px] uppercase font-black tracking-widest text-muted-foreground">WhatsApp</p>
-                        <p className="font-bold truncate text-sm">0856 5554 8656</p>
+                        <p className="font-bold truncate text-xs md:text-sm">0856 5554 8656</p>
                     </div>
                 </a>
 
                 <div className="pt-6">
-                    <Card className="bg-primary/5 border-primary/10 p-8 rounded-[2rem] text-center space-y-4">
+                    <Card className="bg-primary/5 border-primary/10 p-8 rounded-[2rem] text-center space-y-4 shadow-inner">
                         <h4 className="font-black text-lg">Bawa Elitera di Genggaman</h4>
-                        <p className="text-sm text-muted-foreground">Unduh aplikasi Android yang dibangun dengan <strong>Expo Native</strong> untuk pengalaman yang lebih cepat dan notifikasi instan.</p>
-                        <a href="https://raw.githubusercontent.com/Zombiesigma/elitera-asset/main/elitera.apk" download="Elitera.apk">
-                            <Button className="w-full rounded-xl font-bold shadow-lg shadow-primary/20">
-                                Unduh Mobile <ArrowRight className="ml-2 h-4 w-4" />
+                        <p className="text-xs md:text-sm text-muted-foreground font-medium">Unduh aplikasi Android yang dibangun dengan <strong>Expo Native</strong> untuk pengalaman yang lebih cepat dan notifikasi instan.</p>
+                        <a href="https://raw.githubusercontent.com/Zombiesigma/elitera-asset/main/elitera.apk" download>
+                            <Button className="w-full rounded-xl font-bold shadow-lg shadow-primary/20 h-12">
+                                Unduh Elitera.apk <ArrowRight className="ml-2 h-4 w-4" />
                             </Button>
                         </a>
                     </Card>
@@ -257,34 +252,41 @@ export default function AboutPage() {
             </div>
         </div>
 
-        <div className="lg:col-span-7">
+        <div className="lg:col-span-7 w-full overflow-hidden">
             <Card className="rounded-[2.5rem] border-none shadow-2xl bg-card overflow-hidden">
                 <CardHeader className="p-8 border-b bg-muted/20">
                     <CardTitle className="text-2xl font-headline font-black flex items-center gap-3">
-                        <Send className="h-6 w-6 text-primary" /> Kirim Umpan Balik
+                        <Send className="h-6 w-6 text-primary" /> Kirim Pesan
                     </CardTitle>
                     <CardDescription className="text-sm font-medium">Masukan Anda membantu Elitera menjadi lebih baik setiap harinya.</CardDescription>
                 </CardHeader>
                 <CardContent className="p-8">
-                    <form className="space-y-6" action="https://wa.me/6285655548656" target="_blank">
+                    <div className="space-y-6">
                         <div className="grid md:grid-cols-2 gap-6">
                             <div className="space-y-2">
-                                <Label htmlFor="name" className="font-bold text-xs uppercase tracking-widest ml-1">Nama Anda</Label>
-                                <Input id="name" name="name" placeholder="Siapa nama Anda?" className="h-12 rounded-xl bg-muted/30 border-none focus-visible:ring-primary/20" required />
+                                <p className="font-black text-[10px] uppercase tracking-widest text-muted-foreground ml-1">Nama Anda</p>
+                                <div className="h-12 flex items-center px-5 rounded-xl bg-muted/30 text-sm font-medium text-foreground/60 italic border border-transparent">Informasi identitas otomatis</div>
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="email" className="font-bold text-xs uppercase tracking-widest ml-1">Email</Label>
-                                <Input id="email" name="email" type="email" placeholder="anda@contoh.com" className="h-12 rounded-xl bg-muted/30 border-none focus-visible:ring-primary/20" required />
+                                <p className="font-black text-[10px] uppercase tracking-widest text-muted-foreground ml-1">Kontak Kami</p>
+                                <a href="https://wa.me/6285655548656" target="_blank" rel="noopener noreferrer">
+                                    <Button variant="outline" className="w-full h-12 rounded-xl border-2 font-bold justify-start px-5 hover:bg-primary/5">
+                                        <Phone className="mr-2 h-4 w-4 text-green-600" /> WhatsApp CS
+                                    </Button>
+                                </a>
                             </div>
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="feedback" className="font-bold text-xs uppercase tracking-widest ml-1">Pesan atau Saran</Label>
-                            <Textarea id="feedback" name="text" placeholder="Bagikan pemikiran Anda dengan kami..." rows={6} className="rounded-2xl bg-muted/30 border-none focus-visible:ring-primary/20 resize-none py-4" required />
+                        <div className="p-6 rounded-2xl bg-primary/5 border border-primary/10">
+                            <p className="text-sm text-muted-foreground leading-relaxed font-medium">
+                                Klik tombol di bawah untuk membuka obrolan langsung dengan tim pengembang kami. Anda bisa melaporkan kendala atau memberikan saran fitur baru.
+                            </p>
                         </div>
-                        <Button type="submit" className="w-full h-14 rounded-2xl font-black text-base shadow-xl shadow-primary/20 transition-all active:scale-95 group">
-                            Kirim <Send className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
-                        </Button>
-                    </form>
+                        <a href="https://wa.me/6285655548656" target="_blank" rel="noopener noreferrer">
+                            <Button className="w-full h-14 rounded-2xl font-black text-base shadow-xl shadow-primary/20 transition-all active:scale-95 group">
+                                Buka Diskusi <Send className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
+                            </Button>
+                        </a>
+                    </div>
                 </CardContent>
             </Card>
         </div>

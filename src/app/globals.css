@@ -66,9 +66,9 @@
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
     overscroll-behavior-y: none;
-    overflow-x: hidden;
-    width: 100%;
-    max-width: 100%;
+    overflow-x: hidden !important;
+    width: 100vw;
+    max-width: 100vw;
     position: relative;
   }
 }
@@ -92,7 +92,6 @@
   }
 }
 
-/* Custom Animations */
 @keyframes float {
   0% { transform: translateY(0px); }
   50% { transform: translateY(-10px); }
