@@ -24,6 +24,11 @@ const technologies = [
         icon: "https://svgl.app/library/nextjs_icon_dark.svg",
     },
     { 
+        title: "Vercel", 
+        desc: "Infrastruktur cloud tercepat untuk deployment otomatis dan performa web skala global.",
+        icon: "https://svgl.app/library/vercel.svg",
+    },
+    { 
         title: "Firebase", 
         desc: "Infrastruktur Cloud dari Google yang menjaga keamanan akun dan sinkronisasi data real-time.",
         icon: "https://svgl.app/library/firebase.svg",
