@@ -1,6 +1,6 @@
 /**
  * @fileOverview Utilitas unggahan file Elitera dengan sistem Failover Dual-CDN.
- * Urutan: Catbox (Proxy) -> Pomf.lain.la (Internal API).
+ * Urutan: Catbox (Proxy) -> Pomf Multi-Mirror (Internal API).
  */
 
 /**
@@ -16,7 +16,6 @@ function ensureHttps(url: string): string {
 
 /**
  * LAYANAN 1: Catbox via Proxy (Layanan Utama)
- * Menggunakan uploader.himmel.web.id sebagai jembatan untuk menghindari CORS browser.
  */
 async function uploadToCatbox(file: File): Promise<string> {
   const formData = new FormData();
@@ -30,7 +29,7 @@ async function uploadToCatbox(file: File): Promise<string> {
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Catbox Proxy failed: ${response.status} ${errorText}`);
+    throw new Error(`Catbox Proxy Error: ${response.status} ${errorText}`);
   }
   
   const data = await response.json();
@@ -41,8 +40,7 @@ async function uploadToCatbox(file: File): Promise<string> {
 }
 
 /**
- * LAYANAN 2: Pomf.lain.la via Internal API Route (Failover)
- * Menembak ke /api/upload/pomf untuk diproses di sisi server agar aman dari CORS.
+ * LAYANAN 2: Pomf Multi-Mirror via Internal API Route (Failover)
  */
 async function uploadToPomf(file: File): Promise<string> {
   const formData = new FormData();
@@ -54,9 +52,8 @@ async function uploadToPomf(file: File): Promise<string> {
   });
 
   if (!response.ok) {
-    // Mencoba mengambil detail error dari JSON jika tersedia
-    const errorData = await response.json().catch(() => ({ error: 'Internal server error on Pomf route' }));
-    throw new Error(errorData.error || `Internal Pomf Route failed with status: ${response.status}`);
+    const errorData = await response.json().catch(() => ({ error: 'Jalur Pomf internal tidak merespons.' }));
+    throw new Error(errorData.error || `Server cadangan gagal dengan status: ${response.status}`);
   }
   
   const data = await response.json();
@@ -64,34 +61,33 @@ async function uploadToPomf(file: File): Promise<string> {
     return ensureHttps(data.files[0].url);
   }
   
-  throw new Error('Pomf upload was unsuccessful: ' + (data.error || 'No file URL returned from provider'));
+  throw new Error('Gagal mendapatkan URL permanen dari sistem cadangan.');
 }
 
 /**
  * FUNGSI UTAMA: uploadFile
- * Mengorkestrasi failover otomatis antar penyedia layanan permanen.
+ * Mengorkestrasi failover otomatis antara dua penyedia layanan permanen terbaik.
  */
 export async function uploadFile(file: File): Promise<string> {
-  // Validasi ukuran file (5MB) sebelum memulai proses
+  // Validasi ukuran file (5MB)
   if (file.size > 5 * 1024 * 1024) {
-    throw new Error('Ukuran file terlalu besar. Maksimal 5MB untuk menjaga performa.');
+    throw new Error('Ukuran file terlalu besar (Maksimal 5MB).');
   }
 
   // 1. Coba Catbox (Utama)
   try {
-    console.log('[Uploader] Mencoba Catbox...');
+    console.log('[Uploader] Mencoba layanan utama (Catbox)...');
     return await uploadToCatbox(file);
   } catch (err: any) {
-    console.warn('[Uploader] Catbox gagal:', err.message);
-    console.warn('[Uploader] Beralih ke layanan cadangan (Pomf)...');
+    console.warn('[Uploader] Layanan utama gagal:', err.message);
+    console.log('[Uploader] Beralih ke sistem cadangan multi-mirror (Pomf)...');
   }
 
-  // 2. Coba Pomf (Cadangan Terakhir)
+  // 2. Coba Pomf Multi-Mirror (Cadangan)
   try {
-    console.log('[Uploader] Mencoba Pomf...');
     return await uploadToPomf(file);
   } catch (err: any) {
-    console.error('[Uploader] Fatal: Seluruh sistem upload gagal!', err.message);
-    throw new Error('Gagal mengunggah file ke semua layanan (Catbox & Pomf). Harap periksa koneksi internet Anda atau coba perkecil ukuran file.');
+    console.error('[Uploader] Fatal: Seluruh sistem unggahan gagal!', err.message);
+    throw new Error(`Gagal mengunggah file. Detail: ${err.message}. Harap coba perkecil ukuran file atau periksa koneksi internet Anda.`);
   }
 }

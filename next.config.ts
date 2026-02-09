@@ -54,6 +54,24 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'quax.moe',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'pomf.cat',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'pomf2.lain.la',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
         hostname: 'api.dicebear.com',
         port: '',
         pathname: '/**',

@@ -1,9 +1,17 @@
 import { NextResponse } from 'next/server';
 
 /**
- * API Route Handler untuk menangani upload ke Pomf.lain.la secara server-side.
- * Hal ini dilakukan untuk menghindari masalah CORS yang sering terjadi pada upload langsung dari browser.
+ * API Route Handler untuk menangani upload ke kategori layanan Pomf secara server-side.
+ * Menggunakan sistem Multi-Mirror Failover untuk menjamin keberhasilan unggahan.
  */
+
+// Daftar Mirror Pomf yang bersifat permanen dan stabil
+const POMF_MIRRORS = [
+  'https://pomf.lain.la/upload.php',
+  'https://quax.moe/upload.php',
+  'https://pomf.cat/upload.php'
+];
+
 export async function POST(request: Request) {
   try {
     const formData = await request.formData();
@@ -13,35 +21,47 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'File tidak ditemukan dalam permintaan.' }, { status: 400 });
     }
 
-    const pomfFormData = new FormData();
-    // Pomf clones mewajibkan field name 'files[]'
-    pomfFormData.append('files[]', file);
+    let lastErrorMessage = 'Semua mirror Pomf gagal merespons.';
 
-    // Gunakan timeout agar tidak menggantung jika server remote lambat
-    const response = await fetch('https://pomf.lain.la/upload.php', {
-      method: 'POST',
-      body: pomfFormData,
-      signal: AbortSignal.timeout(30000), // Batas waktu 30 detik
-    });
+    // Mencoba satu per satu mirror hingga berhasil
+    for (const mirror of POMF_MIRRORS) {
+      try {
+        const pomfFormData = new FormData();
+        pomfFormData.append('files[]', file);
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('[Pomf API] Remote server error:', response.status, errorText);
-      return NextResponse.json({ 
-        success: false, 
-        error: `Server Pomf merespons dengan status: ${response.status}` 
-      }, { status: response.status });
+        const response = await fetch(mirror, {
+          method: 'POST',
+          body: pomfFormData,
+          signal: AbortSignal.timeout(20000), // Batas waktu 20 detik per mirror
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.files && data.files.length > 0) {
+            console.log(`[Pomf API] Berhasil mengunggah via mirror: ${new URL(mirror).hostname}`);
+            return NextResponse.json(data);
+          }
+        }
+        
+        lastErrorMessage = `Mirror ${new URL(mirror).hostname} merespons dengan status: ${response.status}`;
+      } catch (err: any) {
+        console.warn(`[Pomf API] Mirror ${new URL(mirror).hostname} gagal:`, err.message);
+        lastErrorMessage = `Gagal menghubungi ${new URL(mirror).hostname}: ${err.message}`;
+        // Lanjut ke mirror berikutnya
+        continue;
+      }
     }
 
-    const data = await response.json();
-    return NextResponse.json(data);
-  } catch (error: any) {
-    console.error('[Pomf Route] Error:', error.message);
-    const isTimeout = error.name === 'TimeoutError' || error.message.includes('timeout');
-    
     return NextResponse.json({ 
       success: false, 
-      error: isTimeout ? 'Unggahan ke Pomf melampaui batas waktu (timeout).' : `Kesalahan server internal: ${error.message}` 
+      error: `Gagal mengunggah ke seluruh mirror Pomf. Detail terakhir: ${lastErrorMessage}` 
+    }, { status: 500 });
+
+  } catch (error: any) {
+    console.error('[Pomf Route] Fatal Error:', error.message);
+    return NextResponse.json({ 
+      success: false, 
+      error: `Kesalahan server internal: ${error.message}` 
     }, { status: 500 });
   }
 }
