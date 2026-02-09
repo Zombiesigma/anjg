@@ -1,9 +1,10 @@
+
 'use client';
 
 import { useMemo, useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { useFirestore, useCollection } from '@/firebase';
+import { useFirestore, useCollection, useUser } from '@/firebase';
 import { collection, query, where, orderBy } from 'firebase/firestore';
 import type { User } from '@/lib/types';
 import { 
@@ -43,18 +44,19 @@ import { cn } from '@/lib/utils';
 
 function UserListPageContent() {
     const firestore = useFirestore();
+    const { user: currentUser } = useUser();
     const searchParams = useSearchParams();
     const roleFilter = searchParams.get('role');
     const [searchTerm, setSearchTerm] = useState('');
 
     const usersQuery = useMemo(() => {
-        if (!firestore) return null;
+        if (!firestore || !currentUser) return null;
         const usersCollection = collection(firestore, 'users');
         if (roleFilter) {
             return query(usersCollection, where('role', '==', roleFilter));
         }
         return usersCollection;
-    }, [firestore, roleFilter]);
+    }, [firestore, currentUser, roleFilter]);
 
     const { data: allUsers, isLoading } = useCollection<User>(usersQuery);
 

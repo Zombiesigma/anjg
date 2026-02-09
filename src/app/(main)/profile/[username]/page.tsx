@@ -1,7 +1,8 @@
+
 'use client';
 
 import { notFound, useParams, useRouter } from 'next/navigation';
-import Image from 'next/image';
+import Image from 'next/link';
 import Link from 'next/link';
 import { useMemo, useState, useEffect } from 'react';
 import { useFirestore, useUser, useCollection, useDoc } from '@/firebase';
@@ -12,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { BookCard } from '@/components/BookCard';
-import { UserPlus, MessageCircle, Edit, Loader2, UserMinus, Sparkles, Users, BookOpen, Heart as HeartIcon, CheckCircle2, MessageSquare, Clapperboard, Play } from 'lucide-react';
+import { UserPlus, MessageCircle, Edit, Loader2, UserMinus, Sparkles, Users, BookOpen, Heart as HeartIcon, CheckCircle2, MessageSquare, Clapperboard, Play, ChevronRight } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { StoryViewer } from '@/components/stories/StoryViewer';
@@ -40,10 +41,10 @@ export default function ProfilePage() {
   const normalizedUsername = useMemo(() => params.username.toLowerCase(), [params.username]);
 
   const userQuery = useMemo(() => (
-    firestore 
+    (firestore && currentUser)
       ? query(collection(firestore, 'users'), where('username', '==', normalizedUsername), limit(1)) 
       : null
-  ), [firestore, normalizedUsername]);
+  ), [firestore, currentUser, normalizedUsername]);
   const { data: users, isLoading: isUserLoading } = useCollection<User>(userQuery);
   const user = users?.[0];
 
@@ -100,7 +101,7 @@ export default function ProfilePage() {
   }, [isFollowerDoc]);
   
   const publishedBooksQuery = useMemo(() => {
-    if (!firestore || !user) return null;
+    if (!firestore || !user || !currentUser) return null;
     
     const baseQuery = query(collection(firestore, 'books'), where('authorId', '==', user.uid), where('status', '==', 'published'));
     if (isOwnProfile) return baseQuery;
@@ -108,21 +109,21 @@ export default function ProfilePage() {
         return query(baseQuery, where('visibility', 'in', ['public', 'followers_only']));
     }
     return query(baseQuery, where('visibility', '==', 'public'));
-  }, [firestore, user, isOwnProfile, isFollowing]);
+  }, [firestore, user, currentUser, isOwnProfile, isFollowing]);
   const { data: publishedBooks, isLoading: arePublishedBooksLoading } = useCollection<Book>(publishedBooksQuery);
 
   const userReelsQuery = useMemo(() => (
-    (firestore && user)
+    (firestore && user && currentUser)
       ? query(collection(firestore, 'reels'), where('authorId', '==', user.uid), orderBy('createdAt', 'desc'))
       : null
-  ), [firestore, user]);
+  ), [firestore, user, currentUser]);
   const { data: userReels, isLoading: areUserReelsLoading } = useCollection<Reel>(userReelsQuery);
 
   const otherBooksQuery = useMemo(() => (
-    (firestore && user && isOwnProfile)
+    (firestore && user && currentUser && isOwnProfile)
       ? query(collection(firestore, 'books'), where('authorId', '==', user.uid), where('status', 'in', ['draft', 'pending_review', 'rejected']))
       : null
-  ), [firestore, user, isOwnProfile]);
+  ), [firestore, user, currentUser, isOwnProfile]);
   const { data: otherBooks, isLoading: areOtherBooksLoading } = useCollection<Book>(otherBooksQuery);
 
   const areBooksLoading = arePublishedBooksLoading || (isOwnProfile && areOtherBooksLoading);
@@ -135,24 +136,24 @@ export default function ProfilePage() {
   const { data: userChats, isLoading: areChatsLoading } = useCollection<Chat>(chatsByUserQuery);
 
   const favoritesQuery = useMemo(() => (
-    (firestore && user && isOwnProfile) ? query(collection(firestore, 'users', user.uid, 'favorites')) : null
-  ), [firestore, user, isOwnProfile]);
+    (firestore && user && currentUser && isOwnProfile) ? query(collection(firestore, 'users', user.uid, 'favorites')) : null
+  ), [firestore, user, currentUser, isOwnProfile]);
   const { data: favorites, isLoading: areFavoritesLoading } = useCollection<Favorite>(favoritesQuery);
 
   const favoriteBookIds = useMemo(() => favorites?.map(f => f.id) || [], [favorites]);
 
   const favoriteBooksQuery = useMemo(() => {
-      if (!firestore || favoriteBookIds.length === 0 || !isOwnProfile) return null;
+      if (!firestore || !currentUser || favoriteBookIds.length === 0 || !isOwnProfile) return null;
       const chunks = favoriteBookIds.slice(0, 30);
       if (chunks.length === 0) return null;
       return query(collection(firestore, 'books'), where(documentId(), 'in', chunks));
-  }, [firestore, favoriteBookIds, isOwnProfile]);
+  }, [firestore, currentUser, favoriteBookIds, isOwnProfile]);
   const { data: favoriteBooks, isLoading: areFavoriteBooksLoading } = useCollection<Book>(favoriteBooksQuery);
   
   const [allActiveStoriesQuery, setAllActiveStoriesQuery] = useState<Query<DocumentData> | null>(null);
 
   useEffect(() => {
-    if (firestore) {
+    if (firestore && currentUser) {
       const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
       setAllActiveStoriesQuery(
         query(
@@ -162,7 +163,7 @@ export default function ProfilePage() {
         )
       );
     }
-  }, [firestore]);
+  }, [firestore, currentUser]);
   
   const { data: allActiveStories, isLoading: areStoriesLoading } = useCollection<Story>(allActiveStoriesQuery);
   const userHasActiveStory = useMemo(() => (

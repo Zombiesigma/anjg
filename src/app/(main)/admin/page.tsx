@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo, useState } from "react";
@@ -55,8 +56,8 @@ export default function AdminPage() {
 
   // Permintaan Penulis: Mengambil semua dan filter di client untuk kepastian data muncul
   const authorRequestsQuery = useMemo(() => (
-    firestore ? collection(firestore, 'authorRequests') : null
-  ), [firestore]);
+    (firestore && currentUser) ? collection(firestore, 'authorRequests') : null
+  ), [firestore, currentUser]);
   const { data: rawAuthorRequests, isLoading: areAuthorRequestsLoading } = useCollection<AuthorRequest>(authorRequestsQuery);
   
   const authorRequests = useMemo(() => (
@@ -64,18 +65,18 @@ export default function AdminPage() {
   ), [rawAuthorRequests]);
 
   const pendingBooksQuery = useMemo(() => (
-    firestore ? query(collection(firestore, 'books'), where('status', '==', 'pending_review')) : null
-  ), [firestore]);
+    (firestore && currentUser) ? query(collection(firestore, 'books'), where('status', '==', 'pending_review')) : null
+  ), [firestore, currentUser]);
   const { data: pendingBooks, isLoading: areBooksLoading } = useCollection<Book>(pendingBooksQuery);
   
   const usersQuery = useMemo(() => (
-    firestore ? collection(firestore, 'users') : null
-  ), [firestore]);
+    (firestore && currentUser) ? collection(firestore, 'users') : null
+  ), [firestore, currentUser]);
   const { data: users, isLoading: areUsersLoading } = useCollection<AppUser>(usersQuery);
 
   const storiesQuery = useMemo(() => (
-    firestore ? collection(firestore, 'stories') : null
-  ), [firestore]);
+    (firestore && currentUser) ? collection(firestore, 'stories') : null
+  ), [firestore, currentUser]);
   const { data: activeStories, isLoading: areStoriesLoading } = useCollection<Story>(storiesQuery);
 
   const stats = useMemo(() => {

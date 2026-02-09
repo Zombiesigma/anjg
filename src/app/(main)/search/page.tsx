@@ -1,8 +1,9 @@
+
 'use client';
 
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useMemo, useState } from 'react';
-import { useFirestore, useCollection } from '@/firebase';
+import { useFirestore, useCollection, useUser } from '@/firebase';
 import { collection, query, where, limit } from 'firebase/firestore';
 import type { Book, User } from '@/lib/types';
 import { BookCard } from '@/components/BookCard';
@@ -19,6 +20,7 @@ import { cn } from '@/lib/utils';
 function SearchPageContent() {
   const searchParams = useSearchParams();
   const firestore = useFirestore();
+  const { user: currentUser } = useUser();
   const q = searchParams.get('q') || '';
   const [activeTab, setActiveTab] = useState('all');
   
@@ -28,7 +30,7 @@ function SearchPageContent() {
   }, [q]);
 
   const booksQuery = useMemo(() => {
-    if (!firestore || !capitalizedQuery) return null;
+    if (!firestore || !currentUser || !capitalizedQuery) return null;
     return query(
       collection(firestore, 'books'),
       where('status', '==', 'published'),
@@ -37,17 +39,17 @@ function SearchPageContent() {
       where('title', '<=', capitalizedQuery + '\uf8ff'),
       limit(24)
     );
-  }, [firestore, capitalizedQuery]);
+  }, [firestore, currentUser, capitalizedQuery]);
 
   const usersQuery = useMemo(() => {
-    if (!firestore || !capitalizedQuery) return null;
+    if (!firestore || !currentUser || !capitalizedQuery) return null;
     return query(
       collection(firestore, 'users'),
       where('displayName', '>=', capitalizedQuery),
       where('displayName', '<=', capitalizedQuery + '\uf8ff'),
       limit(24)
     );
-  }, [firestore, capitalizedQuery]);
+  }, [firestore, currentUser, capitalizedQuery]);
   
   const { data: books, isLoading: areBooksLoading } = useCollection<Book>(booksQuery);
   const { data: users, isLoading: areUsersLoading } = useCollection<User>(usersQuery);

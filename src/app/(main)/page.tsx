@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useFirestore, useCollection, useUser, useDoc } from '@/firebase';
@@ -44,7 +45,7 @@ export default function HomePage() {
   };
   
   useEffect(() => {
-    if (firestore) {
+    if (firestore && currentUser) {
       const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
       setStoriesQuery(
         query(
@@ -54,17 +55,17 @@ export default function HomePage() {
         )
       );
     }
-  }, [firestore]);
+  }, [firestore, currentUser]);
 
   const booksQuery = useMemo(() => (
-    firestore
+    (firestore && currentUser)
     ? query(
         collection(firestore, 'books'), 
         where('status', '==', 'published'),
         where('visibility', '==', 'public')
       )
     : null
-  ), [firestore]);
+  ), [firestore, currentUser]);
   
   const { data: rawBooks, isLoading } = useCollection<Book>(booksQuery);
 
@@ -140,7 +141,7 @@ export default function HomePage() {
                   Ukir <span className="italic text-primary-foreground">Jejakmu</span> <br/> Lewat Kata.
                 </h1>
                 <p className="text-sm text-white/70 font-medium leading-relaxed max-w-xs mx-auto">
-                  Temukan ribuan mahakarya atau mulailah menulis sejarahmu sendiri hari ini.
+                  Temukan ribuan mahakarya atau mulailah writing sejarahmu sendiri hari ini.
                 </p>
                 <div className="flex flex-col gap-3 w-full pt-4">
                   <Button className="rounded-full h-12 bg-white text-primary hover:bg-white/90 font-black text-xs uppercase tracking-widest shadow-xl" asChild>

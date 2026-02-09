@@ -21,11 +21,11 @@ export default function ReelsPage() {
   );
 
   const reelsQuery = useMemo(() => (
-    firestore ? query(
+    (firestore && currentUser) ? query(
       collection(firestore, 'reels'),
       orderBy('createdAt', 'desc')
     ) : null
-  ), [firestore]);
+  ), [firestore, currentUser]);
 
   const { data: reels, isLoading } = useCollection<Reel>(reelsQuery);
 

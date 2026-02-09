@@ -11,22 +11,23 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
-    // Aturan global sebagai fallback untuk menjamin pengembangan lancar
-    match /{allPaths=**} {
-      allow read, write: if isAuthenticated();
+    function isAdmin() {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
     // Profil Pengguna
     match /users/{userId} {
-      allow read: if isAuthenticated();
-      allow write: if isOwner(userId);
+      allow get, list: if isAuthenticated();
+      allow write: if isOwner(userId) || isAdmin();
       
       match /favorites/{bookId} {
-        allow read, write: if isOwner(userId);
+        allow read: if isAuthenticated();
+        allow write: if isOwner(userId);
       }
       
       match /notifications/{notifId} {
-        allow read, write: if isOwner(userId);
+        allow read: if isOwner(userId) || isAdmin();
+        allow write: if isAuthenticated(); // Admin needs write, others for interaction notifications
       }
       
       match /followers/{followerId} {
@@ -42,8 +43,9 @@ service cloud.firestore {
 
     // Buku & Bab
     match /books/{bookId} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated();
+      allow get, list: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && (request.auth.uid == resource.data.authorId || isAdmin());
       
       match /chapters/{chapterId} {
         allow read: if isAuthenticated();
@@ -52,10 +54,12 @@ service cloud.firestore {
       
       match /comments/{commentId} {
         allow read: if isAuthenticated();
-        allow write: if isAuthenticated();
+        allow create: if isAuthenticated();
+        allow update, delete: if isAuthenticated() && (isOwner(resource.data.userId) || isAdmin());
         
         match /replies/{replyId} {
-          allow read, write: if isAuthenticated();
+          allow read: if isAuthenticated();
+          allow write: if isAuthenticated();
         }
         
         match /likes/{userId} {
@@ -67,14 +71,18 @@ service cloud.firestore {
 
     // Reels (Video Permanen)
     match /reels/{reelId} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated();
+      allow get, list: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && (request.auth.uid == resource.data.authorId || isAdmin());
       
       match /comments/{commentId} {
-        allow read, write: if isAuthenticated();
+        allow read: if isAuthenticated();
+        allow create: if isAuthenticated();
+        allow update, delete: if isAuthenticated() && (isOwner(resource.data.userId) || isAdmin());
         
         match /replies/{replyId} {
-          allow read, write: if isAuthenticated();
+          allow read: if isAuthenticated();
+          allow write: if isAuthenticated();
         }
         
         match /likes/{userId} {
@@ -96,11 +104,14 @@ service cloud.firestore {
 
     // Cerita (Story 24 Jam)
     match /stories/{storyId} {
-      allow read: if isAuthenticated();
-      allow write: if isAuthenticated();
+      allow get, list: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && (request.auth.uid == resource.data.authorId || isAdmin());
       
       match /comments/{commentId} {
-        allow read, write: if isAuthenticated();
+        allow read: if isAuthenticated();
+        allow create: if isAuthenticated();
+        allow update, delete: if isAuthenticated() && (isOwner(resource.data.userId) || isAdmin());
       }
       
       match /likes/{userId} {
@@ -117,7 +128,8 @@ service cloud.firestore {
     // Pesan & Obrolan
     match /chats/{chatId} {
       allow read: if isAuthenticated() && (request.auth.uid in resource.data.participantUids);
-      allow write: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (request.auth.uid in resource.data.participantUids);
       
       match /messages/{messageId} {
         allow read: if isAuthenticated();
@@ -128,7 +140,13 @@ service cloud.firestore {
     // Permintaan Penulis
     match /authorRequests/{requestId} {
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin() || isOwner(resource.data.userId);
+    }
+
+    // Global Catch-all (Should be at the end)
+    match /{allPaths=**} {
+      allow read, write: if isAdmin();
     }
   }
 }

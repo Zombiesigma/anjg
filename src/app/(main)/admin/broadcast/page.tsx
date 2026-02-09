@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -32,7 +33,9 @@ export default function BroadcastPage() {
   const { toast } = useToast();
   const [isSending, setIsSending] = useState(false);
 
-  const usersQuery = useMemo(() => (firestore ? collection(firestore, 'users') : null), [firestore]);
+  const usersQuery = useMemo(() => (
+    (firestore && currentUser) ? collection(firestore, 'users') : null
+  ), [firestore, currentUser]);
   const { data: allUsers, isLoading: areUsersLoading } = useCollection<User>(usersQuery);
 
   const form = useForm<z.infer<typeof broadcastSchema>>({

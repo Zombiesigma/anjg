@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -21,7 +22,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { BookUser, Loader2, Send, Info, Users, BookOpen, Star, Sparkles, ChevronRight, PenTool, CheckCircle2, Clock, ShieldCheck, ClipboardCheck } from "lucide-react";
+import { BookUser, Loader2, Send, Info, Users, BookOpen, Star, Sparkles, ChevronRight, PenTool, CheckCircle2, Clock, ShieldCheck, ClipboardCheck, ArrowRight } from "lucide-react";
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -62,8 +63,8 @@ export default function JoinAuthorPage() {
     const { data: pendingRequests, isLoading: areRequestsLoading } = useCollection<AuthorRequest>(authorRequestsQuery);
     
     const usersQuery = useMemo(() => (
-        firestore ? query(collection(firestore, 'users'), orderBy('displayName', 'asc')) : null
-    ), [firestore]);
+        (firestore && user) ? query(collection(firestore, 'users'), orderBy('displayName', 'asc')) : null
+    ), [firestore, user]);
     const { data: allUsers, isLoading: areUsersLoading } = useCollection<AppUser>(usersQuery);
     
     const authors = useMemo(() => (
