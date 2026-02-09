@@ -1,9 +1,8 @@
-
 "use client";
 
 import { useState, useRef, useEffect, useMemo } from 'react';
 import type { FormEvent } from 'react';
-import { Bot, Send, Loader2, Sparkles, Lightbulb, HelpCircle, BookOpen } from "lucide-react";
+import { Bot, Send, Loader2, Sparkles, Lightbulb, HelpCircle, BookOpen, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -32,7 +31,7 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Persistence Logic: Load messages from Firestore
+  // Memuat riwayat dari Firestore
   const aiMessagesQuery = useMemo(() => (
     (firestore && currentUser) 
       ? query(collection(firestore, `users/${currentUser.uid}/aiMessages`), orderBy('createdAt', 'asc'))
@@ -41,31 +40,29 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
 
   const { data: dbMessages, isLoading: isHistoryLoading } = useCollection<AiChatMessage>(aiMessagesQuery);
 
+  // Gabungkan riwayat database dengan salam pembuka jika baru pertama kali
   const allMessages = useMemo(() => {
-      if (!dbMessages) return history;
-      if (dbMessages.length === 0) return history;
-      return dbMessages;
-  }, [dbMessages, history]);
+      if (!dbMessages && isHistoryLoading) return []; 
+      if (dbMessages && dbMessages.length > 0) return dbMessages;
+      return history; // Salam pembuka default jika DB kosong
+  }, [dbMessages, history, isHistoryLoading]);
 
-  const scrollToBottom = () => {
+  const scrollToBottom = (behavior: 'smooth' | 'auto' = 'smooth') => {
     if (scrollAreaRef.current) {
         const viewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
         if (viewport) {
             viewport.scrollTo({
                 top: viewport.scrollHeight,
-                behavior: 'smooth'
+                behavior
             });
         }
     }
   };
 
+  // Scroll otomatis saat pesan baru masuk
   useEffect(() => {
-    scrollToBottom();
+    scrollToBottom(dbMessages?.length ? 'smooth' : 'auto');
   }, [allMessages, isProcessing, isHistoryLoading]);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setInput(e.target.value);
-  };
 
   const handleSend = async (text: string) => {
     if (!text.trim() || isProcessing || !firestore || !currentUser) return;
@@ -75,7 +72,7 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
     setIsProcessing(true);
 
     try {
-      // 1. Save user message to Firestore
+      // 1. Simpan pesan user ke Firestore
       const aiMessagesCol = collection(firestore, `users/${currentUser.uid}/aiMessages`);
       await addDoc(aiMessagesCol, {
         role: "user",
@@ -83,20 +80,20 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
         createdAt: serverTimestamp(),
       });
 
-      // 2. Prepare chat history for AI (convert timestamps if needed)
+      // 2. Siapkan riwayat untuk dikirim ke AI (hanya content & role)
       const chatHistory = allMessages.map(msg => ({
         role: msg.role,
         content: msg.content
       }));
 
-      // 3. Call AI Flow
+      // 3. Panggil Flow AI dengan riwayat lengkap
       const result = await chatWithEliteraAI({ 
         message: userMessageContent, 
         chatHistory,
         userName: currentUser?.displayName || 'Pujangga Elitera',
       });
       
-      // 4. Save AI response to Firestore
+      // 4. Simpan respons AI ke Firestore
       await addDoc(aiMessagesCol, {
         role: "model",
         content: result.response,
@@ -105,7 +102,7 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
 
     } catch (error) {
       console.error("Error with Elitera AI:", error);
-      // Fallback for error state
+      // Feedback jika terjadi gangguan
       const aiMessagesCol = collection(firestore, `users/${currentUser.uid}/aiMessages`);
       await addDoc(aiMessagesCol, {
         role: "model",
@@ -137,9 +134,15 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
       <ScrollArea className="flex-1 min-h-0 relative z-10" ref={scrollAreaRef}>
         <div className="max-w-3xl mx-auto p-4 md:p-10 space-y-8 md:space-y-10 pb-32 md:pb-20">
           {isHistoryLoading ? (
-              <div className="flex flex-col items-center justify-center py-20 gap-4 opacity-40">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  <p className="text-[10px] font-black uppercase tracking-widest">Sinkronisasi Memori...</p>
+              <div className="flex flex-col items-center justify-center py-32 gap-6 opacity-40">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full scale-150 animate-pulse" />
+                    <Loader2 className="h-10 w-10 animate-spin text-primary relative z-10" />
+                  </div>
+                  <div className="text-center space-y-1">
+                    <p className="text-[10px] font-black uppercase tracking-[0.3em]">Memulihkan Ingatan...</p>
+                    <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest italic">Menyinkronkan Riwayat Puitis</p>
+                  </div>
               </div>
           ) : (
             <>
@@ -267,8 +270,8 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
                     <Textarea
                         ref={textareaRef}
                         value={input}
-                        onChange={handleInputChange}
-                        placeholder="Tuangkan pertanyaan atau ide Anda..."
+                        onChange={(e) => setInput(e.target.value)}
+                        placeholder="Lanjutkan narasimu..."
                         className="relative w-full resize-none rounded-[1.75rem] border-none bg-muted/40 px-6 py-4 pr-16 min-h-[60px] max-h-40 focus-visible:ring-primary/20 focus-visible:bg-background transition-all shadow-inner text-base font-medium leading-relaxed"
                         onKeyDown={(e) => {
                             if (e.key === 'Enter' && !e.shiftKey) {
@@ -277,14 +280,14 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
                             }
                         }}
                         rows={1}
-                        disabled={isProcessing}
+                        disabled={isProcessing || isHistoryLoading}
                     />
                     <div className="absolute right-2 bottom-2">
                         <Button 
                             type="submit" 
                             size="icon" 
                             className="h-11 w-11 rounded-[1.25rem] shadow-xl shadow-primary/30 transition-all active:scale-90 bg-primary hover:bg-primary/90" 
-                            disabled={isProcessing || !input.trim()}
+                            disabled={isProcessing || !input.trim() || isHistoryLoading}
                         >
                             {isProcessing ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
                         </Button>
@@ -295,9 +298,9 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
             <div className="hidden md:flex items-center justify-center gap-4 mt-4 opacity-30 select-none">
                 <div className="h-px bg-border flex-1" />
                 <div className="flex items-center gap-2">
-                    <Sparkles className="h-2.5 w-2.5 text-primary" />
+                    <Clock className="h-2.5 w-2.5 text-primary" />
                     <p className="text-[8px] font-black uppercase tracking-[0.4em] text-muted-foreground whitespace-nowrap">
-                        Elitera Intelligence v1.5
+                        Riwayat Tersinkronisasi Otomatis
                     </p>
                 </div>
                 <div className="h-px bg-border flex-1" />
