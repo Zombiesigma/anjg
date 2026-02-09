@@ -184,7 +184,6 @@ export default function MessagesPage() {
     }
   };
 
-  // Image Upload
   const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !currentUser || !selectedChatId || !firestore || !otherParticipant) return;
@@ -208,7 +207,6 @@ export default function MessagesPage() {
     }
   };
 
-  // Voice Note Recording
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -222,7 +220,7 @@ export default function MessagesPage() {
 
       mediaRecorder.onstop = async () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        if (audioBlob.size < 1000) return; // Ignore very short recordings
+        if (audioBlob.size < 1000) return;
 
         const audioFile = new File([audioBlob], `vn-${Date.now()}.webm`, { type: 'audio/webm' });
         
@@ -258,9 +256,7 @@ export default function MessagesPage() {
 
   const stopRecording = (cancel = false) => {
     if (mediaRecorderRef.current && isRecording) {
-      if (cancel) {
-        audioChunksRef.current = []; // Empty chunks to prevent saving
-      }
+      if (cancel) audioChunksRef.current = [];
       mediaRecorderRef.current.stop();
       mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
       setIsRecording(false);
@@ -289,12 +285,12 @@ export default function MessagesPage() {
   };
 
   return (
-    <div className="h-[calc(100dvh-64px)] -mt-6 -mx-4 md:-mx-6 border-none overflow-hidden flex flex-col bg-background relative shadow-inner">
+    <div className="h-[calc(100dvh-64px)] -mt-6 -mx-4 md:-mx-6 border-none overflow-hidden flex flex-col bg-background relative">
       <div className="grid grid-cols-12 flex-1 h-full overflow-hidden">
         
         {/* Sidebar: Chat List */}
         <div className={cn(
-          "col-span-12 md:col-span-4 lg:col-span-3 border-r h-full flex flex-col bg-card/30 overflow-hidden relative transition-all duration-500",
+          "col-span-12 md:col-span-4 lg:col-span-3 border-r h-full flex flex-col bg-muted/10 overflow-hidden relative transition-all duration-500",
           selectedChatId ? "hidden md:flex" : "flex"
         )}>
           {/* Header Sidebar */}
@@ -304,7 +300,7 @@ export default function MessagesPage() {
                     <div className="p-2.5 rounded-2xl bg-primary/10 text-primary shadow-sm ring-1 ring-primary/20">
                         <MessageSquare className="h-5 w-5" />
                     </div>
-                    <h1 className="text-2xl font-headline font-black tracking-tight uppercase">Pesan</h1>
+                    <h1 className="text-2xl font-headline font-black tracking-tight uppercase italic">Pesan <span className="text-primary underline decoration-primary/20">Pujangga</span></h1>
                 </div>
                 <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/5 text-primary">
                     <Plus className="h-5 w-5" />
@@ -323,7 +319,7 @@ export default function MessagesPage() {
           </div>
 
           {/* List Obrolan */}
-          <div className="flex-1 overflow-hidden relative bg-muted/5">
+          <div className="flex-1 overflow-hidden relative">
             <ScrollArea className="h-full">
                 <div className="flex flex-col p-3 gap-2 pb-24">
                 {isLoadingThreads ? (
@@ -333,8 +329,8 @@ export default function MessagesPage() {
                     </div>
                 ) : sortedAndFilteredChatThreads.length === 0 ? (
                     <div className="text-center py-20 px-6 opacity-30 flex flex-col items-center gap-4">
-                        <Zap className="h-12 w-12" />
-                        <p className="text-sm font-bold leading-relaxed">Belum ada jejak percakapan.</p>
+                        <div className="p-6 rounded-full bg-primary/5"><Zap className="h-12 w-12 text-primary" /></div>
+                        <p className="text-sm font-bold leading-relaxed max-w-[180px]">Belum ada jejak percakapan puitis.</p>
                     </div>
                 ) : sortedAndFilteredChatThreads.map((chat, idx) => {
                     const otherP = chat.participants.find(p => p.uid !== currentUser?.uid);
@@ -366,7 +362,7 @@ export default function MessagesPage() {
                                 <AvatarFallback className="bg-primary/5 text-primary font-black">{otherP.displayName.charAt(0)}</AvatarFallback>
                             </Avatar>
                             {isOnline && (
-                                <span className="absolute bottom-0 right-0 block h-4 w-4 rounded-full bg-green-500 border-2 border-background shadow-sm ring-1 ring-green-400 animate-pulse" />
+                                <span className="absolute bottom-0 right-0 block h-4 w-4 rounded-full bg-green-500 border-2 border-background shadow-lg ring-1 ring-green-400 animate-pulse" />
                             )}
                         </div>
                         
@@ -380,7 +376,7 @@ export default function MessagesPage() {
                                 )}
                             </div>
                             <p className={cn(
-                                "text-xs truncate mt-1 leading-relaxed", 
+                                "text-xs truncate mt-1 leading-relaxed font-medium", 
                                 isActive ? "text-white/80" : "text-muted-foreground"
                             )}>
                                 {chat.lastMessage?.text || "Kirim pesan inspirasi..."}
@@ -388,13 +384,9 @@ export default function MessagesPage() {
                         </div>
 
                         {unreadCount > 0 && !isActive && (
-                            <div className="absolute right-4 bottom-4 h-6 min-w-[24px] px-2 flex items-center justify-center rounded-full bg-primary text-white text-[10px] font-black shadow-lg shadow-primary/30 ring-2 ring-background animate-bounce">
+                            <div className="absolute right-4 bottom-4 h-6 min-w-[24px] px-2 flex items-center justify-center rounded-full bg-primary text-white text-[10px] font-black shadow-lg shadow-primary/30 ring-2 ring-background">
                                 {unreadCount}
                             </div>
-                        )}
-                        
-                        {!isActive && (
-                            <ChevronRight className="h-4 w-4 absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-20 transition-all group-hover:translate-x-1" />
                         )}
                     </motion.button>
                     )
@@ -484,7 +476,7 @@ export default function MessagesPage() {
               </div>
               
               {/* Pesan-pesan */}
-              <div className="flex-1 overflow-hidden relative">
+              <div className="flex-1 overflow-hidden relative bg-muted/5">
                 <ScrollArea className="h-full">
                     <div className="py-10 px-6 space-y-10">
                     {isLoadingMessages ? (
@@ -494,7 +486,7 @@ export default function MessagesPage() {
                         </div>
                     ) : messageGroups.length === 0 ? (
                         <div className="text-center py-32 opacity-20 flex flex-col items-center gap-6">
-                            <div className="p-6 rounded-[2rem] bg-primary/5">
+                            <div className="p-6 rounded-[2.5rem] bg-primary/5">
                                 <Sparkles className="h-16 w-16 text-primary" />
                             </div>
                             <p className="font-headline text-2xl font-black italic max-w-xs mx-auto">Mulailah Percakapan Puitis Pertama Anda</p>
@@ -531,7 +523,6 @@ export default function MessagesPage() {
                                 <div className={cn("flex flex-col gap-1.5 max-w-[85%] md:max-w-[70%]", isSender ? "items-end" : "items-start")}>
                                     <div className={cn(
                                         "rounded-[1.75rem] shadow-sm text-[15px] leading-relaxed relative overflow-hidden", 
-                                        (msg.type === 'text' || msg.type === 'image' || msg.type === 'voice_note') ? "" : "p-1",
                                         isSender 
                                             ? "bg-primary text-white rounded-br-none shadow-primary/20 ring-1 ring-white/10" 
                                             : "bg-card border border-border/50 rounded-bl-none shadow-black/5"
@@ -540,11 +531,11 @@ export default function MessagesPage() {
                                             <p className="whitespace-pre-wrap font-medium px-6 py-4">{msg.text}</p>
                                         )}
                                         {msg.type === 'image' && (
-                                            <div className="relative aspect-auto max-w-full overflow-hidden rounded-[1.5rem] group">
+                                            <div className="relative aspect-auto max-w-full overflow-hidden rounded-[1.5rem] group p-1">
                                                 <img 
                                                     src={msg.imageUrl} 
                                                     alt="Chat Media" 
-                                                    className="w-full h-auto object-cover max-h-[300px] cursor-pointer"
+                                                    className="w-full h-auto object-cover max-h-[300px] cursor-pointer rounded-[1.25rem]"
                                                     onClick={() => window.open(msg.imageUrl, '_blank')}
                                                 />
                                             </div>
@@ -581,11 +572,11 @@ export default function MessagesPage() {
                                                         />
                                                         <div className="absolute inset-0 bg-black/40" />
                                                         <div className="absolute bottom-3 left-3 right-3 text-white">
-                                                            <p className="font-black text-xs sm:text-sm line-clamp-2 leading-tight uppercase tracking-tight">{msg.book.title}</p>
+                                                            <p className="font-black text-xs sm:text-sm line-clamp-2 leading-tight uppercase tracking-tight italic">{msg.book.title}</p>
                                                             <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest mt-1 opacity-80">{msg.book.authorName}</p>
                                                         </div>
                                                     </div>
-                                                    <div className="px-4 py-2 text-center">
+                                                    <div className="px-4 py-2 text-center border-t border-white/10">
                                                         <span className={cn(
                                                             "text-[8px] sm:text-[10px] font-black uppercase tracking-widest",
                                                             isSender ? "text-white/60" : "text-primary"
@@ -606,17 +597,17 @@ export default function MessagesPage() {
                                                         </div>
                                                         <div className="min-w-0">
                                                             <p className={cn("text-[10px] font-black uppercase tracking-widest", isSender ? "text-white/60" : "text-primary")}>Video Reels</p>
-                                                            <p className="text-xs font-bold truncate opacity-80">{msg.reel.authorName}</p>
+                                                            <p className="text-xs font-bold truncate opacity-80">@{msg.reel.authorName.toLowerCase()}</p>
                                                         </div>
                                                     </div>
-                                                    <div className="aspect-video relative rounded-xl overflow-hidden bg-black/20 flex items-center justify-center">
+                                                    <div className="aspect-video relative rounded-xl overflow-hidden bg-black/20 flex items-center justify-center group-hover/shared:scale-[1.02] transition-transform">
                                                         <Play className="h-8 w-8 text-white/40 group-hover/shared:scale-110 group-hover/shared:text-white transition-all" />
                                                         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                                                     </div>
                                                     {msg.reel.caption && (
                                                         <p className="text-xs line-clamp-2 italic opacity-70 font-medium">"{msg.reel.caption}"</p>
                                                     )}
-                                                    <div className="text-center pt-1">
+                                                    <div className="text-center pt-1 border-t border-white/5 mt-1">
                                                         <span className={cn(
                                                             "text-[9px] font-black uppercase tracking-[0.2em]",
                                                             isSender ? "text-white/40" : "text-muted-foreground"
@@ -625,14 +616,8 @@ export default function MessagesPage() {
                                                 </div>
                                             </Link>
                                         )}
-                                        
-                                        {/* Subtle message arrow tail */}
-                                        <div className={cn(
-                                            "absolute bottom-0 w-4 h-4",
-                                            isSender ? "-right-1 bg-primary [clip-path:polygon(0_0,100%_100%,0_100%)]" : "-left-1 bg-card border-l border-b border-border/50 [clip-path:polygon(100%_0,100%_100%,0_100%)]"
-                                        )} />
                                     </div>
-                                    <p className={cn("text-[8px] font-black uppercase opacity-40 px-2 tracking-widest", isSender ? "text-right" : "text-left")}>
+                                    <p className={cn("text-[8px] font-black uppercase opacity-40 px-2 tracking-widest mt-0.5", isSender ? "text-right" : "text-left")}>
                                         {format(msg.createdAt.toDate(), 'HH:mm')}
                                     </p>
                                 </div>
@@ -653,18 +638,18 @@ export default function MessagesPage() {
                           <motion.div 
                             initial={{ opacity: 0, y: 10 }} 
                             animate={{ opacity: 1, y: 0 }} 
-                            className="bg-primary/5 border border-primary/20 rounded-2xl p-4 flex items-center justify-between"
+                            className="bg-primary/5 border border-primary/20 rounded-[1.75rem] p-4 flex items-center justify-between shadow-inner"
                           >
                               <div className="flex items-center gap-3">
                                   <div className="h-2.5 w-2.5 rounded-full bg-red-500 animate-pulse" />
                                   <span className="font-mono font-bold text-primary">{formatTime(recordingTime)}</span>
-                                  <span className="text-xs font-medium text-muted-foreground">Sedang Merekam Suara...</span>
+                                  <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground/60">Sedang Merekam...</span>
                               </div>
                               <div className="flex items-center gap-2">
-                                  <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-rose-500" onClick={() => stopRecording(true)}>
+                                  <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-rose-500 rounded-full" onClick={() => stopRecording(true)}>
                                       <Trash2 className="h-5 w-5" />
                                   </Button>
-                                  <Button size="icon" className="rounded-full h-10 w-10 bg-primary" onClick={() => stopRecording(false)}>
+                                  <Button size="icon" className="rounded-full h-10 w-10 bg-primary shadow-lg shadow-primary/20" onClick={() => stopRecording(false)}>
                                       <Send className="h-5 w-5" />
                                   </Button>
                               </div>
@@ -678,7 +663,7 @@ export default function MessagesPage() {
                                     type="button" 
                                     variant="ghost" 
                                     size="icon" 
-                                    className="rounded-full text-muted-foreground hover:text-primary hover:bg-primary/5"
+                                    className="rounded-full text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
                                     onClick={() => fileInputRef.current?.click()}
                                     disabled={isSending}
                                 >
@@ -690,7 +675,7 @@ export default function MessagesPage() {
                                     type="button" 
                                     variant="ghost" 
                                     size="icon" 
-                                    className="rounded-full text-muted-foreground hover:text-primary hover:bg-primary/5"
+                                    className="rounded-full text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
                                     onClick={startRecording}
                                     disabled={isSending}
                                 >
@@ -724,8 +709,11 @@ export default function MessagesPage() {
                         </form>
                       )}
                   </div>
-                  <div className="mt-2 flex justify-center opacity-20 pointer-events-none select-none">
-                      <p className="text-[7px] font-black uppercase tracking-[0.4em]">Elitera Secure Messenger</p>
+                  <div className="mt-3 flex justify-center opacity-20 pointer-events-none select-none grayscale">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="h-3 w-3" />
+                        <p className="text-[7px] font-black uppercase tracking-[0.4em]">Elitera Encrypted Messenger</p>
+                      </div>
                   </div>
               </div>
             </div>
