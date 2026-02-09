@@ -27,8 +27,8 @@ export function MobileNav() {
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-6 md:hidden pointer-events-none">
-      <div className="bg-background/80 backdrop-blur-2xl border border-white/20 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] rounded-[2rem] h-16 flex items-center justify-around px-2 relative overflow-hidden pointer-events-auto max-w-lg mx-auto">
+    <div className="fixed bottom-0 left-0 right-0 z-[100] px-4 pb-6 md:hidden pointer-events-none">
+      <div className="bg-background/80 backdrop-blur-2xl border border-white/20 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.3)] rounded-[2.5rem] h-16 flex items-center justify-around px-2 relative overflow-hidden pointer-events-auto max-w-lg mx-auto">
         {navItems.map((item) => {
           const isActive = (item.href === '/' && pathname === '/') || (item.href !== '/' && pathname.startsWith(item.href));
           
@@ -40,18 +40,18 @@ export function MobileNav() {
             <Link 
               key={item.href} 
               href={finalHref} 
-              className="flex-1 flex flex-col items-center justify-center h-full relative z-10"
+              className="flex-1 flex flex-col items-center justify-center h-full relative z-10 group"
             >
               <div className="flex flex-col items-center justify-center transition-all duration-300">
                 <item.icon 
                   className={cn(
                     'w-5 h-5 transition-all duration-300', 
-                    isActive ? 'text-primary scale-110' : 'text-muted-foreground'
+                    isActive ? 'text-primary scale-110' : 'text-muted-foreground group-hover:text-primary/60'
                   )} 
                 />
                 <span 
                   className={cn(
-                    'text-[10px] font-black mt-1 tracking-tighter transition-all duration-300 uppercase',
+                    'text-[9px] font-black mt-1 tracking-tighter transition-all duration-300 uppercase',
                      isActive ? 'text-primary' : 'text-muted-foreground'
                   )}
                 >
@@ -62,7 +62,7 @@ export function MobileNav() {
               {isActive && (
                 <motion.div
                   layoutId="mobile-nav-indicator"
-                  className="absolute inset-1 bg-primary/10 rounded-2xl z-[-1]"
+                  className="absolute inset-1.5 bg-primary/10 rounded-[1.5rem] z-[-1]"
                   initial={false}
                   transition={{ type: 'spring', stiffness: 350, damping: 30 }}
                 />
