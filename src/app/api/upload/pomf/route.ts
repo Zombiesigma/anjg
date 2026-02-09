@@ -10,26 +10,38 @@ export async function POST(request: Request) {
     const file = formData.get('file') as File;
 
     if (!file) {
-      return NextResponse.json({ success: false, error: 'No file uploaded' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'File tidak ditemukan dalam permintaan.' }, { status: 400 });
     }
 
     const pomfFormData = new FormData();
-    // Pomf mewajibkan field name 'files[]'
+    // Pomf clones mewajibkan field name 'files[]'
     pomfFormData.append('files[]', file);
 
+    // Gunakan timeout agar tidak menggantung jika server remote lambat
     const response = await fetch('https://pomf.lain.la/upload.php', {
       method: 'POST',
       body: pomfFormData,
+      signal: AbortSignal.timeout(30000), // Batas waktu 30 detik
     });
 
     if (!response.ok) {
-      throw new Error(`Pomf responded with status: ${response.status}`);
+      const errorText = await response.text();
+      console.error('[Pomf API] Remote server error:', response.status, errorText);
+      return NextResponse.json({ 
+        success: false, 
+        error: `Server Pomf merespons dengan status: ${response.status}` 
+      }, { status: response.status });
     }
 
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error: any) {
     console.error('[Pomf Route] Error:', error.message);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    const isTimeout = error.name === 'TimeoutError' || error.message.includes('timeout');
+    
+    return NextResponse.json({ 
+      success: false, 
+      error: isTimeout ? 'Unggahan ke Pomf melampaui batas waktu (timeout).' : `Kesalahan server internal: ${error.message}` 
+    }, { status: 500 });
   }
 }
