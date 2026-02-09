@@ -7,7 +7,7 @@ import type { Reel, ReelLike, User as AppUser, User } from '@/lib/types';
 import { Heart, MessageSquare, Share2, Volume2, VolumeX, Sparkles, Loader2, Music2, Send as SendIcon } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import Link from 'next/link';
+import Link from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -123,15 +123,7 @@ export function ReelItem({ reel, isMuted, onToggleMute }: ReelItemProps) {
       url: shareUrl,
     };
 
-    if (navigator.share) {
-      try {
-        await navigator.share(shareData);
-      } catch (err) {
-        if ((err as Error).name !== 'AbortError') {
-          console.error('Share failed:', err);
-        }
-      }
-    } else {
+    const copyToClipboard = async () => {
       try {
         await navigator.clipboard.writeText(shareUrl);
         toast({
@@ -143,9 +135,23 @@ export function ReelItem({ reel, isMuted, onToggleMute }: ReelItemProps) {
         toast({
           variant: 'destructive',
           title: 'Gagal Menyalin',
-          description: 'Perangkat Anda tidak mendukung fitur ini.',
+          description: 'Harap salin tautan secara manual dari bilah alamat.',
         });
       }
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (err: any) {
+        // Fallback to clipboard if share was cancelled or failed due to permission
+        if (err.name !== 'AbortError') {
+          console.warn('[ReelItem] Web Share failed, falling back to clipboard:', err.name);
+          await copyToClipboard();
+        }
+      }
+    } else {
+      await copyToClipboard();
     }
   };
 
@@ -215,23 +221,27 @@ export function ReelItem({ reel, isMuted, onToggleMute }: ReelItemProps) {
       {/* Bottom Info Section */}
       <div className="absolute bottom-0 left-0 right-0 p-6 pb-14 space-y-4 z-20 pointer-events-none">
         <div className="flex items-center gap-3 pointer-events-auto">
-            <Link href={`/profile/${reel.authorName.toLowerCase()}`} className="flex items-center gap-3 group">
-                <div className="relative">
-                    <Avatar className="h-12 w-12 border-2 border-white/30 shadow-xl group-hover:scale-105 transition-transform">
-                        <AvatarImage src={reel.authorAvatarUrl} className="object-cover" />
-                        <AvatarFallback className="bg-primary text-white font-black">{reel.authorName?.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <div className="absolute -bottom-1 -right-1 bg-primary text-white p-0.5 rounded-full ring-2 ring-black">
-                        <Sparkles className="h-3 w-3" />
+            <div className="flex items-center gap-3 group">
+                <Link href={`/profile/${reel.authorName.toLowerCase()}`}>
+                    <div className="relative">
+                        <Avatar className="h-12 w-12 border-2 border-white/30 shadow-xl group-hover:scale-105 transition-transform">
+                            <AvatarImage src={reel.authorAvatarUrl} className="object-cover" />
+                            <AvatarFallback className="bg-primary text-white font-black">{reel.authorName?.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div className="absolute -bottom-1 -right-1 bg-primary text-white p-0.5 rounded-full ring-2 ring-black">
+                            <Sparkles className="h-3 w-3" />
+                        </div>
                     </div>
-                </div>
+                </Link>
                 <div className="flex flex-col">
-                    <p className="text-white font-black text-sm tracking-tight group-hover:text-primary transition-colors">{reel.authorName}</p>
+                    <Link href={`/profile/${reel.authorName.toLowerCase()}`}>
+                        <p className="text-white font-black text-sm tracking-tight group-hover:text-primary transition-colors">{reel.authorName}</p>
+                    </Link>
                     <p className="text-[9px] text-white/60 font-bold uppercase tracking-widest">
                         {reel.createdAt ? formatDistanceToNow(reel.createdAt.toDate(), { locale: id, addSuffix: true }) : 'Baru saja'}
                     </p>
                 </div>
-            </Link>
+            </div>
         </div>
 
         <p className="text-white text-sm font-medium leading-relaxed drop-shadow-md line-clamp-2 max-w-[85%] italic">
