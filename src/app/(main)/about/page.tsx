@@ -46,7 +46,7 @@ const technologies = [
     { 
         title: "Shadcn UI", 
         desc: "Koleksi komponen visual berkualitas tinggi untuk pengalaman pengguna yang premium dan konsisten.",
-        icon: "https://raw.githubusercontent.com/shadcn-ui/ui/main/apps/www/public/logo.png",
+        icon: "https://svgl.app/library/shadcnui.svg",
     },
     { 
         title: "Google Genkit", 
@@ -56,7 +56,7 @@ const technologies = [
     { 
         title: "Sentuhan AI", 
         desc: "Aplikasi ini dibangun dengan kolaborasi asisten AI untuk efisiensi kode dan ideasi puitis.",
-        icon: "https://svgl.app/library/anthropic_icon.svg",
+        icon: "https://svgl.app/library/anthropic.svg",
     }
 ];
 
