@@ -1,12 +1,18 @@
+'use client';
+
 import { Header } from '@/components/layout/Header';
 import { MobileNav } from '@/components/layout/MobileNav';
 import { ProtectedLayout } from '@/components/auth/ProtectedLayout';
+import { usePathname } from 'next/navigation';
 
 export default function MainAppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+  const isImmersiveRoute = pathname?.startsWith('/messages') || pathname?.startsWith('/ai');
+
   return (
     <ProtectedLayout>
       <div className="relative flex min-h-screen flex-col bg-background overflow-x-hidden w-full max-w-full">
@@ -16,7 +22,8 @@ export default function MainAppLayout({
             {children}
           </div>
         </main>
-        <div className="h-20 md:hidden shrink-0" /> 
+        {/* Spacer bawah hanya muncul jika bukan rute imersif */}
+        {!isImmersiveRoute && <div className="h-12 md:hidden shrink-0" />} 
         <MobileNav />
       </div>
     </ProtectedLayout>

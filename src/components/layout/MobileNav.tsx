@@ -13,8 +13,13 @@ export function MobileNav() {
   const firestore = useFirestore();
   const pathname = usePathname();
 
+  // Logika untuk menyembunyikan navigasi pada rute tertentu
+  const isImmersiveRoute = pathname?.startsWith('/messages') || pathname?.startsWith('/ai');
+
   const userProfileRef = (firestore && user) ? doc(firestore, 'users', user.uid) : null;
   const { data: userProfile, isLoading: isProfileLoading } = useDoc<AppUser>(userProfileRef);
+
+  if (isImmersiveRoute) return null;
 
   const canUpload = userProfile?.role === 'penulis' || userProfile?.role === 'admin';
 
