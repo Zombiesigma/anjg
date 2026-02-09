@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/Logo';
 import { Sparkles, BookOpen, Users, Heart, ArrowRight, Bot, Zap, ShieldCheck, Cpu } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 const devPortfolio = "https://www.gunturpadilah.web.id/";
 const devImage = "https://www.gunturpadilah.web.id/pp.jpg";
