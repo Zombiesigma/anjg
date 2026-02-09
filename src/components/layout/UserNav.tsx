@@ -32,6 +32,7 @@ import {
   LayoutGrid,
   Heart,
   MessageSquare,
+  Bot,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -186,6 +187,7 @@ export function UserNav() {
               <div className="space-y-1 mb-6">
                 <p className="px-4 py-2 text-[9px] font-black uppercase tracking-[0.3em] text-muted-foreground/60">Akses Cepat</p>
                 <NavLink href={`/profile/${userProfile?.username?.toLowerCase()}`} icon={UserIcon} label="Profil Utama" description="Lihat jejak karyamu" />
+                <NavLink href="/ai" icon={Bot} label="Elitera AI" description="Asisten kreatif puitis" />
                 <NavLink href="/messages" icon={MessageSquare} label="Kotak Pesan" description="Diskusi pribadi antar pujangga" />
                 <NavLink href="/notifications" icon={Sparkles} label="Kabar Terbaru" description="Aktivitas dan interaksi" />
               </div>

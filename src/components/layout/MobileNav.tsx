@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { Home, BookUser, PlusSquare, Bot, User, Loader2 } from 'lucide-react';
+import { Home, BookUser, PlusSquare, Clapperboard, User, Loader2 } from 'lucide-react';
 import { useUser, useFirestore, useDoc } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import type { User as AppUser } from '@/lib/types';
@@ -22,7 +22,7 @@ export function MobileNav() {
     { href: '/', icon: Home, label: 'Beranda' },
     { href: '/join-author', icon: BookUser, label: 'Penulis' },
     ...(canUpload ? [{ href: '/upload', icon: PlusSquare, label: 'Unggah' }] : []),
-    { href: '/ai', icon: Bot, label: 'AI' },
+    { href: '/reels', icon: Clapperboard, label: 'Reels' },
     { href: '/profile', icon: User, label: 'Profil' },
   ];
 
