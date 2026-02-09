@@ -12,12 +12,12 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
-import { MessageSquare, Loader2, Send, Search, ArrowLeft, ChevronRight, Sparkles, Zap, Plus, Info, Clapperboard, Play, Camera, Mic, Square, Trash2, Image as ImageIcon } from 'lucide-react';
+import { MessageSquare, Loader2, Send, Search, ArrowLeft, ChevronRight, Sparkles, Zap, Plus, Info, Clapperboard, Play, Camera, Mic, Square, Trash2, Image as ImageIcon, Reply, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Chat, ChatMessage, User as AppUser } from '@/lib/types';
 import { isSameDay, format, isToday, isYesterday } from 'date-fns';
 import { id } from 'date-fns/locale';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
 import { Skeleton } from '@/components/ui/skeleton';
 import { uploadFile, uploadAudio } from '@/lib/uploader';
 import { useToast } from '@/hooks/use-toast';
@@ -33,6 +33,8 @@ export default function MessagesPage() {
   const [newMessage, setNewMessage] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -110,6 +112,7 @@ export default function MessagesPage() {
   useEffect(() => {
     const chatIdFromUrl = searchParams.get('chatId');
     setSelectedChatId(chatIdFromUrl || null);
+    setReplyingTo(null);
   }, [searchParams]);
 
   const messagesQuery = useMemo(() => (
@@ -165,12 +168,23 @@ export default function MessagesPage() {
     if (e) e.preventDefault();
     if (!newMessage.trim() || !currentUser || !selectedChatId || !firestore || !otherParticipant) return;
     const textToSend = newMessage.trim();
+    const replyData = replyingTo ? {
+        text: replyingTo.type === 'text' ? replyingTo.text : replyingTo.type === 'image' ? '📷 Gambar' : replyingTo.type === 'voice_note' ? '🎤 Pesan Suara' : '📦 Konten Shared',
+        senderName: replyingTo.senderId === currentUser.uid ? 'Anda' : otherParticipant.displayName,
+        type: replyingTo.type
+    } : null;
+
     setNewMessage(""); 
+    setReplyingTo(null);
     setIsSending(true);
     try {
       const batch = writeBatch(firestore);
       batch.set(doc(collection(firestore, 'chats', selectedChatId, 'messages')), {
-        type: 'text', text: textToSend, senderId: currentUser.uid, createdAt: serverTimestamp(),
+        type: 'text', 
+        text: textToSend, 
+        senderId: currentUser.uid, 
+        createdAt: serverTimestamp(),
+        ...(replyData && { replyTo: replyData })
       });
       batch.update(doc(firestore, 'chats', selectedChatId), {
         lastMessage: { text: textToSend, senderId: currentUser.uid, timestamp: serverTimestamp() },
@@ -507,121 +521,15 @@ export default function MessagesPage() {
                             }
                             const msg = item as ChatMessage;
                             const isSender = msg.senderId === currentUser?.uid;
+                            
                             return (
-                                <motion.div 
+                                <MessageBubble 
                                     key={msg.id} 
-                                    initial={{ opacity: 0, y: 20, scale: 0.95 }} 
-                                    animate={{ opacity: 1, y: 0, scale: 1 }} 
-                                    className={cn("flex items-end gap-3", isSender ? "justify-end" : "justify-start")}
-                                >
-                                {!isSender && (
-                                    <Avatar className="h-9 w-9 mb-1 shrink-0 border-2 border-background shadow-md">
-                                        <AvatarImage src={otherParticipant?.photoURL} className="object-cover" />
-                                        <AvatarFallback className="bg-primary/5 text-primary text-[10px] font-bold">{otherParticipant?.displayName.charAt(0)}</AvatarFallback>
-                                    </Avatar>
-                                )}
-                                <div className={cn("flex flex-col gap-1.5 max-w-[85%] md:max-w-[70%]", isSender ? "items-end" : "items-start")}>
-                                    <div className={cn(
-                                        "rounded-[1.75rem] shadow-sm text-[15px] leading-relaxed relative overflow-hidden", 
-                                        isSender 
-                                            ? "bg-primary text-white rounded-br-none shadow-primary/20 ring-1 ring-white/10" 
-                                            : "bg-card border border-border/50 rounded-bl-none shadow-black/5"
-                                    )}>
-                                        {msg.type === 'text' && (
-                                            <p className="whitespace-pre-wrap font-medium px-6 py-4">{msg.text}</p>
-                                        )}
-                                        {msg.type === 'image' && (
-                                            <div className="relative aspect-auto max-w-full overflow-hidden rounded-[1.5rem] group p-1">
-                                                <img 
-                                                    src={msg.imageUrl} 
-                                                    alt="Chat Media" 
-                                                    className="w-full h-auto object-cover max-h-[300px] cursor-pointer rounded-[1.25rem]"
-                                                    onClick={() => window.open(msg.imageUrl, '_blank')}
-                                                />
-                                            </div>
-                                        )}
-                                        {msg.type === 'voice_note' && (
-                                            <div className="flex items-center gap-3 px-4 py-3 min-w-[200px]">
-                                                <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center text-white">
-                                                    <Mic className="h-5 w-5" />
-                                                </div>
-                                                <div className="flex-1">
-                                                    <audio 
-                                                        src={msg.audioUrl} 
-                                                        controls 
-                                                        className={cn(
-                                                            "h-10 w-full scale-90 origin-left",
-                                                            isSender ? "filter invert hue-rotate-180" : ""
-                                                        )} 
-                                                    />
-                                                </div>
-                                            </div>
-                                        )}
-                                        {msg.type === 'book_share' && (
-                                            <Link href={`/books/${msg.book.id}`} className="block group/shared">
-                                                <div className={cn(
-                                                    "flex flex-col gap-2 min-w-[180px] sm:min-w-[240px] overflow-hidden rounded-2xl transition-all",
-                                                    isSender ? "bg-white/5 hover:bg-white/10" : "bg-muted/20 hover:bg-muted/40"
-                                                )}>
-                                                    <div className="aspect-[2/3] relative w-full h-40 sm:h-56">
-                                                        <Image 
-                                                            src={msg.book.coverUrl} 
-                                                            alt={msg.book.title} 
-                                                            fill 
-                                                            className="object-cover"
-                                                        />
-                                                        <div className="absolute inset-0 bg-black/40" />
-                                                        <div className="absolute bottom-3 left-3 right-3 text-white">
-                                                            <p className="font-black text-xs sm:text-sm line-clamp-2 leading-tight uppercase tracking-tight italic">{msg.book.title}</p>
-                                                            <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest mt-1 opacity-80">{msg.book.authorName}</p>
-                                                        </div>
-                                                    </div>
-                                                    <div className="px-4 py-2 text-center border-t border-white/10">
-                                                        <span className={cn(
-                                                            "text-[8px] sm:text-[10px] font-black uppercase tracking-widest",
-                                                            isSender ? "text-white/60" : "text-primary"
-                                                        )}>Buka Karya</span>
-                                                    </div>
-                                                </div>
-                                            </Link>
-                                        )}
-                                        {msg.type === 'reel_share' && (
-                                            <Link href={`/reels?id=${msg.reel.id}`} className="block group/shared">
-                                                <div className={cn(
-                                                    "flex flex-col gap-3 min-w-[200px] sm:min-w-[260px] p-4 overflow-hidden rounded-2xl transition-all",
-                                                    isSender ? "bg-white/5 hover:bg-white/10" : "bg-muted/20 hover:bg-muted/40"
-                                                )}>
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="h-10 w-10 rounded-xl bg-primary/20 flex items-center justify-center text-primary shrink-0">
-                                                            <Clapperboard className="h-5 w-5" />
-                                                        </div>
-                                                        <div className="min-w-0">
-                                                            <p className={cn("text-[10px] font-black uppercase tracking-widest", isSender ? "text-white/60" : "text-primary")}>Video Reels</p>
-                                                            <p className="text-xs font-bold truncate opacity-80">@{msg.reel.authorName.toLowerCase()}</p>
-                                                        </div>
-                                                    </div>
-                                                    <div className="aspect-video relative rounded-xl overflow-hidden bg-black/20 flex items-center justify-center group-hover/shared:scale-[1.02] transition-transform">
-                                                        <Play className="h-8 w-8 text-white/40 group-hover/shared:scale-110 group-hover/shared:text-white transition-all" />
-                                                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-                                                    </div>
-                                                    {msg.reel.caption && (
-                                                        <p className="text-xs line-clamp-2 italic opacity-70 font-medium">"{msg.reel.caption}"</p>
-                                                    )}
-                                                    <div className="text-center pt-1 border-t border-white/5 mt-1">
-                                                        <span className={cn(
-                                                            "text-[9px] font-black uppercase tracking-[0.2em]",
-                                                            isSender ? "text-white/40" : "text-muted-foreground"
-                                                        )}>Tonton Video</span>
-                                                    </div>
-                                                </div>
-                                            </Link>
-                                        )}
-                                    </div>
-                                    <p className={cn("text-[8px] font-black uppercase opacity-40 px-2 tracking-widest mt-0.5", isSender ? "text-right" : "text-left")}>
-                                        {format(msg.createdAt.toDate(), 'HH:mm')}
-                                    </p>
-                                </div>
-                                </motion.div>
+                                    msg={msg} 
+                                    isSender={isSender} 
+                                    otherParticipant={otherParticipant}
+                                    onSwipe={() => setReplyingTo(msg)}
+                                />
                             );
                             })}
                         </AnimatePresence>
@@ -634,6 +542,38 @@ export default function MessagesPage() {
               {/* Input Area */}
               <div className="p-4 md:p-6 border-t bg-background/95 backdrop-blur-md shrink-0 z-[60] pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-15px_40px_-15px_rgba(0,0,0,0.1)]">
                   <div className="max-w-5xl mx-auto flex flex-col gap-3">
+                      {/* Replying Context Bar */}
+                      <AnimatePresence>
+                        {replyingTo && (
+                            <motion.div 
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: 10 }}
+                                className="flex items-center gap-3 bg-muted/40 p-3 rounded-2xl border border-primary/10 relative overflow-hidden"
+                            >
+                                <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-primary" />
+                                <div className="flex-1 min-w-0 pl-2">
+                                    <p className="text-[9px] font-black uppercase text-primary tracking-widest">
+                                        Membalas {replyingTo.senderId === currentUser?.uid ? 'Anda' : otherParticipant?.displayName}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground truncate italic mt-0.5">
+                                        {replyingTo.type === 'text' ? replyingTo.text : 
+                                         replyingTo.type === 'image' ? '📷 Gambar' : 
+                                         replyingTo.type === 'voice_note' ? '🎤 Pesan Suara' : '📦 Konten Shared'}
+                                    </p>
+                                </div>
+                                <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="h-7 w-7 rounded-full text-muted-foreground hover:text-rose-500"
+                                    onClick={() => setReplyingTo(null)}
+                                >
+                                    <X className="h-4 w-4" />
+                                </Button>
+                            </motion.div>
+                        )}
+                      </AnimatePresence>
+
                       {isRecording && (
                           <motion.div 
                             initial={{ opacity: 0, y: 10 }} 
@@ -722,4 +662,163 @@ export default function MessagesPage() {
       </div>
     </div>
   )
+}
+
+function MessageBubble({ msg, isSender, otherParticipant, onSwipe }: { msg: ChatMessage, isSender: boolean, otherParticipant?: any, onSwipe: () => void }) {
+    const x = useMotionValue(0);
+    const opacity = useTransform(x, [0, 60], [0, 1]);
+    const scale = useTransform(x, [0, 60], [0.5, 1]);
+
+    const handleDragEnd = (_: any, info: any) => {
+        if (info.offset.x > 60) {
+            onSwipe();
+        }
+    };
+
+    return (
+        <motion.div 
+            className="relative"
+            initial={{ opacity: 0, y: 20, scale: 0.95 }} 
+            animate={{ opacity: 1, y: 0, scale: 1 }} 
+        >
+            {/* Reply Icon Indicator */}
+            <motion.div 
+                style={{ opacity, scale }}
+                className="absolute left-[-40px] top-1/2 -translate-y-1/2 flex items-center justify-center h-10 w-10 bg-primary/10 rounded-full text-primary"
+            >
+                <Reply className="h-5 w-5" />
+            </motion.div>
+
+            <motion.div
+                drag="x"
+                dragConstraints={{ left: 0, right: 100 }}
+                dragElastic={0.1}
+                onDragEnd={handleDragEnd}
+                className={cn("flex items-end gap-3", isSender ? "justify-end" : "justify-start")}
+            >
+                {!isSender && (
+                    <Avatar className="h-9 w-9 mb-1 shrink-0 border-2 border-background shadow-md">
+                        <AvatarImage src={otherParticipant?.photoURL} className="object-cover" />
+                        <AvatarFallback className="bg-primary/5 text-primary text-[10px] font-bold">{otherParticipant?.displayName.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                )}
+                <div className={cn("flex flex-col gap-1.5 max-w-[85%] md:max-w-[70%]", isSender ? "items-end" : "items-start")}>
+                    <div className={cn(
+                        "rounded-[1.75rem] shadow-sm text-[15px] leading-relaxed relative overflow-hidden flex flex-col", 
+                        isSender 
+                            ? "bg-primary text-white rounded-br-none shadow-primary/20 ring-1 ring-white/10" 
+                            : "bg-card border border-border/50 rounded-bl-none shadow-black/5"
+                    )}>
+                        {/* Render Reply Metadata inside bubble */}
+                        {msg.replyTo && (
+                            <div className={cn(
+                                "mx-2 mt-2 p-2 px-3 rounded-2xl border-l-4 flex flex-col gap-0.5 opacity-80",
+                                isSender ? "bg-white/10 border-white/40" : "bg-muted/50 border-primary/40"
+                            )}>
+                                <p className={cn("text-[9px] font-black uppercase tracking-widest", isSender ? "text-white/60" : "text-primary/60")}>
+                                    {msg.replyTo.senderName}
+                                </p>
+                                <p className="text-[11px] truncate italic line-clamp-1">
+                                    {msg.replyTo.text}
+                                </p>
+                            </div>
+                        )}
+
+                        {msg.type === 'text' && (
+                            <p className="whitespace-pre-wrap font-medium px-6 py-4">{msg.text}</p>
+                        )}
+                        {msg.type === 'image' && (
+                            <div className="relative aspect-auto max-w-full overflow-hidden rounded-[1.5rem] group p-1">
+                                <img 
+                                    src={msg.imageUrl} 
+                                    alt="Chat Media" 
+                                    className="w-full h-auto object-cover max-h-[300px] cursor-pointer rounded-[1.25rem]"
+                                    onClick={() => window.open(msg.imageUrl, '_blank')}
+                                />
+                            </div>
+                        )}
+                        {msg.type === 'voice_note' && (
+                            <div className="flex items-center gap-3 px-4 py-3 min-w-[200px]">
+                                <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center text-white">
+                                    <Mic className="h-5 w-5" />
+                                </div>
+                                <div className="flex-1">
+                                    <audio 
+                                        src={msg.audioUrl} 
+                                        controls 
+                                        className={cn(
+                                            "h-10 w-full scale-90 origin-left",
+                                            isSender ? "filter invert hue-rotate-180" : ""
+                                        )} 
+                                    />
+                                </div>
+                            </div>
+                        )}
+                        {msg.type === 'book_share' && (
+                            <Link href={`/books/${msg.book.id}`} className="block group/shared">
+                                <div className={cn(
+                                    "flex flex-col gap-2 min-w-[180px] sm:min-w-[240px] overflow-hidden rounded-2xl transition-all",
+                                    isSender ? "bg-white/5 hover:bg-white/10" : "bg-muted/20 hover:bg-muted/40"
+                                )}>
+                                    <div className="aspect-[2/3] relative w-full h-40 sm:h-56">
+                                        <Image 
+                                            src={msg.book.coverUrl} 
+                                            alt={msg.book.title} 
+                                            fill 
+                                            className="object-cover"
+                                        />
+                                        <div className="absolute inset-0 bg-black/40" />
+                                        <div className="absolute bottom-3 left-3 right-3 text-white">
+                                            <p className="font-black text-xs sm:text-sm line-clamp-2 leading-tight uppercase tracking-tight italic">{msg.book.title}</p>
+                                            <p className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest mt-1 opacity-80">{msg.book.authorName}</p>
+                                        </div>
+                                    </div>
+                                    <div className="px-4 py-2 text-center border-t border-white/10">
+                                        <span className={cn(
+                                            "text-[8px] sm:text-[10px] font-black uppercase tracking-widest",
+                                            isSender ? "text-white/60" : "text-primary"
+                                        )}>Buka Karya</span>
+                                    </div>
+                                </div>
+                            </Link>
+                        )}
+                        {msg.type === 'reel_share' && (
+                            <Link href={`/reels?id=${msg.reel.id}`} className="block group/shared">
+                                <div className={cn(
+                                    "flex flex-col gap-3 min-w-[200px] sm:min-w-[260px] p-4 overflow-hidden rounded-2xl transition-all",
+                                    isSender ? "bg-white/5 hover:bg-white/10" : "bg-muted/20 hover:bg-muted/40"
+                                )}>
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-10 w-10 rounded-xl bg-primary/20 flex items-center justify-center text-primary shrink-0">
+                                            <Clapperboard className="h-5 w-5" />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className={cn("text-[10px] font-black uppercase tracking-widest", isSender ? "text-white/60" : "text-primary")}>Video Reels</p>
+                                            <p className="text-xs font-bold truncate opacity-80">@{msg.reel.authorName.toLowerCase()}</p>
+                                        </div>
+                                    </div>
+                                    <div className="aspect-video relative rounded-xl overflow-hidden bg-black/20 flex items-center justify-center group-hover/shared:scale-[1.02] transition-transform">
+                                        <Play className="h-8 w-8 text-white/40 group-hover/shared:scale-110 group-hover/shared:text-white transition-all" />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                                    </div>
+                                    {msg.reel.caption && (
+                                        <p className="text-xs line-clamp-2 italic opacity-70 font-medium">"{msg.reel.caption}"</p>
+                                    )}
+                                    <div className="text-center pt-1 border-t border-white/5 mt-1">
+                                        <span className={cn(
+                                            "text-[9px] font-black uppercase tracking-[0.2em]",
+                                            isSender ? "text-white/40" : "text-muted-foreground"
+                                        )}>Tonton Video</span>
+                                    </div>
+                                </div>
+                            </Link>
+                        )}
+                    </div>
+                    <p className={cn("text-[8px] font-black uppercase opacity-40 px-2 tracking-widest mt-0.5", isSender ? "text-right" : "text-left")}>
+                        {format(msg.createdAt.toDate(), 'HH:mm')}
+                    </p>
+                </div>
+            </motion.div>
+        </motion.div>
+    );
 }

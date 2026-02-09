@@ -143,6 +143,11 @@ export type ChatMessage = (
   id: string;
   senderId: string;
   createdAt: Timestamp;
+  replyTo?: {
+    text: string;
+    senderName: string;
+    type: string;
+  };
 };
 
 
