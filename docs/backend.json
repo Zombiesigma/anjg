@@ -74,6 +74,14 @@
             "onStoryComment": {
               "type": "boolean",
               "description": "Receive notification on story comments."
+            },
+            "onReelLike": {
+              "type": "boolean",
+              "description": "Receive notification on reel likes."
+            },
+            "onReelComment": {
+              "type": "boolean",
+              "description": "Receive notification on reel comments."
             }
           }
         }

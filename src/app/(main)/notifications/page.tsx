@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
@@ -9,7 +10,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
-  Loader2, 
   Bell, 
   MessageCircle, 
   UserPlus, 
@@ -18,7 +18,9 @@ import {
   Megaphone, 
   CheckCheck,
   ChevronRight,
-  MessageSquare
+  MessageSquare,
+  Clapperboard,
+  Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow, isToday, isYesterday } from 'date-fns';
@@ -91,6 +93,8 @@ export default function NotificationsPage() {
       case 'author_request': return <PenTool className="h-4 w-4 text-orange-500" />;
       case 'story_comment': return <MessageSquare className="h-4 w-4 text-indigo-500" />;
       case 'broadcast': return <Megaphone className="h-4 w-4 text-primary" />;
+      case 'reel_like': return <Heart className="h-4 w-4 text-rose-500" fill="currentColor" />;
+      case 'reel_comment': return <Clapperboard className="h-4 w-4 text-indigo-500" />;
       default: return <Bell className="h-4 w-4 text-muted-foreground" />;
     }
   };

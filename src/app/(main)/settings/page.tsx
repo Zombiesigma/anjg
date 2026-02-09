@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -45,6 +46,8 @@ const notificationFormSchema = z.object({
   onBookComment: z.boolean().default(true),
   onBookFavorite: z.boolean().default(true),
   onStoryComment: z.boolean().default(true),
+  onReelLike: z.boolean().default(true),
+  onReelComment: z.boolean().default(true),
 });
 
 type SettingsTab = 'profile' | 'appearance' | 'notifications';
@@ -112,6 +115,8 @@ export default function SettingsPage() {
         onBookComment: userProfile.notificationPreferences?.onBookComment ?? true,
         onBookFavorite: userProfile.notificationPreferences?.onBookFavorite ?? true,
         onStoryComment: userProfile.notificationPreferences?.onStoryComment ?? true,
+        onReelLike: userProfile.notificationPreferences?.onReelLike ?? true,
+        onReelComment: userProfile.notificationPreferences?.onReelComment ?? true,
       });
     }
   }, [userProfile, profileForm, notificationForm]);
@@ -513,7 +518,9 @@ export default function SettingsPage() {
                                             { name: 'onNewFollower', label: 'Pengikut Baru', desc: 'Saat seseorang mulai mengikuti profil Anda.' },
                                             { name: 'onBookComment', label: 'Komentar Buku', desc: 'Saat ada ulasan baru pada karya-karya Anda.' },
                                             { name: 'onBookFavorite', label: 'Karya Favorit', desc: 'Saat buku Anda ditambahkan ke koleksi favorit pembaca.' },
-                                            { name: 'onStoryComment', label: 'Respon Momen', desc: 'Saat seseorang membalas cerita singkat Anda.' }
+                                            { name: 'onStoryComment', label: 'Respon Momen', desc: 'Saat seseorang membalas cerita singkat Anda.' },
+                                            { name: 'onReelLike', label: 'Suka Video Reels', desc: 'Saat seseorang menyukai postingan video Anda.' },
+                                            { name: 'onReelComment', label: 'Komentar Video Reels', desc: 'Saat ada ulasan baru pada video Reels Anda.' }
                                         ].map((item) => (
                                             <FormField key={item.name} control={notificationForm.control} name={item.name as any} render={({ field }) => (
                                                 <div className="flex items-center justify-between p-6 rounded-3xl transition-colors hover:bg-muted/30 group border border-transparent hover:border-border/50">

@@ -1,9 +1,10 @@
+
 'use client';
 
 import { useFirestore, useUser, useDoc } from '@/firebase';
-import { doc, increment, updateDoc, serverTimestamp, writeBatch, deleteDoc } from 'firebase/firestore';
+import { doc, increment, updateDoc, serverTimestamp, writeBatch, getDoc, collection, addDoc } from 'firebase/firestore';
 import { useState, useRef, useEffect, useMemo } from 'react';
-import type { Reel, ReelLike, User as AppUser } from '@/lib/types';
+import type { Reel, ReelLike, User as AppUser, User } from '@/lib/types';
 import { Heart, MessageSquare, Share2, Volume2, VolumeX, Sparkles, Loader2, Music2, Send as SendIcon } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -86,6 +87,28 @@ export function ReelItem({ reel, isMuted, onToggleMute }: ReelItemProps) {
         batch.update(reelRef, { likes: increment(1) });
       }
       await batch.commit();
+
+      // Notification Logic for Reel Like
+      if (!isLiked && currentUser.uid !== reel.authorId) {
+          const authorDoc = await getDoc(doc(firestore, 'users', reel.authorId));
+          if (authorDoc.exists()) {
+              const authorProfile = authorDoc.data() as User;
+              if (authorProfile.notificationPreferences?.onReelLike !== false) {
+                  addDoc(collection(firestore, 'users', reel.authorId, 'notifications'), {
+                      type: 'reel_like',
+                      text: `${currentUser.displayName} menyukai video Reel Anda.`,
+                      link: `/reels`,
+                      actor: {
+                          uid: currentUser.uid,
+                          displayName: currentUser.displayName!,
+                          photoURL: currentUser.photoURL!,
+                      },
+                      read: false,
+                      createdAt: serverTimestamp()
+                  }).catch(err => console.warn("Failed to send reel_like notification", err));
+              }
+          }
+      }
     } catch (e) {
       console.error(e);
     } finally {
@@ -207,7 +230,7 @@ export function ReelItem({ reel, isMuted, onToggleMute }: ReelItemProps) {
       </div>
 
       {/* Sheets & Dialogs */}
-      <ReelCommentsSheet reelId={reel.id} isOpen={showComments} onOpenChange={setShowComments} />
+      <ReelCommentsSheet reelId={reel.id} reelAuthorId={reel.authorId} isOpen={showComments} onOpenChange={setShowComments} />
       <ShareReelDialog reel={reel} open={showShare} onOpenChange={setShowShare} />
 
       <style jsx>{`

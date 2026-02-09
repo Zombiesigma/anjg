@@ -19,6 +19,8 @@ export type User = {
     onBookComment?: boolean;
     onBookFavorite?: boolean;
     onStoryComment?: boolean;
+    onReelLike?: boolean;
+    onReelComment?: boolean;
   };
 };
 

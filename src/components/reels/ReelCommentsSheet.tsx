@@ -3,8 +3,8 @@
 
 import { useMemo, useState, useEffect } from 'react';
 import { useFirestore, useUser, useCollection } from '@/firebase';
-import { collection, query, orderBy, addDoc, serverTimestamp, doc, increment, writeBatch } from 'firebase/firestore';
-import type { ReelComment } from '@/lib/types';
+import { collection, query, orderBy, addDoc, serverTimestamp, doc, increment, writeBatch, getDoc } from 'firebase/firestore';
+import type { ReelComment, User } from '@/lib/types';
 import {
   Sheet,
   SheetContent,
@@ -22,11 +22,12 @@ import { ReelCommentItem } from './ReelCommentItem';
 
 interface ReelCommentsSheetProps {
   reelId: string;
+  reelAuthorId: string;
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
 }
 
-export function ReelCommentsSheet({ reelId, isOpen, onOpenChange }: ReelCommentsSheetProps) {
+export function ReelCommentsSheet({ reelId, reelAuthorId, isOpen, onOpenChange }: ReelCommentsSheetProps) {
   const firestore = useFirestore();
   const { user: currentUser } = useUser();
   const { toast } = useToast();
@@ -73,6 +74,29 @@ export function ReelCommentsSheet({ reelId, isOpen, onOpenChange }: ReelComments
       batch.update(reelRef, { commentCount: increment(1) });
 
       await batch.commit();
+
+      // Notification Logic
+      if (currentUser.uid !== reelAuthorId) {
+          const authorDoc = await getDoc(doc(firestore, 'users', reelAuthorId));
+          if (authorDoc.exists()) {
+              const authorProfile = authorDoc.data() as User;
+              if (authorProfile.notificationPreferences?.onReelComment !== false) {
+                  addDoc(collection(firestore, 'users', reelAuthorId, 'notifications'), {
+                      type: 'reel_comment',
+                      text: `${currentUser.displayName} mengomentari video Reel Anda.`,
+                      link: `/reels`,
+                      actor: {
+                          uid: currentUser.uid,
+                          displayName: currentUser.displayName!,
+                          photoURL: currentUser.photoURL!,
+                      },
+                      read: false,
+                      createdAt: serverTimestamp()
+                  }).catch(err => console.warn("Failed to send reel_comment notification", err));
+              }
+          }
+      }
+
       setCommentText("");
     } catch (error) {
       toast({ variant: 'destructive', title: 'Gagal', description: 'Tidak dapat mengirim komentar.' });
