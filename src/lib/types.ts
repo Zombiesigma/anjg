@@ -153,8 +153,10 @@ export type Notification = {
 };
 
 export type AiChatMessage = {
+  id?: string;
   role: 'user' | 'model';
   content: string;
+  createdAt?: Timestamp;
 };
 
 export type Favorite = {

@@ -247,6 +247,17 @@
         "type"
       ]
     },
+    "AiMessage": {
+      "title": "AI Message",
+      "description": "A single message in the persistent AI chat history.",
+      "type": "object",
+      "properties": {
+        "role": { "type": "string", "enum": ["user", "model"] },
+        "content": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["role", "content", "createdAt"]
+    },
     "FavoriteBook": {
         "title": "Favorite Book",
         "description": "Marks a book as a favorite for a user. The document ID is the book ID.",
@@ -413,6 +424,10 @@
     "/users/{userId}": {
       "schema": { "$ref": "#/backend/entities/UserProfile" },
       "description": "Stores user profile information."
+    },
+    "/users/{userId}/aiMessages/{messageId}": {
+      "schema": { "$ref": "#/backend/entities/AiMessage" },
+      "description": "Stores persistent AI chat history for a user."
     },
     "/users/{userId}/favorites/{bookId}": {
         "schema": { "$ref": "#/backend/entities/FavoriteBook" },

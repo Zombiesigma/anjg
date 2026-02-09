@@ -20,6 +20,10 @@ service cloud.firestore {
       allow get, list: if isAuthenticated();
       allow write: if isOwner(userId) || isAdmin();
       
+      match /aiMessages/{msgId} {
+        allow read, write: if isOwner(userId);
+      }
+
       match /favorites/{bookId} {
         allow read: if isAuthenticated();
         allow write: if isOwner(userId);
