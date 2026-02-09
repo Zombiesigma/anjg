@@ -1,11 +1,10 @@
-
 'use client';
 
 import { useFirestore, useUser, useDoc } from '@/firebase';
 import { doc, increment, updateDoc, serverTimestamp, writeBatch, deleteDoc } from 'firebase/firestore';
 import { useState, useRef, useEffect, useMemo } from 'react';
 import type { Reel, ReelLike, User as AppUser } from '@/lib/types';
-import { Heart, MessageSquare, Share2, Volume2, VolumeX, Sparkles, Loader2, Music2 } from 'lucide-react';
+import { Heart, MessageSquare, Share2, Volume2, VolumeX, Sparkles, Loader2, Music2, Send as SendIcon } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
