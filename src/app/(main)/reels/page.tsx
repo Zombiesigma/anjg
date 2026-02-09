@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useFirestore, useCollection, useUser, useDoc } from '@/firebase';
@@ -39,7 +38,7 @@ export default function ReelsPage() {
   }
 
   return (
-    <div className="h-[calc(100dvh-180px)] md:h-[calc(100dvh-144px)] -mt-6 -mx-4 md:-mx-6 bg-black overflow-y-scroll snap-y snap-mandatory no-scrollbar rounded-none md:rounded-[2.5rem] shadow-2xl relative scroll-smooth">
+    <div className="h-[calc(100dvh-180px)] md:h-[calc(100dvh-144px)] -mt-6 -mx-4 md:-mx-6 bg-black overflow-y-auto snap-y snap-mandatory no-scrollbar rounded-none md:rounded-[2.5rem] shadow-2xl relative">
       
       {/* Floating Global Controls */}
       <div className="fixed top-24 left-8 right-8 z-[110] flex items-center justify-between pointer-events-none">
