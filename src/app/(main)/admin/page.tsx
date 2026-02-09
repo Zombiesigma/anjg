@@ -3,7 +3,7 @@
 
 import { useMemo, useState } from "react";
 import { useFirestore, useCollection, useUser, useDoc } from '@/firebase';
-import { collection, query, doc, writeBatch, updateDoc, where, deleteDoc } from 'firebase/firestore';
+import { collection, query, doc, writeBatch, updateDoc, where, deleteDoc, getDoc, getDocs, serverTimestamp } from 'firebase/firestore';
 import {
   Card,
   CardContent,
@@ -112,9 +112,51 @@ export default function AdminPage() {
     setProcessingId(bookId);
     try {
       const bookRef = doc(firestore, 'books', bookId);
-      await updateDoc(bookRef, { status: 'published' });
-      toast({ variant: 'success', title: "Buku Disetujui", description: `"${bookTitle}" telah diterbitkan.` });
+      const bookSnap = await getDoc(bookRef);
+      
+      if (!bookSnap.exists()) {
+          toast({ variant: 'destructive', title: "Buku tidak ditemukan" });
+          return;
+      }
+      
+      const bookData = bookSnap.data() as Book;
+      const batch = writeBatch(firestore);
+      
+      batch.update(bookRef, { status: 'published' });
+
+      // Kirim notifikasi jika visibilitas adalah followers_only (private khusus pengikut)
+      if (bookData.visibility === 'followers_only') {
+          const followersRef = collection(firestore, 'users', bookData.authorId, 'followers');
+          const followersSnap = await getDocs(followersRef);
+          
+          followersSnap.forEach((followerDoc) => {
+              const followerId = followerDoc.id;
+              const notificationRef = doc(collection(firestore, `users/${followerId}/notifications`));
+              batch.set(notificationRef, {
+                  type: 'broadcast',
+                  text: `${bookData.authorName} telah menerbitkan karya eksklusif: ${bookData.title}`,
+                  link: `/books/${bookId}`,
+                  actor: {
+                      uid: bookData.authorId,
+                      displayName: bookData.authorName,
+                      photoURL: bookData.authorAvatarUrl,
+                  },
+                  read: false,
+                  createdAt: serverTimestamp(),
+              });
+          });
+      }
+
+      await batch.commit();
+      toast({ 
+        variant: 'success', 
+        title: "Buku Disetujui", 
+        description: bookData.visibility === 'followers_only' 
+            ? `"${bookTitle}" telah terbit & pengikut telah dinotifikasi.` 
+            : `"${bookTitle}" telah berhasil diterbitkan.` 
+      });
     } catch (error) {
+      console.error("Error approving book:", error);
       toast({ variant: "destructive", title: "Gagal Menyetujui" });
     } finally {
       setProcessingId(null);
