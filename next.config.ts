@@ -48,13 +48,13 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'api.dicebear.com',
+        hostname: 'pixeldrain.com',
         port: '',
         pathname: '/**',
       },
       {
         protocol: 'https',
-        hostname: 'lh3.googleusercontent.com',
+        hostname: 'api.dicebear.com',
         port: '',
         pathname: '/**',
       },
