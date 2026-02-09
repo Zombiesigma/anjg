@@ -1,12 +1,20 @@
 /**
  * @fileOverview Utilitas untuk mengunggah file dengan sistem failover otomatis.
- * Alur: Mencoba Catbox (via Proxy) -> Jika Gagal -> Mencoba PixelDrain (Direct dengan Multi-Key).
+ * Alur: Mencoba berbagai layanan via Proxy -> Jika Gagal -> Mencoba PixelDrain (Direct dengan Multi-Key).
  */
 
 const BASE_PROXY_URL = 'https://uploader.himmel.web.id/api/upload';
 const PIXELDRAIN_KEYS = [
   '6d7d2f74-8af6-4f7f-8dc8-c5d817bc4cd2',
   'a0ed18eb-3627-4ced-8f0d-b782aaccc016'
+];
+
+export const UPLOADER_SERVICES = [
+  'Catbox',
+  'Litterbox',
+  'Uguu',
+  'Pomf',
+  'Quax'
 ];
 
 /**
@@ -16,7 +24,6 @@ async function uploadToPixelDrain(file: File, keyIndex: number = 0): Promise<str
   const formData = new FormData();
   formData.append('file', file);
 
-  // Jika sudah mencoba semua key, coba upload anonim
   const isAnonymous = keyIndex >= PIXELDRAIN_KEYS.length;
   
   const options: RequestInit = {
@@ -61,17 +68,20 @@ async function uploadToPixelDrain(file: File, keyIndex: number = 0): Promise<str
 }
 
 /**
- * Mengunggah file dengan sistem failover.
- * @param file Objek File dari input browser.
- * @returns Promise yang mengembalikan URL file yang berhasil diunggah.
+ * Mencoba mengunggah ke berbagai layanan melalui proxy.
  */
-export async function uploadFile(file: File): Promise<string> {
-  // 1. Coba layanan utama (Catbox) via Proxy
+async function uploadViaProxy(file: File, serviceIndex: number = 0): Promise<string> {
+  if (serviceIndex >= UPLOADER_SERVICES.length) {
+    throw new Error('Seluruh layanan proxy gagal.');
+  }
+
+  const service = UPLOADER_SERVICES[serviceIndex];
+  console.log(`[Uploader] Mencoba mengunggah ke ${service} via Proxy...`);
+
   try {
-    console.log("[Uploader] Mencoba mengunggah ke Catbox...");
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('service', 'Catbox');
+    formData.append('service', service);
 
     const response = await fetch(BASE_PROXY_URL, {
       method: 'POST',
@@ -83,35 +93,39 @@ export async function uploadFile(file: File): Promise<string> {
       const uploadedUrl = data.result || data.url || data.link || (data.data && data.data.url) || data.files?.[0]?.url;
       
       if (uploadedUrl) {
-        console.log("[Uploader] Berhasil mengunggah ke Catbox.");
+        console.log(`[Uploader] Berhasil mengunggah ke ${service}.`);
         return uploadedUrl;
       }
     }
     
-    throw new Error(`Respons Proxy Catbox tidak valid.`);
+    console.warn(`[Uploader] ${service} gagal, mencoba layanan proxy berikutnya...`);
+    return uploadViaProxy(file, serviceIndex + 1);
   } catch (error) {
-    console.warn(`[Uploader] Catbox gagal atau sibuk, beralih ke sistem failover PixelDrain...`, error);
+    console.warn(`[Uploader] ${service} error, mencoba layanan proxy berikutnya...`);
+    return uploadViaProxy(file, serviceIndex + 1);
+  }
+}
+
+/**
+ * Mengunggah file dengan sistem failover multi-lapis.
+ * @param file Objek File dari input browser.
+ * @returns Promise yang mengembalikan URL file yang berhasil diunggah.
+ */
+export async function uploadFile(file: File): Promise<string> {
+  // 1. Coba berbagai layanan via Proxy (Catbox, Litterbox, dll)
+  try {
+    return await uploadViaProxy(file);
+  } catch (proxyError) {
+    console.warn(`[Uploader] Seluruh layanan proxy gagal, beralih ke PixelDrain...`);
     
-    // 2. Jika gagal, otomatis beralih ke PixelDrain dengan sistem multi-key
+    // 2. Jika semua proxy gagal, beralih ke PixelDrain (Direct Client)
     try {
       const url = await uploadToPixelDrain(file);
       console.log("[Uploader] Berhasil mengunggah ke PixelDrain.");
       return url;
     } catch (pdError) {
-      console.error('[Uploader] Seluruh sistem CDN (Catbox & PixelDrain) gagal merespons!', pdError);
-      throw new Error('Gagal mengunggah file ke semua penyedia layanan. Harap periksa ukuran file atau koneksi internet Anda.');
+      console.error('[Uploader] Fatal: Seluruh sistem CDN gagal merespons!', pdError);
+      throw new Error('Gagal mengunggah file. Harap periksa koneksi internet Anda atau coba file yang lebih kecil.');
     }
   }
 }
-
-export const UPLOADER_SERVICES = [
-  'Catbox',
-  'Litterbox',
-  'Pomf',
-  'Quax',
-  'Ryzumi',
-  'Uguu',
-  'Videy',
-  'Cloudku',
-  'Picsur'
-];
