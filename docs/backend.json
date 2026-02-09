@@ -363,9 +363,11 @@
         "userName": { "type": "string" },
         "userAvatarUrl": { "type": "string", "format": "uri" },
         "text": { "type": "string" },
+        "likeCount": { "type": "number" },
+        "replyCount": { "type": "number" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["userId", "userName", "text", "createdAt"]
+      "required": ["userId", "userName", "text", "createdAt", "likeCount", "replyCount"]
     },
     "ReelLike": {
       "title": "Reel Like",
@@ -384,6 +386,16 @@
         "userId": { "type": "string" },
         "viewedAt": { "type": "string", "format": "date-time" }
       }
+    },
+    "ReelCommentLike": {
+      "title": "Reel Comment Like",
+      "description": "Represents a user's like on a reel comment.",
+      "type": "object",
+      "properties": {
+          "userId": { "type": "string" },
+          "likedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "likedAt"]
     }
   },
   "auth": {
@@ -465,6 +477,14 @@
     "/reels/{reelId}/comments/{commentId}": {
       "schema": { "$ref": "#/backend/entities/ReelComment" },
       "description": "Stores comments for a reel."
+    },
+    "/reels/{reelId}/comments/{commentId}/replies/{replyId}": {
+      "schema": { "$ref": "#/backend/entities/ReelComment" },
+      "description": "Stores replies for a reel comment."
+    },
+    "/reels/{reelId}/comments/{commentId}/likes/{userId}": {
+      "schema": { "$ref": "#/backend/entities/ReelCommentLike" },
+      "description": "Stores likes for a reel comment."
     },
     "/reels/{reelId}/likes/{userId}": {
       "schema": { "$ref": "#/backend/entities/ReelLike" },

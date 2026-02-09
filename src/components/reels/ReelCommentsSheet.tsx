@@ -12,15 +12,13 @@ import {
   SheetTitle,
   SheetDescription,
 } from '@/components/ui/sheet';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, MessageSquare, Send, Clock, Sparkles } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
-import { id } from 'date-fns/locale';
+import { Loader2, MessageSquare, Send, Sparkles } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
+import { ReelCommentItem } from './ReelCommentItem';
 
 interface ReelCommentsSheetProps {
   reelId: string;
@@ -66,6 +64,8 @@ export function ReelCommentsSheet({ reelId, isOpen, onOpenChange }: ReelComments
         userName: currentUser.displayName || 'Pujangga Elitera',
         userAvatarUrl: currentUser.photoURL || '',
         text: commentText.trim(),
+        likeCount: 0,
+        replyCount: 0,
         createdAt: serverTimestamp()
       };
 
@@ -85,7 +85,7 @@ export function ReelCommentsSheet({ reelId, isOpen, onOpenChange }: ReelComments
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
       <SheetContent 
         side="bottom" 
-        className="h-[75vh] md:h-[65vh] flex flex-col rounded-t-[3rem] border-t-0 bg-background p-0 overflow-hidden z-[300] shadow-[0_-20px_50px_-15px_rgba(0,0,0,0.3)]"
+        className="h-[85vh] md:h-[75vh] flex flex-col rounded-t-[3rem] border-t-0 bg-background p-0 overflow-hidden z-[300] shadow-[0_-20px_50px_-15px_rgba(0,0,0,0.3)]"
         onCloseAutoFocus={(e) => {
             e.preventDefault();
             document.body.style.pointerEvents = '';
@@ -98,7 +98,7 @@ export function ReelCommentsSheet({ reelId, isOpen, onOpenChange }: ReelComments
             <div className="space-y-1">
                 <div className="flex items-center gap-2 text-primary">
                     <MessageSquare className="h-6 w-6" />
-                    <SheetTitle className="text-2xl font-headline font-black tracking-tight">Komentar</SheetTitle>
+                    <SheetTitle className="text-2xl font-headline font-black tracking-tight">Diskusi Karya</SheetTitle>
                 </div>
                 <SheetDescription className="text-xs font-bold uppercase tracking-[0.1em] text-muted-foreground">
                     {isLoading ? 'Menghubungkan pikiran...' : `${comments?.length || 0} suara pujangga`}
@@ -128,32 +128,9 @@ export function ReelCommentsSheet({ reelId, isOpen, onOpenChange }: ReelComments
                     <p className="text-sm max-w-[240px] mx-auto mt-2 leading-relaxed">Jadilah yang pertama mengapresiasi karya video ini.</p>
                 </div>
             ) : (
-                <div className="space-y-6">
+                <div className="space-y-8 pb-20">
                 {comments.map((comment) => (
-                    <motion.div 
-                        key={comment.id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="flex items-start gap-4"
-                    >
-                    <Avatar className="h-10 w-10 border-2 border-background shrink-0 shadow-sm">
-                        <AvatarImage src={comment.userAvatarUrl} className="object-cover" />
-                        <AvatarFallback className="bg-primary/5 text-primary font-black">
-                            {comment.userName?.charAt(0) || 'U'}
-                        </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0 space-y-1">
-                        <div className="flex items-center justify-between gap-2">
-                            <p className="font-black text-sm truncate">{comment.userName}</p>
-                            <span className="text-[9px] text-muted-foreground font-bold uppercase tracking-widest opacity-60">
-                                {comment.createdAt ? formatDistanceToNow(comment.createdAt.toDate(), { locale: id, addSuffix: true }) : 'Baru saja'}
-                            </span>
-                        </div>
-                        <p className="text-sm text-foreground/80 leading-relaxed font-medium bg-white/50 dark:bg-zinc-900/50 p-3 rounded-2xl rounded-tl-none border border-white/10">
-                            {comment.text}
-                        </p>
-                    </div>
-                    </motion.div>
+                    <ReelCommentItem key={comment.id} reelId={reelId} comment={comment} />
                 ))}
                 </div>
             )}
@@ -161,13 +138,13 @@ export function ReelCommentsSheet({ reelId, isOpen, onOpenChange }: ReelComments
         </div>
 
         {/* Comment Input */}
-        <div className="p-6 border-t bg-background/95 backdrop-blur-md">
+        <div className="p-6 border-t bg-background/95 backdrop-blur-md relative z-10">
             <form onSubmit={handleSendComment} className="flex items-center gap-3 relative group">
                 <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-accent/20 rounded-2xl blur opacity-0 group-focus-within:opacity-100 transition-opacity" />
                 <Input 
                     value={commentText} 
                     onChange={(e) => setCommentText(e.target.value)} 
-                    placeholder="Tulis pesan penyemangat..." 
+                    placeholder="Tulis ulasan Anda..." 
                     className="relative flex-1 h-14 rounded-2xl bg-muted/30 border-none px-6 font-medium focus-visible:ring-primary/20"
                     disabled={isSubmitting}
                 />

@@ -68,11 +68,19 @@ service cloud.firestore {
     // Reels (Video Permanen)
     match /reels/{reelId} {
       allow read: if isAuthenticated();
-      // Mengizinkan penulis edit semua, pembaca hanya update field interaksi lewat increment
       allow write: if isAuthenticated();
       
       match /comments/{commentId} {
         allow read, write: if isAuthenticated();
+        
+        match /replies/{replyId} {
+          allow read, write: if isAuthenticated();
+        }
+        
+        match /likes/{userId} {
+          allow read: if isAuthenticated();
+          allow write: if isOwner(userId);
+        }
       }
       
       match /likes/{userId} {

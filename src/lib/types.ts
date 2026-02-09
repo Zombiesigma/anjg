@@ -226,10 +226,18 @@ export type ReelComment = {
   userName: string;
   userAvatarUrl: string;
   text: string;
+  likeCount: number;
+  replyCount: number;
   createdAt: Timestamp;
 };
 
 export type ReelLike = {
+  id: string; // userId
+  userId: string;
+  likedAt: Timestamp;
+};
+
+export type ReelCommentLike = {
   id: string; // userId
   userId: string;
   likedAt: Timestamp;
