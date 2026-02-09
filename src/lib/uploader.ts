@@ -14,6 +14,17 @@ export const UPLOADER_SERVICES = [
 ];
 
 /**
+ * Memastikan URL menggunakan protokol HTTPS.
+ */
+function ensureHttps(url: string): string {
+  if (!url) return url;
+  if (url.startsWith('//')) return `https:${url}`;
+  if (url.startsWith('http://')) return url.replace('http://', 'https://');
+  if (!url.startsWith('http')) return `https://${url}`;
+  return url;
+}
+
+/**
  * Mencoba mengunggah ke Fileditch (Limit besar, tanpa API Key).
  */
 async function uploadToFileditch(file: File): Promise<string> {
@@ -35,8 +46,7 @@ async function uploadToFileditch(file: File): Promise<string> {
     const data = await response.json();
     if (data.success && data.files && data.files.length > 0) {
       console.log("[Uploader] Berhasil mengunggah ke Fileditch.");
-      // Mengembalikan direct link dari Fileditch
-      return data.files[0].url;
+      return ensureHttps(data.files[0].url);
     }
     throw new Error("Gagal mendapatkan URL dari Fileditch");
   } catch (error) {
@@ -72,7 +82,7 @@ async function uploadViaProxy(file: File, serviceIndex: number = 0): Promise<str
       
       if (uploadedUrl) {
         console.log(`[Uploader] Berhasil mengunggah ke ${service}.`);
-        return uploadedUrl;
+        return ensureHttps(uploadedUrl);
       }
     }
     

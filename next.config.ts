@@ -48,6 +48,36 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
+        hostname: '**.catbox.moe',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.fileditch.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.uguu.se',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'pomf.cat',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.quax.moe',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
         hostname: 'up1.fileditch.com',
         port: '',
         pathname: '/**',
