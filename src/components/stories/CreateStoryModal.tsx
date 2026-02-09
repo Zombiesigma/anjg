@@ -35,14 +35,14 @@ interface CreateStoryModalProps {
 }
 
 const BACKGROUNDS = [
-  "from-primary via-accent to-indigo-600",
-  "from-emerald-500 to-teal-700",
-  "from-orange-500 to-rose-500",
-  "from-purple-600 to-blue-500",
-  "from-rose-400 to-red-600",
-  "from-zinc-800 to-black",
-  "from-amber-400 to-orange-600",
-  "from-cyan-500 to-blue-700",
+  "bg-gradient-to-br from-primary via-accent to-indigo-600",
+  "bg-gradient-to-br from-emerald-500 to-teal-700",
+  "bg-gradient-to-br from-orange-500 to-rose-500",
+  "bg-gradient-to-br from-purple-600 to-blue-500",
+  "bg-gradient-to-br from-rose-400 to-red-600",
+  "bg-gradient-to-br from-zinc-800 to-black",
+  "bg-gradient-to-br from-amber-400 to-orange-600",
+  "bg-gradient-to-br from-cyan-500 to-blue-700",
 ];
 
 type StoryMode = 'choice' | 'text' | 'camera' | 'preview';
@@ -302,7 +302,7 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
                         key="text"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        className={cn("flex-1 flex flex-col items-center justify-center bg-gradient-to-br transition-all duration-1000 p-8", BACKGROUNDS[bgIndex])}
+                        className={cn("flex-1 flex flex-col items-center justify-center transition-all duration-1000 p-8", BACKGROUNDS[bgIndex])}
                     >
                         <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
                         <Form {...form}>

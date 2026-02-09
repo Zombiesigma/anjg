@@ -301,7 +301,9 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
                 <div className={cn(
                     "flex-1 relative flex items-center justify-center",
                     currentStory.type === 'text' 
-                        ? (currentStory.background || "bg-gradient-to-br from-indigo-600 to-rose-500") 
+                        ? (currentStory.background?.includes('from-') && !currentStory.background.includes('bg-gradient')
+                            ? `bg-gradient-to-br ${currentStory.background}`
+                            : (currentStory.background || "bg-gradient-to-br from-indigo-600 to-rose-500"))
                         : "bg-black"
                 )}>
                   {currentStory.type === 'text' && <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />}
