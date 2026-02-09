@@ -22,7 +22,7 @@ const initialHistory: AiChatMessage[] = [
 
 export default function AiPage() {
   return (
-    <div className="h-[calc(100dvh-140px)] md:h-[calc(100dvh-144px)] -mt-6 -mx-4 md:-mx-6 border-none md:border md:rounded-[2.5rem] overflow-hidden bg-background flex flex-col shadow-2xl relative">
+    <div className="h-[calc(100dvh-130px)] md:h-[calc(100dvh-144px)] -mt-6 -mx-4 md:-mx-6 border-none md:border md:rounded-[2.5rem] overflow-hidden bg-background flex flex-col shadow-2xl relative">
         <SidebarProvider className="h-full overflow-hidden">
             <Sidebar collapsible="icon" className="border-r border-border/40 bg-muted/30">
                 <SidebarHeader className="p-6 border-b border-border/40 bg-background/50 backdrop-blur-sm">

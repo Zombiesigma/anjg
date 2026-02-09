@@ -191,7 +191,7 @@ export default function MessagesPage() {
   }, [chatThreads, searchQuery, currentUser?.uid]);
 
   return (
-    <div className="h-[calc(100dvh-140px)] md:h-[calc(100dvh-theme(spacing.20)-4px)] -mt-6 -mx-4 md:-mx-6 border rounded-lg overflow-hidden flex flex-col bg-background relative shadow-inner">
+    <div className="h-[calc(100dvh-130px)] md:h-[calc(100dvh-theme(spacing.20)-4px)] -mt-6 -mx-4 md:-mx-6 border rounded-lg overflow-hidden flex flex-col bg-background relative shadow-inner">
       <div className="grid grid-cols-12 flex-1 h-full overflow-hidden">
         
         {/* Sidebar: Chat List */}
