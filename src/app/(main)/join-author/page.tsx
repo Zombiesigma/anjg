@@ -179,107 +179,162 @@ export default function JoinAuthorPage() {
 
     if (applicationStatus === 'author') {
          return (
-            <div className="space-y-16 pb-20">
+            <div className="space-y-16 pb-20 relative">
+                {/* Background Decorations */}
+                <div className="absolute top-[-100px] left-[-100px] w-96 h-96 bg-primary/5 rounded-full blur-[120px] -z-10 pointer-events-none" />
+                <div className="absolute bottom-40 right-[-50px] w-80 h-80 bg-accent/5 rounded-full blur-[100px] -z-10 pointer-events-none" />
+
                 {/* Hero Section */}
-                <div className="text-center space-y-6 max-w-3xl mx-auto">
+                <div className="text-center space-y-6 max-w-3xl mx-auto pt-6">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5 }}
+                        transition={{ duration: 0.6 }}
                     >
-                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-[10px] font-black uppercase tracking-[0.2em] mb-4">
-                            <Sparkles className="h-3.5 w-3.5" /> Komunitas Elitera
+                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-[10px] font-black uppercase tracking-[0.25em] mb-6">
+                            <Sparkles className="h-3.5 w-3.5" /> Jajaran Pujangga Elitera
                         </div>
                         <h1 className="text-4xl md:text-6xl font-headline font-black text-foreground tracking-tight leading-tight">
-                            Temui Para <span className="text-primary italic">Pujangga</span> Modern
+                            Temui Para <span className="text-primary italic underline decoration-primary/20">Pujangga</span> Modern
                         </h1>
-                        <p className="mt-4 text-lg text-muted-foreground leading-relaxed font-medium">
-                            Jelajahi profil para penulis berbakat yang membentuk semesta literasi digital kami. Ikuti mereka untuk mendapatkan pembaruan karya terbaru.
+                        <p className="mt-6 text-lg text-muted-foreground leading-relaxed font-medium italic">
+                            "Mereka adalah arsitek imajinasi yang membangun dunia lewat kata-kata. Jelajahi, ikuti, dan biarkan inspirasi mereka mengalir ke dalam harimu."
                         </p>
                     </motion.div>
                 </div>
 
                 {areUsersLoading ? (
-                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 px-2">
                         {Array.from({length: 6}).map((_, i) => (
-                             <Card key={i} className="overflow-hidden rounded-[2.5rem] border-none shadow-xl">
-                                <Skeleton className="h-24 w-full bg-muted" />
-                                <div className="p-8 pt-0 -mt-12 text-center flex flex-col items-center">
-                                    <Skeleton className="w-28 h-28 rounded-full border-4 border-background mb-4 shadow-xl"/>
+                             <Card key={i} className="overflow-hidden rounded-[2.5rem] border-none shadow-xl bg-card/50">
+                                <Skeleton className="h-32 w-full bg-muted/50" />
+                                <div className="p-8 pt-0 -mt-16 text-center flex flex-col items-center">
+                                    <Skeleton className="w-32 h-32 rounded-full border-4 border-background mb-4 shadow-2xl"/>
                                     <Skeleton className="h-6 w-3/4 mb-2 rounded-full"/>
                                     <Skeleton className="h-4 w-1/2 rounded-full"/>
-                                    <Skeleton className="h-20 w-full mt-8 rounded-2xl"/>
+                                    <div className="grid grid-cols-2 gap-4 w-full mt-10">
+                                        <Skeleton className="h-12 rounded-2xl"/>
+                                        <Skeleton className="h-12 rounded-2xl"/>
+                                    </div>
                                 </div>
                             </Card>
                         ))}
                     </div>
                 ) : (
                     <motion.div 
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8"
+                        initial="hidden"
+                        animate="show"
+                        variants={{
+                            show: { transition: { staggerChildren: 0.1 } }
+                        }}
+                        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 px-2"
                     >
-                        {authors?.map((author, index) => (
+                        {authors?.map((author) => (
                             <motion.div
                                 key={author.id}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: index * 0.05 }}
+                                variants={{
+                                    hidden: { opacity: 0, y: 30, scale: 0.95 },
+                                    show: { opacity: 1, y: 0, scale: 1 }
+                                }}
                             >
                                 <Link href={`/profile/${author.username}`} className="block group h-full">
-                                    <Card className="relative overflow-hidden rounded-[2.5rem] border-2 border-transparent transition-all duration-500 h-full group-hover:border-primary/30 group-hover:shadow-[0_30px_60px_-12px_rgba(0,0,0,0.15)] group-hover:-translate-y-2 bg-card/50 backdrop-blur-sm">
-                                        {/* Background Decoration */}
-                                        <div className="absolute top-0 left-0 w-full h-28 bg-gradient-to-br from-primary/20 via-accent/10 to-transparent group-hover:h-36 transition-all duration-500" />
+                                    <Card className={cn(
+                                        "relative overflow-hidden rounded-[3rem] border-none transition-all duration-500 h-full shadow-[0_20px_50px_-15px_rgba(0,0,0,0.1)] group-hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.2)] group-hover:-translate-y-2 bg-card/50 backdrop-blur-xl border border-white/10",
+                                        author.uid === user?.uid && "ring-2 ring-primary/20"
+                                    )}>
+                                        {/* Dynamic Header Gradient */}
+                                        <div className="absolute top-0 left-0 w-full h-36 bg-gradient-to-br from-primary/20 via-accent/10 to-transparent group-hover:h-44 transition-all duration-700" />
                                         
-                                        <CardContent className="relative z-10 p-8 text-center flex flex-col items-center h-full">
-                                            <div className="relative mb-6">
-                                                <Avatar className="w-28 h-28 md:w-32 md:h-32 border-4 border-background shadow-2xl transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 ring-1 ring-border/50">
+                                        <CardContent className="relative z-10 p-8 pt-12 text-center flex flex-col items-center h-full">
+                                            <div className="relative mb-8">
+                                                {/* Animated Circle Background */}
+                                                <div className="absolute inset-0 bg-primary/20 rounded-full blur-2xl scale-150 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                                                
+                                                <Avatar className="w-32 h-32 md:w-36 md:h-36 border-4 border-background shadow-2xl transition-all duration-700 group-hover:scale-110 group-hover:rotate-3 ring-1 ring-border/50">
                                                     <AvatarImage src={author.photoURL} alt={author.displayName} className="object-cover" />
-                                                    <AvatarFallback className="text-3xl font-black bg-primary/5 text-primary">
+                                                    <AvatarFallback className="text-4xl font-black bg-primary/5 text-primary italic">
                                                         {author.displayName.charAt(0)}
                                                     </AvatarFallback>
                                                 </Avatar>
-                                                {(author.role === 'admin' || author.role === 'penulis') && (
-                                                    <div className="absolute -bottom-1 -right-1 bg-primary text-white p-2 rounded-full shadow-lg ring-4 ring-background">
-                                                        <CheckCircle2 className="h-4 w-4" />
-                                                    </div>
+                                                
+                                                {/* Official Badge with Glow */}
+                                                <div className="absolute -bottom-1 -right-1 bg-primary text-white p-2.5 rounded-full shadow-xl ring-4 ring-background z-20">
+                                                    <CheckCircle2 className="h-5 w-5" />
+                                                </div>
+                                                
+                                                {author.status === 'online' && (
+                                                    <span className="absolute top-2 right-2 block h-5 w-5 rounded-full bg-green-500 border-4 border-background shadow-lg z-20 animate-pulse" />
                                                 )}
                                             </div>
 
-                                            <div className="space-y-1">
-                                                <h3 className="font-headline text-2xl font-black text-foreground group-hover:text-primary transition-colors duration-300">{author.displayName}</h3>
-                                                <p className="text-[10px] font-black text-muted-foreground tracking-[0.2em] uppercase">@{author.username}</p>
+                                            <div className="space-y-2">
+                                                <h3 className="font-headline text-3xl font-black text-foreground group-hover:text-primary transition-colors duration-300 tracking-tight">{author.displayName}</h3>
+                                                <div className="flex items-center justify-center gap-2">
+                                                    <p className="text-[10px] font-black text-muted-foreground/60 tracking-[0.2em] uppercase">@{author.username}</p>
+                                                    {author.uid === user?.uid && (
+                                                        <span className="bg-primary/10 text-primary text-[8px] font-black px-2 py-0.5 rounded-full uppercase">Anda</span>
+                                                    )}
+                                                </div>
                                             </div>
                                             
-                                            <div className="my-6 w-12 h-1 bg-primary/10 rounded-full group-hover:w-24 transition-all duration-500" />
+                                            <div className="my-8 w-16 h-1 bg-primary/10 rounded-full group-hover:w-32 transition-all duration-700 ease-out" />
 
-                                            <p className="text-sm text-muted-foreground/80 leading-relaxed italic line-clamp-3 mb-8 px-2 font-medium">
-                                                {author.bio || `Pujangga inspiratif di komunitas Elitera yang berbagi cerita lewat kata.`}
+                                            <p className="text-base text-muted-foreground/80 leading-relaxed italic line-clamp-3 mb-10 px-4 font-medium min-h-[4.5rem]">
+                                                {author.bio || `Seorang penjelajah kata di Elitera yang percaya bahwa setiap cerita memiliki keajaibannya sendiri.`}
                                             </p>
                                             
-                                            <div className="mt-auto pt-6 border-t border-border/50 grid grid-cols-2 gap-8 w-full">
-                                                <div className="text-center space-y-1">
-                                                    <p className="font-black text-xl text-primary">{new Intl.NumberFormat('id-ID', { notation: 'compact' }).format(author.followers)}</p>
-                                                    <div className="flex items-center justify-center gap-1.5 text-[10px] uppercase font-black tracking-tighter text-muted-foreground opacity-60">
-                                                        <Users className="h-2.5 w-2.5" /> Pengikut
+                                            <div className="mt-auto pt-8 border-t border-border/50 grid grid-cols-2 gap-10 w-full relative">
+                                                <div className="text-center space-y-1 group/stat">
+                                                    <p className="font-black text-2xl text-primary tracking-tighter transition-transform group-hover/stat:scale-110">{new Intl.NumberFormat('id-ID', { notation: 'compact' }).format(author.followers)}</p>
+                                                    <div className="flex items-center justify-center gap-1.5 text-[9px] uppercase font-black tracking-widest text-muted-foreground opacity-50">
+                                                        <Users className="h-3 w-3" /> Pengikut
                                                     </div>
                                                 </div>
-                                                <div className="text-center space-y-1">
-                                                    <p className="font-black text-xl text-accent">{author.following}</p>
-                                                    <div className="flex items-center justify-center gap-1.5 text-[10px] uppercase font-black tracking-tighter text-muted-foreground opacity-60">
-                                                        <BookOpen className="h-2.5 w-2.5" /> Mengikuti
+                                                <div className="text-center space-y-1 group/stat">
+                                                    <p className="font-black text-2xl text-accent tracking-tighter transition-transform group-hover/stat:scale-110">{author.following}</p>
+                                                    <div className="flex items-center justify-center gap-1.5 text-[9px] uppercase font-black tracking-widest text-muted-foreground opacity-50">
+                                                        <BookOpen className="h-3 w-3" /> Mengikuti
                                                     </div>
                                                 </div>
+                                                
+                                                {/* Separator Line */}
+                                                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-8 w-px bg-border/50 mt-4" />
                                             </div>
                                         </CardContent>
                                         
-                                        <div className="absolute bottom-4 right-8 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-x-4 group-hover:translate-x-0">
-                                            <ChevronRight className="h-6 w-6 text-primary/40" />
+                                        {/* Bottom Action Hint */}
+                                        <div className="absolute bottom-6 right-10 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-x-4 group-hover:translate-x-0 flex items-center gap-2">
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-primary/60">Lihat Profil</span>
+                                            <ChevronRight className="h-5 w-5 text-primary/40" />
                                         </div>
                                     </Card>
                                 </Link>
                             </motion.div>
                         ))}
+                    </motion.div>
+                )}
+                
+                {/* Join Community CTA */}
+                {!isProfileLoading && userProfile?.role === 'pembaca' && (
+                    <motion.div 
+                        initial={{ opacity: 0, y: 40 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        className="mt-20 pt-16 border-t border-border/50 text-center space-y-8"
+                    >
+                        <div className="p-6 rounded-[2.5rem] bg-primary/5 border border-primary/10 max-w-xl mx-auto shadow-inner">
+                            <h4 className="text-2xl font-headline font-black mb-3">Siap Menjadi Bagian Dari Mereka?</h4>
+                            <p className="text-muted-foreground font-medium text-sm leading-relaxed mb-8">
+                                Bergabunglah bersama para pujangga di atas dan mulai bangun duniamu sendiri.
+                            </p>
+                            <Button 
+                                onClick={() => setApplicationStatus('not_applied')}
+                                size="lg" 
+                                className="rounded-2xl px-10 h-14 font-black text-sm uppercase tracking-widest shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95"
+                            >
+                                Mulai Perjalanan Sekarang <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
+                        </div>
                     </motion.div>
                 )}
             </div>
