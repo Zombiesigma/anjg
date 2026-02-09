@@ -1,10 +1,11 @@
 /**
  * @fileOverview Utilitas untuk mengunggah file dengan sistem failover otomatis.
- * Alur: Mencoba berbagai layanan via Proxy -> Jika Gagal -> Mencoba PixelDrain (Direct dengan Multi-Key).
+ * Alur: Proxy (Catbox/Litterbox/Uguu) -> Fileditch -> PixelDrain (Multi-Key/Anonymous).
  */
 
 const BASE_PROXY_URL = 'https://uploader.himmel.web.id/api/upload';
 const PIXELDRAIN_KEYS = [
+  'ab9eec7d-1684-4f59-a0dc-207cf4a6af77',
   '6d7d2f74-8af6-4f7f-8dc8-c5d817bc4cd2',
   'a0ed18eb-3627-4ced-8f0d-b782aaccc016'
 ];
@@ -16,6 +17,36 @@ export const UPLOADER_SERVICES = [
   'Pomf',
   'Quax'
 ];
+
+/**
+ * Mencoba mengunggah ke Fileditch (Limit besar, tanpa API Key).
+ */
+async function uploadToFileditch(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append("files[]", file);
+
+  console.log("[Uploader] Mencoba Fileditch...");
+  try {
+    const response = await fetch("https://up1.fileditch.com/upload.php", {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Fileditch gagal dengan status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    if (data.success && data.files && data.files.length > 0) {
+      console.log("[Uploader] Berhasil mengunggah ke Fileditch.");
+      return data.files[0].url;
+    }
+    throw new Error("Gagal mendapatkan URL dari Fileditch");
+  } catch (error) {
+    console.warn("[Uploader] Fileditch error:", error);
+    throw error;
+  }
+}
 
 /**
  * Fungsi internal untuk mengunggah ke PixelDrain dengan sistem multi-key dan anonymous fallback.
@@ -116,16 +147,23 @@ export async function uploadFile(file: File): Promise<string> {
   try {
     return await uploadViaProxy(file);
   } catch (proxyError) {
-    console.warn(`[Uploader] Seluruh layanan proxy gagal, beralih ke PixelDrain...`);
+    console.warn(`[Uploader] Seluruh layanan proxy gagal, mencoba Fileditch...`);
     
-    // 2. Jika semua proxy gagal, beralih ke PixelDrain (Direct Client)
+    // 2. Jika semua proxy gagal, coba Fileditch
     try {
-      const url = await uploadToPixelDrain(file);
-      console.log("[Uploader] Berhasil mengunggah ke PixelDrain.");
-      return url;
-    } catch (pdError) {
-      console.error('[Uploader] Fatal: Seluruh sistem CDN gagal merespons!', pdError);
-      throw new Error('Gagal mengunggah file. Harap periksa koneksi internet Anda atau coba file yang lebih kecil.');
+      return await uploadToFileditch(file);
+    } catch (fileditchError) {
+      console.warn(`[Uploader] Fileditch gagal, beralih ke PixelDrain sebagai cadangan terakhir...`);
+      
+      // 3. Jika Fileditch gagal, beralih ke PixelDrain (Multi-Key)
+      try {
+        const url = await uploadToPixelDrain(file);
+        console.log("[Uploader] Berhasil mengunggah ke PixelDrain.");
+        return url;
+      } catch (pdError) {
+        console.error('[Uploader] Fatal: Seluruh sistem CDN gagal merespons!', pdError);
+        throw new Error('Gagal mengunggah file. Harap periksa koneksi internet Anda atau coba file yang lebih kecil.');
+      }
     }
   }
 }
