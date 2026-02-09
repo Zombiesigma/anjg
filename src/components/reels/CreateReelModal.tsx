@@ -14,10 +14,9 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, X, Sparkles, Video, Film, Trash2, User } from 'lucide-react';
+import { Loader2, X, Sparkles, Video, Film, Trash2, Heart, MessageSquare, Send as SendIcon, Music2 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { User as AppUser } from '@/lib/types';
 import { uploadVideo } from '@/lib/uploader';
@@ -83,10 +82,8 @@ export function CreateReelModal({ isOpen, onClose, currentUserProfile }: CreateR
     setIsSubmitting(true);
     
     try {
-      // 1. Unggah video ke GitHub Storage (Eksklusif)
       const permanentVideoUrl = await uploadVideo(videoFile);
 
-      // 2. Simpan dokumen Reel ke Firestore dengan caption
       await addDoc(collection(firestore, 'reels'), {
         authorId: currentUser.uid,
         authorName: currentUserProfile.displayName,
@@ -111,12 +108,14 @@ export function CreateReelModal({ isOpen, onClose, currentUserProfile }: CreateR
       toast({ 
         variant: 'destructive', 
         title: 'Gagal Menerbitkan', 
-        description: error.message || 'Terjadi kendala saat menghubungkan ke penyimpanan GitHub.' 
+        description: error.message || 'Terjadi kendala saat mengunggah video.' 
       });
     } finally {
       setIsSubmitting(false);
     }
   }
+
+  const captionValue = form.watch('caption');
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && !isSubmitting && onClose()}>
@@ -125,8 +124,8 @@ export function CreateReelModal({ isOpen, onClose, currentUserProfile }: CreateR
         onCloseAutoFocus={(e) => { e.preventDefault(); document.body.style.pointerEvents = ''; }}
       >
         <DialogHeader className="sr-only">
-          <DialogTitle>Buat Reel Baru</DialogTitle>
-          <DialogDescription>Tambahkan caption dan bagikan karya video permanen Anda.</DialogDescription>
+          <DialogTitle>Penyunting Reel</DialogTitle>
+          <DialogDescription>Tambahkan caption dan lihat pratinjau live karya Anda.</DialogDescription>
         </DialogHeader>
 
         {/* Floating Top Nav */}
@@ -149,16 +148,15 @@ export function CreateReelModal({ isOpen, onClose, currentUserProfile }: CreateR
                     disabled={isSubmitting}
                 >
                     {isSubmitting ? (
-                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Memproses...</>
+                        <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Menerbitkan...</>
                     ) : (
-                        <><Sparkles className="mr-2 h-4 w-4" /> Terbitkan Sekarang</>
+                        <><Sparkles className="mr-2 h-4 w-4" /> Terbitkan</>
                     )}
                 </Button>
              )}
           </div>
         </div>
 
-        {/* Main Interface */}
         <div className="flex-1 relative overflow-hidden flex flex-col items-center justify-center">
             <AnimatePresence mode="wait">
                 {!videoUrl ? (
@@ -174,15 +172,15 @@ export function CreateReelModal({ isOpen, onClose, currentUserProfile }: CreateR
                             <Film className="h-20 w-20 text-primary relative z-10" />
                         </div>
                         <div className="text-center space-y-3 mb-4">
-                            <h2 className="text-white text-4xl font-headline font-black tracking-tight">Karya <span className="text-primary italic">Video.</span></h2>
-                            <p className="text-white/40 text-sm font-medium max-w-xs mx-auto">Bagikan rekaman inspiratif atau cuplikan proses kreatif Anda di panggung Reels.</p>
+                            <h2 className="text-white text-4xl font-headline font-black tracking-tight uppercase">Pilih <span className="text-primary italic">Karya.</span></h2>
+                            <p className="text-white/40 text-sm font-medium max-w-xs mx-auto">Bagikan proses kreatif atau hasil akhir rekaman Anda di panggung Reels.</p>
                         </div>
                         <Button 
                             size="lg" 
                             className="h-16 rounded-2xl px-10 font-black text-lg gap-4 shadow-xl shadow-primary/20 transition-all active:scale-95"
                             onClick={() => videoInputRef.current?.click()}
                         >
-                            <Video className="h-6 w-6" /> Pilih dari Galeri
+                            <Video className="h-6 w-6" /> Pilih Video
                         </Button>
                         <input type="file" ref={videoInputRef} className="hidden" accept="video/*" onChange={handleVideoSelect} />
                     </motion.div>
@@ -193,73 +191,107 @@ export function CreateReelModal({ isOpen, onClose, currentUserProfile }: CreateR
                         animate={{ opacity: 1 }}
                         className="w-full h-full flex flex-col md:flex-row bg-black"
                     >
-                        {/* Video Preview Left Section */}
-                        <div className="flex-1 relative bg-zinc-950 flex items-center justify-center overflow-hidden">
-                            <video 
-                                src={videoUrl} 
-                                className="w-full h-full object-contain p-2 md:p-8 md:rounded-[3rem]" 
-                                autoPlay 
-                                loop 
-                                playsInline 
-                            />
+                        {/* LEFT: LIVE PREVIEW SIMULATION */}
+                        <div className="flex-1 relative bg-zinc-950 flex items-center justify-center overflow-hidden border-r border-white/5">
+                            <div className="relative aspect-[9/16] h-full max-h-[85vh] shadow-[0_0_100px_rgba(0,0,0,0.5)] md:rounded-[2.5rem] overflow-hidden group/live">
+                                <video 
+                                    src={videoUrl} 
+                                    className="w-full h-full object-cover" 
+                                    autoPlay 
+                                    loop 
+                                    muted 
+                                    playsInline 
+                                />
+                                
+                                {/* UI OVERLAY SIMULATION */}
+                                <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/80 pointer-events-none" />
+                                
+                                {/* Right Sidebar Dummy */}
+                                <div className="absolute right-4 bottom-32 flex flex-col items-center gap-6 z-10 opacity-60">
+                                    <div className="flex flex-col items-center gap-1.5">
+                                        <div className="h-12 w-12 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white"><Heart className="h-6 w-6" /></div>
+                                        <span className="text-[10px] font-black text-white">0</span>
+                                    </div>
+                                    <div className="flex flex-col items-center gap-1.5">
+                                        <div className="h-12 w-12 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white"><MessageSquare className="h-6 w-6" /></div>
+                                        <span className="text-[10px] font-black text-white">0</span>
+                                    </div>
+                                    <div className="h-12 w-12 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center text-white"><SendIcon className="h-5 w-5" /></div>
+                                </div>
+
+                                {/* Bottom Info Dummy */}
+                                <div className="absolute bottom-0 left-0 right-0 p-6 pb-10 space-y-4 z-10">
+                                    <div className="flex items-center gap-3">
+                                        <Avatar className="h-10 w-10 border-2 border-white/30">
+                                            <AvatarImage src={currentUserProfile?.photoURL} />
+                                            <AvatarFallback className="bg-primary text-white font-black">{currentUserProfile?.displayName?.charAt(0)}</AvatarFallback>
+                                        </Avatar>
+                                        <p className="text-white font-black text-sm">{currentUserProfile?.displayName}</p>
+                                    </div>
+                                    <p className="text-white text-xs font-medium leading-relaxed italic drop-shadow-md line-clamp-2 max-w-[85%]">
+                                        {captionValue || "Tuliskan pesan puitis Anda..."}
+                                    </p>
+                                    <div className="flex items-center gap-2 text-white/40">
+                                        <Music2 className="h-3 w-3" />
+                                        <p className="text-[9px] font-black uppercase tracking-widest">Suara Asli - {currentUserProfile?.displayName}</p>
+                                    </div>
+                                </div>
+
+                                {/* Live Badge */}
+                                <div className="absolute top-6 left-6 z-20">
+                                    <div className="bg-primary/80 backdrop-blur-md text-white px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-[0.2em] shadow-lg flex items-center gap-2">
+                                        <div className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+                                        Pratinjau Langsung
+                                    </div>
+                                </div>
+                            </div>
                             
                             {/* Re-select Button */}
                             <button 
                                 onClick={() => setVideoUrl(null)}
-                                className="absolute bottom-10 left-10 bg-rose-500/20 hover:bg-rose-500 backdrop-blur-xl text-white p-4 rounded-2xl shadow-xl transition-all border border-rose-500/30 group"
+                                className="absolute bottom-10 left-10 bg-rose-500/20 hover:bg-rose-500 backdrop-blur-xl text-white p-4 rounded-2xl shadow-xl transition-all border border-rose-500/30 group z-[220]"
                                 disabled={isSubmitting}
                             >
                                 <Trash2 className="h-5 w-5 transition-transform group-hover:scale-110" />
                             </button>
                         </div>
                         
-                        {/* Sidebar Editor Right Section */}
-                        <div className="w-full md:w-[400px] lg:w-[450px] p-8 md:p-12 bg-zinc-900 border-l border-white/5 flex flex-col gap-10 pt-24 md:pt-32 shrink-0">
-                            <div className="flex items-center gap-5">
-                                <div className="relative">
-                                    <Avatar className="h-14 w-14 border-2 border-primary/20 shadow-xl">
-                                        <AvatarImage src={currentUserProfile?.photoURL} className="object-cover" />
-                                        <AvatarFallback className="bg-primary/10 text-primary font-black">
-                                            {currentUserProfile?.displayName?.charAt(0) || 'U'}
-                                        </AvatarFallback>
-                                    </Avatar>
-                                    <div className="absolute -bottom-1 -right-1 bg-primary text-white p-1 rounded-full ring-2 ring-zinc-900">
-                                        <Sparkles className="h-3 w-3" />
-                                    </div>
-                                </div>
-                                <div>
-                                    <p className="text-white font-black text-base">{currentUserProfile?.displayName}</p>
-                                    <p className="text-white/40 text-[10px] font-bold uppercase tracking-[0.2em]">Penyuntingan Reel</p>
-                                </div>
+                        {/* RIGHT: EDITOR PANEL */}
+                        <div className="w-full md:w-[400px] lg:w-[450px] p-8 md:p-12 bg-zinc-900 border-l border-white/5 flex flex-col gap-10 pt-24 md:pt-32 shrink-0 overflow-y-auto custom-scrollbar">
+                            <div className="space-y-2">
+                                <h3 className="text-white text-2xl font-headline font-black tracking-tight">Sempurnakan <span className="text-primary italic">Narasimu.</span></h3>
+                                <p className="text-white/40 text-sm font-medium">Caption ini akan menjadi jiwa dari video Anda.</p>
                             </div>
 
                             <Form {...form}>
-                                <form onSubmit={(e) => e.preventDefault()} className="space-y-6">
+                                <form onSubmit={(e) => e.preventDefault()} className="space-y-8">
                                     <FormField 
                                         control={form.control} 
                                         name="caption" 
                                         render={({ field }) => (
-                                            <FormItem className="space-y-3">
-                                                <FormLabel className="text-xs font-black uppercase tracking-widest text-white/40 ml-1">Keterangan Karya</FormLabel>
+                                            <FormItem className="space-y-4">
+                                                <FormLabel className="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 ml-1">Deskripsi Karya</FormLabel>
                                                 <FormControl>
                                                     <div className="relative group">
-                                                        <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 to-accent/20 rounded-2xl blur opacity-0 group-focus-within:opacity-100 transition-opacity" />
+                                                        <div className="absolute -inset-1 bg-gradient-to-r from-primary/30 to-accent/30 rounded-[2rem] blur opacity-0 group-focus-within:opacity-100 transition-all duration-500" />
                                                         <textarea 
-                                                            placeholder="Tuliskan pesan puitis atau deskripsi video Anda di sini..." 
-                                                            className="relative w-full min-h-[160px] bg-white/5 border-white/10 text-white placeholder:text-white/20 rounded-2xl p-6 text-sm font-medium focus:ring-2 focus:ring-primary/30 focus:bg-white/[0.08] transition-all resize-none no-scrollbar"
+                                                            placeholder="Tuangkan inspirasi Anda di sini..." 
+                                                            className="relative w-full min-h-[200px] bg-white/[0.03] border-white/10 text-white placeholder:text-white/10 rounded-[2rem] p-8 text-base font-medium focus:ring-2 focus:ring-primary/30 focus:bg-white/[0.06] transition-all resize-none no-scrollbar shadow-inner leading-relaxed"
                                                             {...field}
                                                             disabled={isSubmitting}
                                                         />
                                                     </div>
                                                 </FormControl>
-                                                <div className="flex justify-between items-center px-1">
-                                                    <FormMessage className="text-[10px] font-bold" />
-                                                    <span className={cn(
-                                                        "text-[10px] font-mono font-bold",
-                                                        field.value.length > 450 ? "text-rose-400" : "text-white/20"
+                                                <div className="flex justify-between items-center px-2">
+                                                    <FormMessage className="text-[10px] font-bold text-rose-400" />
+                                                    <div className={cn(
+                                                        "text-[9px] font-black px-3 py-1 rounded-full border transition-all",
+                                                        field.value.length > 450 
+                                                            ? "bg-rose-500/10 border-rose-500/20 text-rose-400" 
+                                                            : "bg-white/5 border-white/10 text-white/30"
                                                     )}>
                                                         {field.value.length} / 500
-                                                    </span>
+                                                    </div>
                                                 </div>
                                             </FormItem>
                                         )} 
@@ -267,11 +299,20 @@ export function CreateReelModal({ isOpen, onClose, currentUserProfile }: CreateR
                                 </form>
                             </Form>
                             
-                            <div className="mt-auto p-6 rounded-3xl bg-primary/5 border border-primary/10">
-                                <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-3">Ketentuan Publikasi</p>
-                                <p className="text-xs text-white/50 leading-relaxed font-medium italic">
-                                    "Reels adalah jejak permanen dalam semesta Elitera. Pastikan caption Anda mencerminkan kualitas narasi sang pujangga."
-                                </p>
+                            <div className="mt-auto space-y-6">
+                                <div className="p-6 rounded-[2rem] bg-white/[0.03] border border-white/10 shadow-sm relative overflow-hidden group">
+                                    <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 transition-transform"><Sparkles className="h-12 w-12 text-primary" /></div>
+                                    <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-3">Tips Pujangga</p>
+                                    <p className="text-xs text-white/50 leading-relaxed font-medium italic">
+                                        "Gunakan baris pertama untuk menarik perhatian, dan biarkan baris selanjutnya mengalirkan emosi karya Anda."
+                                    </p>
+                                </div>
+                                
+                                <div className="flex items-center gap-4 px-2 opacity-20 grayscale">
+                                    <div className="h-px bg-white flex-1" />
+                                    <span className="text-[8px] font-black uppercase tracking-[0.4em]">Elitera Reels v2.0</span>
+                                    <div className="h-px bg-white flex-1" />
+                                </div>
                             </div>
                         </div>
                     </motion.div>
@@ -279,6 +320,18 @@ export function CreateReelModal({ isOpen, onClose, currentUserProfile }: CreateR
             </AnimatePresence>
         </div>
       </DialogContent>
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 10px;
+        }
+      `}</style>
     </Dialog>
   );
 }
