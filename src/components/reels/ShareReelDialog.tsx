@@ -67,6 +67,7 @@ export function ShareReelDialog({ reel, open, onOpenChange }: ShareReelDialogPro
             senderId: currentUser.uid,
             createdAt: serverTimestamp(),
             reel: {
+                id: reel.id,
                 authorName: reel.authorName,
                 caption: reel.caption,
                 videoUrl: reel.videoUrl,
@@ -76,7 +77,8 @@ export function ShareReelDialog({ reel, open, onOpenChange }: ShareReelDialogPro
         try {
             const batch = writeBatch(firestore);
             const messagesCol = collection(firestore, 'chats', selectedChatId, 'messages');
-            batch.set(doc(messagesCol), messageData);
+            const newMessageRef = doc(messagesCol);
+            batch.set(newMessageRef, messageData);
 
             const chatDocRef = doc(firestore, 'chats', selectedChatId);
             batch.update(chatDocRef, {

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
@@ -11,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
-import { MessageSquare, Loader2, Send, Search, ArrowLeft, ChevronRight, Sparkles, Zap, Plus, Info } from 'lucide-react';
+import { MessageSquare, Loader2, Send, Search, ArrowLeft, ChevronRight, Sparkles, Zap, Plus, Info, Clapperboard, Play } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Chat, ChatMessage, User as AppUser } from '@/lib/types';
 import { isSameDay, format, isToday, isYesterday } from 'date-fns';
@@ -465,6 +466,37 @@ export default function MessagesPage() {
                                                             "text-[8px] sm:text-[10px] font-black uppercase tracking-widest",
                                                             isSender ? "text-white/60" : "text-primary"
                                                         )}>Buka Karya</span>
+                                                    </div>
+                                                </div>
+                                            </Link>
+                                        )}
+                                        {msg.type === 'reel_share' && (
+                                            <Link href={`/reels`} className="block group/shared">
+                                                <div className={cn(
+                                                    "flex flex-col gap-3 min-w-[200px] sm:min-w-[260px] p-4 overflow-hidden rounded-2xl transition-all",
+                                                    isSender ? "bg-white/5 hover:bg-white/10" : "bg-muted/20 hover:bg-muted/40"
+                                                )}>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="h-10 w-10 rounded-xl bg-primary/20 flex items-center justify-center text-primary shrink-0">
+                                                            <Clapperboard className="h-5 w-5" />
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <p className={cn("text-[10px] font-black uppercase tracking-widest", isSender ? "text-white/60" : "text-primary")}>Video Reels</p>
+                                                            <p className="text-xs font-bold truncate opacity-80">{msg.reel.authorName}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="aspect-video relative rounded-xl overflow-hidden bg-black/20 flex items-center justify-center">
+                                                        <Play className="h-8 w-8 text-white/40 group-hover/shared:scale-110 group-hover/shared:text-white transition-all" />
+                                                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                                                    </div>
+                                                    {msg.reel.caption && (
+                                                        <p className="text-xs line-clamp-2 italic opacity-70 font-medium">"{msg.reel.caption}"</p>
+                                                    )}
+                                                    <div className="text-center pt-1">
+                                                        <span className={cn(
+                                                            "text-[9px] font-black uppercase tracking-[0.2em]",
+                                                            isSender ? "text-white/40" : "text-muted-foreground"
+                                                        )}>Tonton Video</span>
                                                     </div>
                                                 </div>
                                             </Link>
