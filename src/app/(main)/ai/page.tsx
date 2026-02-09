@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/Logo';
-import { MessageSquarePlus, History, Info, Zap, Star, PenTool, Sparkles } from 'lucide-react';
+import { MessageSquarePlus, History, Info, Zap, Star, PenTool } from 'lucide-react';
 import { ChatClient } from '@/components/ai/ChatClient';
 import type { AiChatMessage } from '@/lib/types';
 
@@ -21,9 +21,8 @@ const initialHistory: AiChatMessage[] = [
 ];
 
 export default function AiPage() {
-  // Mobile Optimized AI Page: Mengambil tinggi maksimal layar dikurangi header dan margin aman
   return (
-    <div className="h-[calc(100dvh-180px)] md:h-[calc(100dvh-144px)] -mt-6 -mx-4 md:-mx-6 border-none md:border md:rounded-[2.5rem] overflow-hidden bg-background flex flex-col shadow-2xl relative">
+    <div className="h-[calc(100dvh-160px)] md:h-[calc(100dvh-144px)] -mt-6 -mx-4 md:-mx-6 border-none md:border md:rounded-[2.5rem] overflow-hidden bg-background flex flex-col shadow-2xl relative">
         <SidebarProvider className="h-full overflow-hidden">
             <Sidebar collapsible="icon" className="border-r border-border/40 bg-muted/30">
                 <SidebarHeader className="p-6 border-b border-border/40 bg-background/50 backdrop-blur-sm">
@@ -86,7 +85,6 @@ export default function AiPage() {
                 </SidebarFooter>
             </Sidebar>
             <SidebarInset className="p-0 m-0 bg-background overflow-hidden h-full flex flex-col min-h-0">
-                 {/* Mobile Optimized AI Header */}
                  <div className="flex items-center justify-between px-6 h-16 border-b border-border/40 bg-background/95 backdrop-blur-md z-30 shrink-0 shadow-sm">
                     <div className="flex items-center gap-4">
                         <SidebarTrigger className="md:hidden text-primary"/>
@@ -100,7 +98,6 @@ export default function AiPage() {
                         <span className="text-[9px] font-black uppercase tracking-widest">Elite</span>
                     </div>
                 </div>
-                {/* Chat Container */}
                 <div className="flex-1 overflow-hidden relative min-h-0 flex flex-col">
                     <ChatClient history={initialHistory} />
                 </div>

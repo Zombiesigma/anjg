@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import type { FormEvent } from 'react';
-import { Bot, Send, Loader2, Sparkles, Lightbulb, HelpCircle, BookOpen, User } from "lucide-react";
+import { Bot, Send, Loader2, Sparkles, Lightbulb, HelpCircle, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -102,13 +102,11 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
 
   return (
     <div className="flex flex-col h-full bg-background/50 overflow-hidden relative">
-      {/* Background Glows */}
       <div className="absolute top-[-10%] left-[-10%] w-64 h-64 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-64 h-64 bg-accent/5 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Area Pesan */}
       <ScrollArea className="flex-1 min-h-0 relative z-10" ref={scrollAreaRef}>
-        <div className="max-w-3xl mx-auto p-6 md:p-10 space-y-10 pb-20">
+        <div className="max-w-3xl mx-auto p-4 md:p-10 space-y-8 md:space-y-10 pb-32 md:pb-20">
           {messages.length <= 1 && !isLoading && (
             <motion.div 
                 initial={{ opacity: 0, scale: 0.95 }}
@@ -122,14 +120,14 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
                     </div>
                 </div>
                 
-                <div className="space-y-3">
+                <div className="space-y-3 px-4">
                     <h2 className="text-3xl md:text-4xl font-headline font-black tracking-tight">Halo, {currentUser?.displayName?.split(' ')[0]}!</h2>
                     <p className="text-muted-foreground max-w-sm mx-auto text-base leading-relaxed font-medium italic">
                         "Saya Elitera AI, rekan kreatif Anda. Ingin membangun plot, menghaluskan draf, atau sekadar berdiskusi sastra?"
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-xl mx-auto">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-xl mx-auto px-4">
                     {SUGGESTIONS.map((item, i) => (
                         <motion.button 
                             key={i}
@@ -157,17 +155,17 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
                 className={cn(
-                  "flex items-start gap-4",
+                  "flex items-start gap-3 md:gap-4",
                   m.role === "user" ? "flex-row-reverse" : "flex-row"
                 )}
               >
                 <div className="shrink-0 mt-1">
                     {m.role === "model" ? (
-                        <div className="h-10 w-10 rounded-2xl bg-primary flex items-center justify-center shadow-xl shadow-primary/20 ring-1 ring-white/20">
-                            <Bot className="h-6 w-6 text-white" />
+                        <div className="h-9 w-9 md:h-10 md:w-10 rounded-2xl bg-primary flex items-center justify-center shadow-xl shadow-primary/20 ring-1 ring-white/20">
+                            <Bot className="h-5 w-5 md:h-6 md:w-6 text-white" />
                         </div>
                     ) : (
-                        <Avatar className="h-10 w-10 border-2 border-background shadow-xl">
+                        <Avatar className="h-9 w-9 md:h-10 md:w-10 border-2 border-background shadow-xl">
                             <AvatarImage src={currentUser?.photoURL ?? ''} className="object-cover" />
                             <AvatarFallback className="bg-accent text-white font-black">{currentUser?.displayName?.charAt(0) ?? 'U'}</AvatarFallback>
                         </Avatar>
@@ -176,7 +174,7 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
                 
                 <div
                   className={cn(
-                    "max-w-[85%] md:max-w-[75%] p-5 md:p-6 rounded-[2rem] shadow-sm leading-relaxed relative",
+                    "max-w-[85%] md:max-w-[75%] p-4 md:p-6 rounded-[1.75rem] md:rounded-[2rem] shadow-sm leading-relaxed relative",
                     m.role === "user"
                       ? "bg-primary text-white rounded-tr-none shadow-primary/20 ring-1 ring-white/10"
                       : "bg-card border border-border/50 rounded-tl-none font-medium"
@@ -191,7 +189,6 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
                     </ReactMarkdown>
                   </div>
                   
-                  {/* Bubble Tail */}
                   <div className={cn(
                       "absolute top-0 w-4 h-4",
                       m.role === "user" 
@@ -208,14 +205,14 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
                 animate={{ opacity: 1, x: 0 }}
                 className="flex items-start gap-4"
               >
-                <div className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20">
-                    <Bot className="h-6 w-6 text-primary animate-bounce" />
+                <div className="h-9 w-9 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20">
+                    <Bot className="h-5 w-5 text-primary animate-bounce" />
                 </div>
-                <div className="bg-card border border-border/50 p-5 rounded-3xl rounded-tl-none shadow-sm shadow-black/5">
+                <div className="bg-card border border-border/50 p-4 rounded-[1.5rem] rounded-tl-none shadow-sm shadow-black/5">
                     <div className="flex gap-2">
-                        <motion.span animate={{ scale: [1, 1.5, 1], opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1 }} className="h-2 w-2 rounded-full bg-primary" />
-                        <motion.span animate={{ scale: [1, 1.5, 1], opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1, delay: 0.2 }} className="h-2 w-2 rounded-full bg-primary" />
-                        <motion.span animate={{ scale: [1, 1.5, 1], opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1, delay: 0.4 }} className="h-2 w-2 rounded-full bg-primary" />
+                        <motion.span animate={{ scale: [1, 1.5, 1], opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1 }} className="h-1.5 w-1.5 rounded-full bg-primary" />
+                        <motion.span animate={{ scale: [1, 1.5, 1], opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1, delay: 0.2 }} className="h-1.5 w-1.5 rounded-full bg-primary" />
+                        <motion.span animate={{ scale: [1, 1.5, 1], opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1, delay: 0.4 }} className="h-1.5 w-1.5 rounded-full bg-primary" />
                     </div>
                 </div>
               </motion.div>
@@ -224,8 +221,7 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
         </div>
       </ScrollArea>
 
-      {/* Area Input Premium - Terangkat di atas Mobile Nav */}
-      <div className="p-4 md:p-8 border-t border-border/40 bg-background/95 backdrop-blur-xl shrink-0 z-[60] relative pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-[0_-15px_40px_-15px_rgba(0,0,0,0.1)]">
+      <div className="p-4 md:p-8 border-t border-border/40 bg-background/95 backdrop-blur-xl shrink-0 z-[60] relative pb-[max(6rem,env(safe-area-inset-bottom))] md:pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-[0_-15px_40px_-15px_rgba(0,0,0,0.1)]">
         <div className="max-w-3xl mx-auto relative">
             <form onSubmit={handleSubmit} className="relative flex items-end gap-4">
                 <div className="relative flex-1 group">
@@ -258,7 +254,7 @@ export function ChatClient({ history }: { history: AiChatMessage[] }) {
                 </div>
             </form>
             
-            <div className="flex items-center justify-center gap-4 mt-4 opacity-30 select-none">
+            <div className="hidden md:flex items-center justify-center gap-4 mt-4 opacity-30 select-none">
                 <div className="h-px bg-border flex-1" />
                 <div className="flex items-center gap-2">
                     <Sparkles className="h-2.5 w-2.5 text-primary" />
