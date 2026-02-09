@@ -39,7 +39,7 @@ export async function POST(request: Request) {
     if (data.success && data.data && data.data.url) {
       return NextResponse.json({
         success: true,
-        url: data.data.url, // Ini adalah direct link
+        url: data.data.url, // Direct link dari ImgBB
       });
     }
 
