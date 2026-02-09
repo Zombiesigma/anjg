@@ -269,7 +269,7 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["comment", "follow", "favorite", "author_request", "story_comment", "broadcast"]
+          "enum": ["comment", "follow", "favorite", "author_request", "story_comment", "broadcast", "reel_like", "reel_comment"]
         },
         "text": { "type": "string" },
         "link": { "type": "string", "description": "The URL to navigate to when the notification is clicked." },
@@ -282,7 +282,7 @@
           },
           "required": ["uid", "displayName"]
         },
-        "read": { "type": "boolean" },
+        "read": { "boolean": "boolean" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["type", "text", "link", "actor", "read", "createdAt"]
@@ -295,17 +295,39 @@
         "authorId": { "type": "string" },
         "authorName": { "type": "string" },
         "authorAvatarUrl": { "type": "string", "format": "uri" },
+        "authorRole": { "type": "string" },
+        "type": { "type": "string", "enum": ["text", "image", "video"] },
         "content": { "type": "string" },
+        "mediaUrl": { "type": "string", "format": "uri" },
+        "background": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" },
         "likes": { "type": "number" },
         "commentCount": { "type": "number" },
-        "viewCount": { "type": "number", "description": "Number of times the story has been viewed." }
+        "viewCount": { "type": "number" }
       },
-      "required": ["authorId", "authorName", "authorAvatarUrl", "content", "createdAt"]
+      "required": ["authorId", "authorName", "authorAvatarUrl", "type", "createdAt"]
     },
-    "StoryComment": {
-      "title": "Story Comment",
-      "description": "A comment on a story.",
+    "Reel": {
+      "title": "Reel",
+      "description": "A permanent short video post.",
+      "type": "object",
+      "properties": {
+        "authorId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "authorAvatarUrl": { "type": "string", "format": "uri" },
+        "authorRole": { "type": "string" },
+        "caption": { "type": "string" },
+        "videoUrl": { "type": "string", "format": "uri" },
+        "likes": { "type": "number" },
+        "commentCount": { "type": "number" },
+        "viewCount": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["authorId", "authorName", "authorAvatarUrl", "videoUrl", "createdAt"]
+    },
+    "ReelComment": {
+      "title": "Reel Comment",
+      "description": "A comment on a reel.",
       "type": "object",
       "properties": {
         "userId": { "type": "string" },
@@ -315,28 +337,6 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["userId", "userName", "text", "createdAt"]
-    },
-    "StoryLike": {
-      "title": "Story Like",
-      "description": "Represents a user's like on a story.",
-      "type": "object",
-      "properties": {
-        "userId": { "type": "string" },
-        "likedAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["userId", "likedAt"]
-    },
-    "StoryView": {
-      "title": "Story View",
-      "description": "Represents a user's view on a story.",
-      "type": "object",
-      "properties": {
-        "userId": { "type": "string" },
-        "userName": { "type": "string" },
-        "userAvatarUrl": { "type": "string", "format": "uri" },
-        "viewedAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["userId", "userName", "viewedAt"]
     }
   },
   "auth": {
@@ -344,92 +344,76 @@
   },
   "firestore": {
     "/users/{userId}": {
-      "schema": {
-        "$ref": "#/backend/entities/UserProfile"
-      },
-      "description": "Stores user profile information, keyed by their Firebase Auth UID."
+      "schema": { "$ref": "#/backend/entities/UserProfile" },
+      "description": "Stores user profile information."
     },
     "/users/{userId}/favorites/{bookId}": {
         "schema": { "$ref": "#/backend/entities/FavoriteBook" },
-        "description": "Stores a user's favorite books. The document ID is the book ID."
+        "description": "Stores a user's favorite books."
     },
     "/users/{userId}/followers/{followerId}": {
       "schema": { "$ref": "#/backend/entities/Follow" },
-      "description": "A list of users that follow this user. The document ID is the follower's user ID."
+      "description": "A list of users that follow this user."
     },
     "/users/{userId}/following/{followedUserId}": {
       "schema": { "$ref": "#/backend/entities/Follow" },
-      "description": "A list of users that this user follows. The document ID is the followed user's ID."
+      "description": "A list of users that this user follows."
     },
     "/users/{userId}/notifications/{notificationId}": {
-      "schema": {
-        "$ref": "#/backend/entities/Notification"
-      },
+      "schema": { "$ref": "#/backend/entities/Notification" },
       "description": "Stores notifications for a user."
     },
     "/books/{bookId}": {
-      "schema": {
-        "$ref": "#/backend/entities/Book"
-      },
+      "schema": { "$ref": "#/backend/entities/Book" },
       "description": "Stores book information."
     },
     "/books/{bookId}/chapters/{chapterId}": {
-        "schema": {
-            "$ref": "#/backend/entities/Chapter"
-        },
+        "schema": { "$ref": "#/backend/entities/Chapter" },
         "description": "Stores chapters for a specific book."
     },
     "/books/{bookId}/comments/{commentId}": {
-      "schema": {
-        "$ref": "#/backend/entities/Comment"
-      },
+      "schema": { "$ref": "#/backend/entities/Comment" },
       "description": "Stores comments for a specific book."
     },
     "/books/{bookId}/comments/{commentId}/replies/{replyId}": {
-      "schema": {
-        "$ref": "#/backend/entities/Comment"
-      },
+      "schema": { "$ref": "#/backend/entities/Comment" },
       "description": "Stores replies for a specific comment."
     },
     "/books/{bookId}/comments/{commentId}/likes/{userId}": {
-      "schema": {
-        "$ref": "#/backend/entities/BookCommentLike"
-      },
-      "description": "Stores likes for a specific comment. Document ID is the user ID."
+      "schema": { "type": "object" },
+      "description": "Stores likes for a specific comment."
     },
     "/authorRequests/{requestId}": {
-      "schema": {
-        "$ref": "#/backend/entities/AuthorRequest"
-      },
+      "schema": { "$ref": "#/backend/entities/AuthorRequest" },
       "description": "Stores user requests to become an author."
     },
     "/chats/{chatId}": {
-      "schema": {
-        "$ref": "#/backend/entities/Chat"
-      },
+      "schema": { "$ref": "#/backend/entities/Chat" },
       "description": "Stores chat thread metadata."
     },
     "/chats/{chatId}/messages/{messageId}": {
-      "schema": {
-        "$ref": "#/backend/entities/ChatMessage"
-      },
+      "schema": { "$ref": "#/backend/entities/ChatMessage" },
       "description": "Stores messages for a specific chat."
     },
     "/stories/{storyId}": {
       "schema": { "$ref": "#/backend/entities/Story" },
-      "description": "Stores user stories, which expire after 24 hours."
+      "description": "Stores user stories."
     },
-    "/stories/{storyId}/comments/{commentId}": {
-      "schema": { "$ref": "#/backend/entities/StoryComment" },
-      "description": "Stores comments for a specific story."
+    "/reels/{reelId}": {
+      "schema": { "$ref": "#/backend/entities/Reel" },
+      "description": "Stores permanent video reels."
     },
-    "/stories/{storyId}/likes/{userId}": {
-      "schema": { "$ref": "#/backend/entities/StoryLike" },
-      "description": "Stores likes for a specific story. Document ID is the user ID."
+    "/reels/{reelId}/comments/{commentId}": {
+      "schema": { "$ref": "#/backend/entities/ReelComment" },
+      "description": "Stores comments for a reel."
     },
-    "/stories/{storyId}/views/{userId}": {
-      "schema": { "$ref": "#/backend/entities/StoryView" },
-      "description": "Stores views for a specific story. Document ID is the user ID."
+    "/reels/{reelId}/likes/{userId}": {
+      "schema": { "type": "object" },
+      "description": "Stores likes for a reel."
+    },
+    "/reels/{reelId}/views/{userId}": {
+      "schema": { "type": "object" },
+      "description": "Stores views for a reel."
     }
   }
 }

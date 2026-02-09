@@ -1,3 +1,4 @@
+
 import type { Timestamp } from 'firebase/firestore';
 
 export type User = {
@@ -124,7 +125,7 @@ export type ChatMessage = (TextMessage | BookShareMessage) & {
 
 export type Notification = {
   id: string;
-  type: 'comment' | 'follow' | 'favorite' | 'author_request' | 'story_comment' | 'broadcast';
+  type: 'comment' | 'follow' | 'favorite' | 'author_request' | 'story_comment' | 'broadcast' | 'reel_like' | 'reel_comment';
   text: string;
   link: string;
   actor: {
@@ -190,4 +191,27 @@ export type StoryView = {
   userName: string;
   userAvatarUrl: string;
   viewedAt: Timestamp;
+};
+
+export type Reel = {
+  id: string;
+  authorId: string;
+  authorName: string;
+  authorAvatarUrl: string;
+  authorRole: string;
+  caption: string;
+  videoUrl: string;
+  likes: number;
+  commentCount: number;
+  viewCount: number;
+  createdAt: Timestamp;
+};
+
+export type ReelComment = {
+  id: string;
+  userId: string;
+  userName: string;
+  userAvatarUrl: string;
+  text: string;
+  createdAt: Timestamp;
 };
