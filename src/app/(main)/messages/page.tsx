@@ -12,7 +12,44 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
-import { MessageSquare, Loader2, Send, Search, ArrowLeft, ChevronRight, Sparkles, Zap, Plus, Info, Clapperboard, Play, Camera, Mic, Square, Trash2, Image as ImageIcon, Reply, X } from 'lucide-react';
+import { 
+  MessageSquare, 
+  Loader2, 
+  Send, 
+  Search, 
+  ArrowLeft, 
+  ChevronRight, 
+  Sparkles, 
+  Zap, 
+  Plus, 
+  Info, 
+  Clapperboard, 
+  Play, 
+  Camera, 
+  Mic, 
+  Square, 
+  Trash2, 
+  Image as ImageIcon, 
+  Reply, 
+  X,
+  MoreVertical,
+  Download,
+  Copy,
+  ExternalLink
+} from 'lucide-react';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogDescription 
+} from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from '@/lib/utils';
 import type { Chat, ChatMessage, User as AppUser } from '@/lib/types';
 import { isSameDay, format, isToday, isYesterday } from 'date-fns';
@@ -34,6 +71,7 @@ export default function MessagesPage() {
   const [isSending, setIsSending] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -298,6 +336,11 @@ export default function MessagesPage() {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const handleCopyLink = (url: string) => {
+    navigator.clipboard.writeText(url);
+    toast({ variant: 'success', title: "Tautan Disalin", description: "Tautan gambar telah disimpan ke clipboard Anda." });
+  };
+
   return (
     <div className="h-[calc(100dvh-64px)] -mt-6 -mx-4 md:-mx-6 border-none overflow-hidden flex flex-col bg-background relative">
       <div className="grid grid-cols-12 flex-1 h-full overflow-hidden">
@@ -529,6 +572,7 @@ export default function MessagesPage() {
                                     isSender={isSender} 
                                     otherParticipant={otherParticipant}
                                     onSwipe={() => setReplyingTo(msg)}
+                                    onImageClick={(url) => setPreviewImage(url)}
                                 />
                             );
                             })}
@@ -660,11 +704,79 @@ export default function MessagesPage() {
           )}
         </div>
       </div>
+
+      {/* Image Preview Dialog */}
+      <Dialog open={!!previewImage} onOpenChange={(open) => !open && setPreviewImage(null)}>
+        <DialogContent className="max-w-none w-screen h-screen p-0 border-0 m-0 bg-black/90 backdrop-blur-2xl overflow-hidden flex flex-col z-[300]">
+            <DialogHeader className="sr-only">
+                <DialogTitle>Pratinjau Gambar</DialogTitle>
+                <DialogDescription>Melihat gambar dalam ukuran penuh.</DialogDescription>
+            </DialogHeader>
+            
+            <div className="absolute top-0 left-0 right-0 p-6 flex items-center justify-between z-[310] bg-gradient-to-b from-black/60 to-transparent">
+                <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="text-white hover:bg-white/10 rounded-full h-12 w-12"
+                    onClick={() => setPreviewImage(null)}
+                >
+                    <X className="h-6 w-6" />
+                </Button>
+
+                <div className="flex items-center gap-3">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="text-white hover:bg-white/10 rounded-full h-12 w-12">
+                                <MoreVertical className="h-6 w-6" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2 bg-background/95 backdrop-blur-xl border-border/50">
+                            <DropdownMenuItem className="rounded-xl gap-3 py-3 font-bold" onSelect={() => window.open(previewImage!, '_blank')}>
+                                <ExternalLink className="h-4 w-4 text-primary" />
+                                Buka Asli
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="rounded-xl gap-3 py-3 font-bold" onSelect={() => handleCopyLink(previewImage!)}>
+                                <Copy className="h-4 w-4 text-primary" />
+                                Salin Tautan
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="rounded-xl gap-3 py-3 font-bold" asChild>
+                                <a href={previewImage!} download={`elitera-image-${Date.now()}.jpg`}>
+                                    <Download className="h-4 w-4 text-primary" />
+                                    Simpan Gambar
+                                </a>
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
+            </div>
+
+            <div className="flex-1 relative flex items-center justify-center p-4">
+                <AnimatePresence mode="wait">
+                    {previewImage && (
+                        <motion.div 
+                            key={previewImage}
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 1.1 }}
+                            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                            className="relative w-full h-full flex items-center justify-center"
+                        >
+                            <img 
+                                src={previewImage} 
+                                alt="Full Preview" 
+                                className="max-w-full max-h-full object-contain rounded-xl shadow-2xl"
+                            />
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
 
-function MessageBubble({ msg, isSender, otherParticipant, onSwipe }: { msg: ChatMessage, isSender: boolean, otherParticipant?: any, onSwipe: () => void }) {
+function MessageBubble({ msg, isSender, otherParticipant, onSwipe, onImageClick }: { msg: ChatMessage, isSender: boolean, otherParticipant?: any, onSwipe: () => void, onImageClick: (url: string) => void }) {
     const x = useMotionValue(0);
     const opacity = useTransform(x, [0, 60], [0, 1]);
     const scale = useTransform(x, [0, 60], [0.5, 1]);
@@ -732,8 +844,8 @@ function MessageBubble({ msg, isSender, otherParticipant, onSwipe }: { msg: Chat
                                 <img 
                                     src={msg.imageUrl} 
                                     alt="Chat Media" 
-                                    className="w-full h-auto object-cover max-h-[300px] cursor-pointer rounded-[1.25rem]"
-                                    onClick={() => window.open(msg.imageUrl, '_blank')}
+                                    className="w-full h-auto object-cover max-h-[300px] cursor-pointer rounded-[1.25rem] border border-white/5 shadow-inner transition-transform active:scale-[0.98]"
+                                    onClick={() => onImageClick(msg.imageUrl)}
                                 />
                             </div>
                         )}
