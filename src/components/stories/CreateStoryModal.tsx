@@ -405,7 +405,7 @@ export function CreateStoryModal({ isOpen, onClose, currentUserProfile }: Create
                     >
                         <div className="flex-1 relative flex items-center justify-center p-2">
                             {mode === 'preview_video' ? (
-                                <video src={capturedMedia} className="w-full h-full object-contain rounded-3xl" autoPlay loop muted playsInline />
+                                <video src={capturedMedia} className="w-full h-full object-contain rounded-3xl" autoPlay loop playsInline />
                             ) : (
                                 <img src={capturedMedia} alt="Captured" className="w-full h-full object-contain rounded-3xl" />
                             )}

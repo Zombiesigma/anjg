@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser, useDoc } from '@/firebase';
 import { doc, collection, serverTimestamp, writeBatch, increment } from 'firebase/firestore';
 import type { Story, StoryLike } from '@/lib/types';
-import { X, Heart, MessageSquare, Send as SendIcon, ChevronLeft, ChevronRight, Loader2, Eye, Play } from 'lucide-react';
+import { X, Heart, MessageSquare, Send as SendIcon, ChevronLeft, ChevronRight, Loader2, Eye, Volume2, VolumeX } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatDistanceToNow } from 'date-fns';
 import { id } from 'date-fns/locale';
@@ -36,6 +36,7 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
   const [isPaused, setIsPaused] = useState(false);
   const [showViews, setShowViews] = useState(false);
   const [showComments, setShowComments] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
   const viewedStoriesInSession = useRef(new Set<string>());
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -316,6 +317,15 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
                             </p>
                         </div>
                     </motion.div>
+                    
+                    <div className="ml-auto pointer-events-auto">
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); setIsMuted(!isMuted); }}
+                            className="h-10 w-10 rounded-full bg-black/30 backdrop-blur-xl border border-white/10 flex items-center justify-center text-white/80 hover:text-white transition-all"
+                        >
+                            {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+                        </button>
+                    </div>
                 </div>
 
                 {/* Main Content Render */}
@@ -346,8 +356,8 @@ export function StoryViewer({ stories, initialAuthorId, isOpen, onClose }: Story
                                         src={currentStory.mediaUrl} 
                                         className="w-full h-full object-cover" 
                                         autoPlay 
-                                        muted 
                                         playsInline 
+                                        muted={isMuted}
                                     />
                                 ) : (
                                     <img src={currentStory.mediaUrl} alt="Konten Cerita" className="w-full h-full object-cover" />
