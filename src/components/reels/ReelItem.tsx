@@ -7,7 +7,7 @@ import type { Reel, ReelLike, User as AppUser, User } from '@/lib/types';
 import { Heart, MessageSquare, Share2, Volume2, VolumeX, Sparkles, Loader2, Music2, Send as SendIcon } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import Link from 'next/navigation';
+import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -144,7 +144,6 @@ export function ReelItem({ reel, isMuted, onToggleMute }: ReelItemProps) {
       try {
         await navigator.share(shareData);
       } catch (err: any) {
-        // Fallback to clipboard if share was cancelled or failed due to permission
         if (err.name !== 'AbortError') {
           console.warn('[ReelItem] Web Share failed, falling back to clipboard:', err.name);
           await copyToClipboard();
@@ -160,7 +159,6 @@ export function ReelItem({ reel, isMuted, onToggleMute }: ReelItemProps) {
       id={`reel-${reel.id}`}
       className="h-full w-full snap-start snap-always relative bg-zinc-950 flex flex-col items-center justify-center overflow-hidden shrink-0"
     >
-      {/* Video Element */}
       <video
         ref={videoRef}
         src={reel.videoUrl}
@@ -171,10 +169,8 @@ export function ReelItem({ reel, isMuted, onToggleMute }: ReelItemProps) {
         onClick={onToggleMute}
       />
 
-      {/* Interactive Overlays */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/80 pointer-events-none" />
 
-      {/* Right Interaction Sidebar */}
       <div className="absolute right-4 bottom-32 flex flex-col items-center gap-6 z-30">
         <div className="flex flex-col items-center gap-1.5">
             <button 
@@ -218,7 +214,6 @@ export function ReelItem({ reel, isMuted, onToggleMute }: ReelItemProps) {
         </div>
       </div>
 
-      {/* Bottom Info Section */}
       <div className="absolute bottom-0 left-0 right-0 p-6 pb-14 space-y-4 z-20 pointer-events-none">
         <div className="flex items-center gap-3 pointer-events-auto">
             <div className="flex items-center gap-3 group">
@@ -258,7 +253,6 @@ export function ReelItem({ reel, isMuted, onToggleMute }: ReelItemProps) {
         </div>
       </div>
 
-      {/* Sheets & Dialogs */}
       <ReelCommentsSheet reelId={reel.id} reelAuthorId={reel.authorId} isOpen={showComments} onOpenChange={setShowComments} />
       <ShareReelDialog reel={reel} open={showShare} onOpenChange={setShowShare} />
 

@@ -1,8 +1,6 @@
-
 'use client';
 
 import { notFound, useParams, useRouter } from 'next/navigation';
-import Image from 'next/link';
 import Link from 'next/link';
 import { useMemo, useState, useEffect } from 'react';
 import { useFirestore, useUser, useCollection, useDoc } from '@/firebase';
@@ -37,7 +35,6 @@ export default function ProfilePage() {
   
   const [sheetState, setSheetState] = useState<{open: boolean; type: 'followers' | 'following'}>({ open: false, type: 'followers' });
 
-  // Normalisasi username pencarian ke lowercase untuk mencegah 404
   const normalizedUsername = useMemo(() => params.username.toLowerCase(), [params.username]);
 
   const userQuery = useMemo(() => (
@@ -112,7 +109,6 @@ export default function ProfilePage() {
   }, [firestore, user, currentUser, isOwnProfile, isFollowing]);
   const { data: publishedBooks, isLoading: arePublishedBooksLoading } = useCollection<Book>(publishedBooksQuery);
 
-  // Hilangkan orderBy di sini karena kueri Firestore gabungan (where + orderBy) membutuhkan indeks komposit manual
   const userReelsQuery = useMemo(() => (
     (firestore && user && currentUser)
       ? query(collection(firestore, 'reels'), where('authorId', '==', user.uid))
@@ -120,7 +116,6 @@ export default function ProfilePage() {
   ), [firestore, user, currentUser]);
   const { data: rawUserReels, isLoading: areUserReelsLoading } = useCollection<Reel>(userReelsQuery);
 
-  // Lakukan pengurutan secara client-side untuk menghindari kebutuhan indeks komposit
   const userReels = useMemo(() => {
       if (!rawUserReels) return [];
       return [...rawUserReels].sort((a, b) => {
@@ -326,7 +321,6 @@ export default function ProfilePage() {
         animate={{ opacity: 1, y: 0 }}
         className="space-y-10 pb-20"
       >
-        {/* Profile Card Premium */}
         <Card className="overflow-hidden border-none shadow-2xl bg-card/50 backdrop-blur-md rounded-[2.5rem] relative">
           <div className="h-40 md:h-64 bg-gradient-to-br from-primary via-accent to-indigo-600 relative overflow-hidden">
               <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
@@ -447,7 +441,6 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
 
-        {/* Content Section */}
         <Tabs defaultValue="published-books" className="space-y-8">
           <div className="flex items-center justify-center">
             <TabsList className="bg-muted/50 p-1.5 rounded-full h-auto flex-wrap justify-center">
