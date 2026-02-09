@@ -1,6 +1,6 @@
 /**
  * @fileOverview Utilitas untuk mengunggah file dengan sistem failover otomatis.
- * Alur: Proxy (Catbox/Litterbox/Uguu/Pomf/Quax) -> Fileditch Permanent Direct Link.
+ * Alur: Proxy (Catbox/Litterbox/Uguu/Pomf/Quax) -> Fileditch Permanent Direct Link (thegumonmyshoe.me).
  */
 
 const BASE_PROXY_URL = 'https://uploader.himmel.web.id/api/upload';
@@ -25,8 +25,8 @@ function ensureHttps(url: string): string {
 }
 
 /**
- * Mengubah link preview/mirror Fileditch menjadi link direct CDN permanen.
- * Target: https://up1.fileditch.com/[path]
+ * Mengubah link preview/mirror menjadi link direct CDN permanen.
+ * Target: https://thegumonmyshoe.me/[path]
  */
 function getPermanentDirectLink(url: string): string {
   try {
@@ -36,25 +36,25 @@ function getPermanentDirectLink(url: string): string {
     // Kasus 1: Tautan via file.php?f=/path/file.png
     const filePath = urlObj.searchParams.get('f');
     if (filePath) {
-      return `https://up1.fileditch.com${filePath.startsWith('/') ? '' : '/'}${filePath}`;
+      return `https://thegumonmyshoe.me${filePath.startsWith('/') ? '' : '/'}${filePath}`;
     }
 
-    // Kasus 2: Tautan mirror atau dengan parameter expired (thegumonmyshoe.me, dll)
-    if (cleanUrl.includes("thegumonmyshoe.me") || cleanUrl.includes("fileditch")) {
-      // Kita ambil path-nya saja dan paksa ke domain up1.fileditch.com
-      return `https://up1.fileditch.com${urlObj.pathname}`;
+    // Kasus 2: Tautan mirror Fileditch atau domain lain yang berisi path file asli
+    if (cleanUrl.includes("fileditch") || cleanUrl.includes("thegumonmyshoe.me")) {
+      // Kita ambil path-nya saja dan paksa ke domain thegumonmyshoe.me tanpa parameter md5/expires
+      return `https://thegumonmyshoe.me${urlObj.pathname}`;
     }
 
     return cleanUrl;
   } catch (e) {
-    console.warn("[Uploader] Gagal mentransformasi URL Fileditch:", e);
+    console.warn("[Uploader] Gagal mentransformasi URL Mirror:", e);
     return url;
   }
 }
 
 /**
  * Mencoba mengunggah ke Fileditch (Limit 15GB, Tanpa API Key).
- * Output otomatis diubah menjadi Direct Link Permanen.
+ * Output otomatis diubah menjadi Direct Link Mirror (thegumonmyshoe.me).
  */
 async function uploadToFileditch(file: File): Promise<string> {
   const formData = new FormData();
@@ -76,7 +76,7 @@ async function uploadToFileditch(file: File): Promise<string> {
     if (data.success && data.files && data.files.length > 0) {
       const rawUrl = data.files[0].url;
       console.log("[Uploader] Berhasil mengunggah ke Fileditch.");
-      // Intersepsi dan ubah ke link permanen
+      // Intersepsi dan ubah ke link mirror thegumonmyshoe.me
       return getPermanentDirectLink(rawUrl);
     }
     throw new Error("Respons Fileditch tidak valid");
@@ -127,7 +127,7 @@ async function uploadViaProxy(file: File, serviceIndex: number = 0): Promise<str
 
 /**
  * Mengunggah file dengan sistem failover otomatis.
- * Strategi: Proxy (Multi-Service) -> Fileditch (Permanent Direct Link).
+ * Strategi: Proxy (Multi-Service) -> Fileditch (Permanent thegumonmyshoe.me).
  */
 export async function uploadFile(file: File): Promise<string> {
   // 1. Upaya pertama: Gunakan jalur Proxy (Catbox/Uguu/Litterbox)
@@ -136,7 +136,7 @@ export async function uploadFile(file: File): Promise<string> {
   } catch (proxyError) {
     console.warn(`[Uploader] Seluruh layanan proxy gagal, mengalihkan ke Fileditch...`);
     
-    // 2. Upaya cadangan: Fileditch dengan transformasi link permanen otomatis
+    // 2. Upaya cadangan: Fileditch dengan transformasi link permanen mirror otomatis
     try {
       return await uploadToFileditch(file);
     } catch (fileditchError) {
