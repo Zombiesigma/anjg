@@ -62,10 +62,14 @@
     @apply border-border;
     -webkit-tap-highlight-color: transparent;
   }
-  body {
-    @apply bg-background text-foreground overflow-x-hidden antialiased;
+  html, body {
+    @apply bg-background text-foreground antialiased;
     font-feature-settings: "rlig" 1, "calt" 1;
-    overscroll-behavior-y: none; /* Mobile app feel */
+    overscroll-behavior-y: none;
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100%;
+    position: relative;
   }
 }
 

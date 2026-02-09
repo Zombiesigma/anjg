@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useFirestore, useCollection, useUser, useDoc } from '@/firebase';
@@ -100,8 +99,8 @@ export default function HomePage() {
   }, [allStories, followingIds, currentUser]);
 
   return (
-    <div className="relative pb-10">
-      {/* Background Blobs for Depth */}
+    <div className="relative pb-10 overflow-x-hidden">
+      {/* Background Blobs for Depth - Contained within parent overflow-hidden */}
       <div className="absolute top-[-150px] left-[-100px] w-[600px] h-[600px] bg-primary/5 rounded-full blur-[140px] -z-10 pointer-events-none animate-pulse" />
       <div className="absolute top-[40%] right-[-150px] w-[500px] h-[500px] bg-accent/5 rounded-full blur-[120px] -z-10 pointer-events-none animate-pulse" style={{ animationDelay: '2s' }} />
 

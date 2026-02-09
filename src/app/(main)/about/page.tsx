@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
 
 const devPortfolio = "https://www.gunturpadilah.web.id/";
 const devImage = "https://www.gunturpadilah.web.id/pp.jpg";
-const devName = "Guntur P.";
+const devName = "Guntur Padilah";
 const devBio = "Seorang antusias literasi dan pengembang tumpukan penuh (full-stack) yang berdedikasi menciptakan ruang digital yang inklusif bagi semua orang untuk berkarya.";
 
 const technologies = [
@@ -67,7 +67,7 @@ const technologies = [
 
 export default function AboutPage() {
   return (
-    <div className="max-w-5xl mx-auto space-y-24 pb-32 relative">
+    <div className="max-w-5xl mx-auto space-y-24 pb-32 relative overflow-x-hidden">
       {/* Decorative Background */}
       <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-[120px] -z-10 pointer-events-none" />
       <div className="absolute bottom-40 left-0 w-72 h-72 bg-accent/5 rounded-full blur-[100px] -z-10 pointer-events-none" />
@@ -169,7 +169,7 @@ export default function AboutPage() {
                                 <Globe className="mr-2 h-4 w-4" /> Portofolio
                             </Button>
                         </a>
-                        <a href="https://github.com/Guntur-s" target="_blank" rel="noopener noreferrer">
+                        <a href="https://github.com/Zombiesigma" target="_blank" rel="noopener noreferrer">
                             <Button variant="outline" className="rounded-full px-8 h-12 font-bold border-zinc-700 hover:bg-zinc-800 hover:border-zinc-600">
                                 <Github className="mr-2 h-4 w-4" /> GitHub
                             </Button>
@@ -249,7 +249,7 @@ export default function AboutPage() {
                         <p className="text-sm text-muted-foreground">Unduh aplikasi Android yang dibangun dengan <strong>Expo Native</strong> untuk pengalaman yang lebih cepat dan notifikasi instan.</p>
                         <a href="https://raw.githubusercontent.com/Zombiesigma/elitera-asset/main/elitera.apk" download="Elitera.apk">
                             <Button className="w-full rounded-xl font-bold shadow-lg shadow-primary/20">
-                                Unduh Elitera.apk <ArrowRight className="ml-2 h-4 w-4" />
+                                Unduh Mobile <ArrowRight className="ml-2 h-4 w-4" />
                             </Button>
                         </a>
                     </Card>
@@ -282,7 +282,7 @@ export default function AboutPage() {
                             <Textarea id="feedback" name="text" placeholder="Bagikan pemikiran Anda dengan kami..." rows={6} className="rounded-2xl bg-muted/30 border-none focus-visible:ring-primary/20 resize-none py-4" required />
                         </div>
                         <Button type="submit" className="w-full h-14 rounded-2xl font-black text-base shadow-xl shadow-primary/20 transition-all active:scale-95 group">
-                            Kirim ke WhatsApp <Send className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
+                            Kirim <Send className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1 group-hover:-translate-y-1" />
                         </Button>
                     </form>
                 </CardContent>

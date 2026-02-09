@@ -19,7 +19,7 @@ export function Header() {
           </Link>
         </div>
         
-        <div className="flex-1 mx-2 max-w-full">
+        <div className="flex-1 mx-2 min-w-0 max-w-full">
            <GlobalSearch />
         </div>
         
