@@ -6,13 +6,13 @@ import Link from 'next/link';
 import { useMemo, useState, useEffect } from 'react';
 import { useFirestore, useUser, useCollection, useDoc } from '@/firebase';
 import { collection, query, where, limit, addDoc, documentId, doc, writeBatch, increment, serverTimestamp, orderBy, getDoc, type Query, type DocumentData } from 'firebase/firestore';
-import type { User, Book, Chat, Favorite, Follow, Story } from '@/lib/types';
+import type { User, Book, Chat, Favorite, Follow, Story, Reel } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { BookCard } from '@/components/BookCard';
-import { UserPlus, MessageCircle, Edit, Loader2, UserMinus, Sparkles, Users, BookOpen, Heart as HeartIcon, CheckCircle2, MessageSquare } from 'lucide-react';
+import { UserPlus, MessageCircle, Edit, Loader2, UserMinus, Sparkles, Users, BookOpen, Heart as HeartIcon, CheckCircle2, MessageSquare, Clapperboard, Play } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { StoryViewer } from '@/components/stories/StoryViewer';
@@ -110,6 +110,13 @@ export default function ProfilePage() {
     return query(baseQuery, where('visibility', '==', 'public'));
   }, [firestore, user, isOwnProfile, isFollowing]);
   const { data: publishedBooks, isLoading: arePublishedBooksLoading } = useCollection<Book>(publishedBooksQuery);
+
+  const userReelsQuery = useMemo(() => (
+    (firestore && user)
+      ? query(collection(firestore, 'reels'), where('authorId', '==', user.uid), orderBy('createdAt', 'desc'))
+      : null
+  ), [firestore, user]);
+  const { data: userReels, isLoading: areUserReelsLoading } = useCollection<Reel>(userReelsQuery);
 
   const otherBooksQuery = useMemo(() => (
     (firestore && user && isOwnProfile)
@@ -431,8 +438,9 @@ export default function ProfilePage() {
         {/* Content Section */}
         <Tabs defaultValue="published-books" className="space-y-8">
           <div className="flex items-center justify-center">
-            <TabsList className="bg-muted/50 p-1.5 rounded-full h-auto">
+            <TabsList className="bg-muted/50 p-1.5 rounded-full h-auto flex-wrap justify-center">
                 <TabsTrigger value="published-books" className="rounded-full px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-white font-bold transition-all">Buku Terbitan</TabsTrigger>
+                <TabsTrigger value="reels" className="rounded-full px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-white font-bold transition-all">Reels</TabsTrigger>
                 {isOwnProfile && <TabsTrigger value="drafts" className="rounded-full px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-white font-bold transition-all">Draf</TabsTrigger>}
                 {isOwnProfile && <TabsTrigger value="favorites" className="rounded-full px-6 py-2.5 data-[state=active]:bg-primary data-[state=active]:text-white font-bold transition-all">Favorit</TabsTrigger>}
             </TabsList>
@@ -463,6 +471,39 @@ export default function ProfilePage() {
                       <p className="text-muted-foreground font-headline font-bold text-lg">{isOwnProfile ? "Anda" : "Pengguna ini"} belum menerbitkan karya.</p>
                   </div>
               )}
+          </TabsContent>
+
+          <TabsContent value="reels" className="mt-0">
+                {areUserReelsLoading && (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                        {Array.from({ length: 4 }).map((_, i) => (
+                            <Skeleton key={i} className="aspect-[9/16] w-full rounded-2xl" />
+                        ))}
+                    </div>
+                )}
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    {userReels?.map(reel => (
+                        <motion.div key={reel.id} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
+                            <Link href={`/reels`} className="group relative aspect-[9/16] block overflow-hidden rounded-2xl bg-zinc-900 border border-white/5 shadow-lg active:scale-95 transition-transform">
+                                <video src={reel.videoUrl} className="h-full w-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" muted loop onMouseEnter={(e) => e.currentTarget.play()} onMouseLeave={(e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }} />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
+                                <div className="absolute bottom-3 left-3 right-3 text-white pointer-events-none">
+                                    <div className="flex items-center gap-1.5 mb-1">
+                                        <Play className="h-2.5 w-2.5 fill-current text-primary" />
+                                        <span className="text-[9px] font-black uppercase tracking-widest">{new Intl.NumberFormat('id-ID', { notation: 'compact' }).format(reel.viewCount || 0)}</span>
+                                    </div>
+                                    <p className="text-[9px] font-medium line-clamp-2 italic opacity-80 leading-relaxed">"{reel.caption || 'Video Elitera'}"</p>
+                                </div>
+                            </Link>
+                        </motion.div>
+                    ))}
+                </div>
+                {!areUserReelsLoading && userReels?.length === 0 && (
+                    <div className="text-center py-20 bg-muted/20 rounded-[2rem] border-2 border-dashed">
+                        <Clapperboard className="h-12 w-12 text-muted-foreground/20 mx-auto mb-4" />
+                        <p className="text-muted-foreground font-headline font-bold text-lg">{isOwnProfile ? "Anda" : "Pengguna ini"} belum menerbitkan Reel.</p>
+                    </div>
+                )}
           </TabsContent>
 
           {isOwnProfile && (
