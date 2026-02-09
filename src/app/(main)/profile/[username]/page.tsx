@@ -112,12 +112,23 @@ export default function ProfilePage() {
   }, [firestore, user, currentUser, isOwnProfile, isFollowing]);
   const { data: publishedBooks, isLoading: arePublishedBooksLoading } = useCollection<Book>(publishedBooksQuery);
 
+  // Hilangkan orderBy di sini karena kueri Firestore gabungan (where + orderBy) membutuhkan indeks komposit manual
   const userReelsQuery = useMemo(() => (
     (firestore && user && currentUser)
-      ? query(collection(firestore, 'reels'), where('authorId', '==', user.uid), orderBy('createdAt', 'desc'))
+      ? query(collection(firestore, 'reels'), where('authorId', '==', user.uid))
       : null
   ), [firestore, user, currentUser]);
-  const { data: userReels, isLoading: areUserReelsLoading } = useCollection<Reel>(userReelsQuery);
+  const { data: rawUserReels, isLoading: areUserReelsLoading } = useCollection<Reel>(userReelsQuery);
+
+  // Lakukan pengurutan secara client-side untuk menghindari kebutuhan indeks komposit
+  const userReels = useMemo(() => {
+      if (!rawUserReels) return [];
+      return [...rawUserReels].sort((a, b) => {
+          const timeA = a.createdAt?.toMillis() || 0;
+          const timeB = b.createdAt?.toMillis() || 0;
+          return timeB - timeA;
+      });
+  }, [rawUserReels]);
 
   const otherBooksQuery = useMemo(() => (
     (firestore && user && currentUser && isOwnProfile)
