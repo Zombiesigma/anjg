@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
@@ -5,23 +6,26 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useFirestore, useUser, useCollection } from '@/firebase';
-import { collection, query, where, orderBy, doc, updateDoc, increment, documentId, writeBatch, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, orderBy, doc, updateDoc, increment, documentId, writeBatch, serverTimestamp, addDoc } from 'firebase/firestore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Textarea } from '@/components/ui/textarea';
-import { MessageSquare, Loader2, Send, Search, ArrowLeft, ChevronRight, Sparkles, Zap, Plus, Info, Clapperboard, Play } from 'lucide-react';
+import { MessageSquare, Loader2, Send, Search, ArrowLeft, ChevronRight, Sparkles, Zap, Plus, Info, Clapperboard, Play, Camera, Mic, Square, Trash2, Image as ImageIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Chat, ChatMessage, User as AppUser } from '@/lib/types';
 import { isSameDay, format, isToday, isYesterday } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Skeleton } from '@/components/ui/skeleton';
+import { uploadFile, uploadAudio } from '@/lib/uploader';
+import { useToast } from '@/hooks/use-toast';
 
 export default function MessagesPage() {
   const firestore = useFirestore();
   const { user: currentUser } = useUser();
+  const { toast } = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -31,7 +35,15 @@ export default function MessagesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [onlineStatus, setOnlineStatus] = useState<{ [key: string]: boolean }>({});
+
+  // Recording State
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // 1. Fetching Chat Threads
   const chatThreadsQuery = useMemo(() => (
@@ -41,7 +53,6 @@ export default function MessagesPage() {
   ), [firestore, currentUser]);
   const { data: chatThreads, isLoading: isLoadingThreads } = useCollection<Chat>(chatThreadsQuery);
 
-  // 2. Fetching Participant Profiles for status & display
   const otherParticipantUids = useMemo(() => {
       if (!chatThreads || !currentUser) return [];
       const uids = new Set<string>();
@@ -64,7 +75,6 @@ export default function MessagesPage() {
       return new Map(participantProfiles.map(p => [p.id, p]));
   }, [participantProfiles]);
 
-  // Status Check Sync
   useEffect(() => {
     if (profilesMap.size === 0) return;
     const checkStatuses = () => {
@@ -87,7 +97,6 @@ export default function MessagesPage() {
     return () => clearInterval(interval);
   }, [profilesMap]);
 
-  // Mark as read logic
   useEffect(() => {
     if (!firestore || !currentUser?.uid || !selectedChatId || !chatThreads) return;
     const selectedChatData = chatThreads.find(c => c.id === selectedChatId);
@@ -103,7 +112,6 @@ export default function MessagesPage() {
     setSelectedChatId(chatIdFromUrl || null);
   }, [searchParams]);
 
-  // 3. Fetching Messages for current chat
   const messagesQuery = useMemo(() => (
     (firestore && selectedChatId)
       ? query(collection(firestore, 'chats', selectedChatId, 'messages'), orderBy('createdAt', 'asc'))
@@ -153,8 +161,8 @@ export default function MessagesPage() {
     router.push('/messages', { scroll: false });
   };
 
-  const handleSendMessage = async (e: any) => {
-    e.preventDefault();
+  const handleSendMessage = async (e?: any) => {
+    if (e) e.preventDefault();
     if (!newMessage.trim() || !currentUser || !selectedChatId || !firestore || !otherParticipant) return;
     const textToSend = newMessage.trim();
     setNewMessage(""); 
@@ -176,6 +184,90 @@ export default function MessagesPage() {
     }
   };
 
+  // Image Upload
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !currentUser || !selectedChatId || !firestore || !otherParticipant) return;
+    
+    setIsSending(true);
+    try {
+      const imageUrl = await uploadFile(file);
+      const batch = writeBatch(firestore);
+      batch.set(doc(collection(firestore, 'chats', selectedChatId, 'messages')), {
+        type: 'image', imageUrl, senderId: currentUser.uid, createdAt: serverTimestamp(),
+      });
+      batch.update(doc(firestore, 'chats', selectedChatId), {
+        lastMessage: { text: "📷 Mengirim Gambar", senderId: currentUser.uid, timestamp: serverTimestamp() },
+        [`unreadCounts.${otherParticipant.uid}`]: increment(1)
+      });
+      await batch.commit();
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: "Gagal Mengirim Gambar", description: error.message });
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  // Voice Note Recording
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        audioChunksRef.current.push(event.data);
+      };
+
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        if (audioBlob.size < 1000) return; // Ignore very short recordings
+
+        const audioFile = new File([audioBlob], `vn-${Date.now()}.webm`, { type: 'audio/webm' });
+        
+        setIsSending(true);
+        try {
+          const audioUrl = await uploadAudio(audioFile);
+          const batch = writeBatch(firestore);
+          batch.set(doc(collection(firestore, 'chats', selectedChatId!, 'messages')), {
+            type: 'voice_note', audioUrl, senderId: currentUser!.uid, createdAt: serverTimestamp(),
+          });
+          batch.update(doc(firestore, 'chats', selectedChatId!), {
+            lastMessage: { text: "🎤 Pesan Suara", senderId: currentUser!.uid, timestamp: serverTimestamp() },
+            [`unreadCounts.${otherParticipant!.uid}`]: increment(1)
+          });
+          await batch.commit();
+        } catch (err: any) {
+          toast({ variant: 'destructive', title: 'Gagal Mengirim VN', description: err.message });
+        } finally {
+          setIsSending(false);
+        }
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+      setRecordingTime(0);
+      recordingIntervalRef.current = setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
+    } catch (err) {
+      toast({ variant: 'destructive', title: 'Izin Mikrofon Ditolak', description: 'Harap aktifkan mikrofon untuk merekam.' });
+    }
+  };
+
+  const stopRecording = (cancel = false) => {
+    if (mediaRecorderRef.current && isRecording) {
+      if (cancel) {
+        audioChunksRef.current = []; // Empty chunks to prevent saving
+      }
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+      setIsRecording(false);
+      if (recordingIntervalRef.current) clearInterval(recordingIntervalRef.current);
+    }
+  };
+
   const sortedAndFilteredChatThreads = useMemo(() => {
     if (!chatThreads) return [];
     let threads = chatThreads.filter(chat => {
@@ -189,6 +281,12 @@ export default function MessagesPage() {
         return timeB - timeA;
     });
   }, [chatThreads, searchQuery, currentUser?.uid]);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   return (
     <div className="h-[calc(100dvh-64px)] -mt-6 -mx-4 md:-mx-6 border-none overflow-hidden flex flex-col bg-background relative shadow-inner">
@@ -433,13 +531,40 @@ export default function MessagesPage() {
                                 <div className={cn("flex flex-col gap-1.5 max-w-[85%] md:max-w-[70%]", isSender ? "items-end" : "items-start")}>
                                     <div className={cn(
                                         "rounded-[1.75rem] shadow-sm text-[15px] leading-relaxed relative overflow-hidden", 
-                                        msg.type === 'text' ? "px-6 py-4" : "p-1",
+                                        (msg.type === 'text' || msg.type === 'image' || msg.type === 'voice_note') ? "" : "p-1",
                                         isSender 
                                             ? "bg-primary text-white rounded-br-none shadow-primary/20 ring-1 ring-white/10" 
                                             : "bg-card border border-border/50 rounded-bl-none shadow-black/5"
                                     )}>
                                         {msg.type === 'text' && (
-                                            <p className="whitespace-pre-wrap font-medium">{msg.text}</p>
+                                            <p className="whitespace-pre-wrap font-medium px-6 py-4">{msg.text}</p>
+                                        )}
+                                        {msg.type === 'image' && (
+                                            <div className="relative aspect-auto max-w-full overflow-hidden rounded-[1.5rem] group">
+                                                <img 
+                                                    src={msg.imageUrl} 
+                                                    alt="Chat Media" 
+                                                    className="w-full h-auto object-cover max-h-[300px] cursor-pointer"
+                                                    onClick={() => window.open(msg.imageUrl, '_blank')}
+                                                />
+                                            </div>
+                                        )}
+                                        {msg.type === 'voice_note' && (
+                                            <div className="flex items-center gap-3 px-4 py-3 min-w-[200px]">
+                                                <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center text-white">
+                                                    <Mic className="h-5 w-5" />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <audio 
+                                                        src={msg.audioUrl} 
+                                                        controls 
+                                                        className={cn(
+                                                            "h-10 w-full scale-90 origin-left",
+                                                            isSender ? "filter invert hue-rotate-180" : ""
+                                                        )} 
+                                                    />
+                                                </div>
+                                            </div>
                                         )}
                                         {msg.type === 'book_share' && (
                                             <Link href={`/books/${msg.book.id}`} className="block group/shared">
@@ -521,35 +646,86 @@ export default function MessagesPage() {
                 </ScrollArea>
               </div>
 
-              {/* Input Area - Terangkat di atas Mobile Nav */}
+              {/* Input Area */}
               <div className="p-4 md:p-6 border-t bg-background/95 backdrop-blur-md shrink-0 z-[60] pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-15px_40px_-15px_rgba(0,0,0,0.1)]">
-                  <form onSubmit={handleSendMessage} className="relative flex items-end gap-4 max-w-5xl mx-auto">
-                      <div className="relative flex-1 group">
-                        <div className="absolute -inset-1 bg-gradient-to-r from-primary/10 to-accent/10 rounded-[2rem] blur opacity-0 group-focus-within:opacity-100 transition-opacity" />
-                        <Textarea 
-                            ref={textareaRef}
-                            placeholder="Tuangkan inspirasi Anda..." 
-                            className="relative w-full resize-none rounded-[1.75rem] border-none bg-muted/40 px-6 py-4 pr-16 min-h-[60px] max-h-40 focus-visible:ring-primary/20 focus-visible:bg-background transition-all shadow-inner text-sm leading-relaxed font-medium"
-                            rows={1}
-                            value={newMessage}
-                            onChange={(e) => setNewMessage(e.target.value)}
-                            onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(e); } }}
-                            disabled={isSending}
-                        />
-                        <div className="absolute right-2 bottom-2">
-                            <Button 
-                                type="submit" 
-                                size="icon" 
-                                className="h-11 w-11 rounded-[1.25rem] shadow-xl shadow-primary/30 transition-all active:scale-90 bg-primary hover:bg-primary/90" 
-                                disabled={isSending || !newMessage.trim()}
-                            >
-                                {isSending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5 ml-0.5"/>}
-                            </Button>
-                        </div>
-                      </div>
-                  </form>
+                  <div className="max-w-5xl mx-auto flex flex-col gap-3">
+                      {isRecording && (
+                          <motion.div 
+                            initial={{ opacity: 0, y: 10 }} 
+                            animate={{ opacity: 1, y: 0 }} 
+                            className="bg-primary/5 border border-primary/20 rounded-2xl p-4 flex items-center justify-between"
+                          >
+                              <div className="flex items-center gap-3">
+                                  <div className="h-2.5 w-2.5 rounded-full bg-red-500 animate-pulse" />
+                                  <span className="font-mono font-bold text-primary">{formatTime(recordingTime)}</span>
+                                  <span className="text-xs font-medium text-muted-foreground">Sedang Merekam Suara...</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                  <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-rose-500" onClick={() => stopRecording(true)}>
+                                      <Trash2 className="h-5 w-5" />
+                                  </Button>
+                                  <Button size="icon" className="rounded-full h-10 w-10 bg-primary" onClick={() => stopRecording(false)}>
+                                      <Send className="h-5 w-5" />
+                                  </Button>
+                              </div>
+                          </motion.div>
+                      )}
+
+                      {!isRecording && (
+                        <form onSubmit={handleSendMessage} className="relative flex items-end gap-2 md:gap-4">
+                            <div className="flex gap-1 md:gap-2 shrink-0 mb-1">
+                                <Button 
+                                    type="button" 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="rounded-full text-muted-foreground hover:text-primary hover:bg-primary/5"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    disabled={isSending}
+                                >
+                                    <ImageIcon className="h-5 w-5" />
+                                </Button>
+                                <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageSelect} />
+                                
+                                <Button 
+                                    type="button" 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="rounded-full text-muted-foreground hover:text-primary hover:bg-primary/5"
+                                    onClick={startRecording}
+                                    disabled={isSending}
+                                >
+                                    <Mic className="h-5 w-5" />
+                                </Button>
+                            </div>
+
+                            <div className="relative flex-1 group">
+                                <div className="absolute -inset-1 bg-gradient-to-r from-primary/10 to-accent/10 rounded-[2rem] blur opacity-0 group-focus-within:opacity-100 transition-opacity" />
+                                <Textarea 
+                                    ref={textareaRef}
+                                    placeholder="Tuangkan inspirasi..." 
+                                    className="relative w-full resize-none rounded-[1.75rem] border-none bg-muted/40 px-6 py-4 pr-12 min-h-[50px] max-h-40 focus-visible:ring-primary/20 focus-visible:bg-background transition-all shadow-inner text-sm leading-relaxed font-medium"
+                                    rows={1}
+                                    value={newMessage}
+                                    onChange={(e) => setNewMessage(e.target.value)}
+                                    onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendMessage(); } }}
+                                    disabled={isSending}
+                                />
+                                <div className="absolute right-1 bottom-1">
+                                    <Button 
+                                        type="submit" 
+                                        size="icon" 
+                                        className="h-10 w-10 rounded-full shadow-lg transition-all active:scale-90 bg-primary" 
+                                        disabled={isSending || !newMessage.trim()}
+                                    >
+                                        {isSending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4 ml-0.5"/>}
+                                    </Button>
+                                </div>
+                            </div>
+                        </form>
+                      )}
+                  </div>
                   <div className="mt-2 flex justify-center opacity-20 pointer-events-none select-none">
-                      <p className="text-[7px] font-black uppercase tracking-0.4em]">Elitera Secure Chat</p>
+                      <p className="text-[7px] font-black uppercase tracking-[0.4em]">Elitera Secure Messenger</p>
                   </div>
               </div>
             </div>

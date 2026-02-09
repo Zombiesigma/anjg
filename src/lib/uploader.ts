@@ -1,7 +1,8 @@
+
 /**
  * @fileOverview Utilitas unggahan file Elitera yang ultra-resilient.
  * Menggunakan GitHub sebagai Storage Utama dan Catbox sebagai Failover untuk Gambar.
- * Untuk Video, hanya menggunakan GitHub Storage.
+ * Untuk Video dan Audio, hanya menggunakan GitHub Storage.
  */
 
 /**
@@ -102,7 +103,22 @@ export async function uploadVideo(file: File): Promise<string> {
     return await uploadToGithub(file);
   } catch (err: any) {
     console.error('[Uploader] Gagal mengunggah video ke GitHub:', err.message);
-    // Berikan pesan galat yang lebih spesifik ke UI
-    throw new Error(`Unggahan Video Gagal: ${err.message}. Layanan video tidak mendukung failover Catbox.`);
+    throw new Error(`Unggahan Video Gagal: ${err.message}.`);
+  }
+}
+
+/**
+ * FUNGSI UNGGAL AUDIO: uploadAudio (Eksklusif GitHub)
+ */
+export async function uploadAudio(file: File): Promise<string> {
+  if (file.size > 10 * 1024 * 1024) {
+    throw new Error('Rekaman suara terlalu besar (Maksimal 10MB).');
+  }
+
+  try {
+    return await uploadToGithub(file);
+  } catch (err: any) {
+    console.error('[Uploader] Gagal mengunggah audio ke GitHub:', err.message);
+    throw new Error(`Gagal mengirim rekaman suara: ${err.message}.`);
   }
 }

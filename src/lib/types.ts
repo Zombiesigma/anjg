@@ -101,15 +101,23 @@ export type TextMessage = {
   id: string;
   type: 'text';
   text: string;
-  senderId: string;
-  createdAt: Timestamp;
+};
+
+export type ImageMessage = {
+  id: string;
+  type: 'image';
+  imageUrl: string;
+};
+
+export type VoiceNoteMessage = {
+  id: string;
+  type: 'voice_note';
+  audioUrl: string;
 };
 
 export type BookShareMessage = {
   id: string;
   type: 'book_share';
-  senderId: string;
-  createdAt: Timestamp;
   book: {
     id: string;
     title: string;
@@ -121,8 +129,6 @@ export type BookShareMessage = {
 export type ReelShareMessage = {
   id: string;
   type: 'reel_share';
-  senderId: string;
-  createdAt: Timestamp;
   reel: {
     id: string;
     authorName: string;
@@ -131,7 +137,9 @@ export type ReelShareMessage = {
   };
 };
 
-export type ChatMessage = (TextMessage | BookShareMessage | ReelShareMessage) & {
+export type ChatMessage = (
+  TextMessage | ImageMessage | VoiceNoteMessage | BookShareMessage | ReelShareMessage
+) & {
   id: string;
   senderId: string;
   createdAt: Timestamp;

@@ -201,12 +201,12 @@
     },
     "ChatMessage": {
       "title": "Chat Message",
-      "description": "Represents a single message within a chat thread. Can be a text message or a special type like a book share.",
+      "description": "Represents a single message within a chat thread. Can be text, book share, reel share, image, or voice note.",
       "type": "object",
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["text", "book_share", "reel_share"],
+          "enum": ["text", "book_share", "reel_share", "image", "voice_note"],
           "description": "The type of the message."
         },
         "text": {
@@ -219,6 +219,16 @@
         "createdAt": {
           "type": "string",
           "format": "date-time"
+        },
+        "imageUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL of the image if type is 'image'."
+        },
+        "audioUrl": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL of the audio if type is 'voice_note'."
         },
         "book": {
           "type": "object",
