@@ -11,7 +11,7 @@ export default function MainAppLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const isImmersiveRoute = pathname?.startsWith('/messages') || pathname?.startsWith('/ai');
+  const isImmersiveRoute = pathname?.startsWith('/messages') || pathname?.startsWith('/ai') || pathname?.startsWith('/reels');
 
   return (
     <ProtectedLayout>

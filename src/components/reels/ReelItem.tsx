@@ -4,7 +4,7 @@ import { useFirestore, useUser, useDoc } from '@/firebase';
 import { doc, increment, updateDoc, serverTimestamp, writeBatch, getDoc, collection, addDoc } from 'firebase/firestore';
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import type { Reel, ReelLike, User } from '@/lib/types';
-import { Heart, MessageSquare, Share2, Volume2, VolumeX, Sparkles, Loader2, Music2, Send as SendIcon } from 'lucide-react';
+import { Heart, MessageSquare, Share2, Volume2, VolumeX, Sparkles, Loader2, Music2, Send as SendIcon, Play, Pause } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
@@ -33,10 +33,13 @@ export function ReelItem({ reel, isMuted, onToggleMute }: ReelItemProps) {
   const [showComments, setShowComments] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const [showHeartAnim, setShowHeartAnim] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [showPlayPauseAnim, setShowPlayPauseAnim] = useState<'play' | 'pause' | null>(null);
+  const [progress, setProgress] = useState(0);
+  
   const viewTracked = useRef(false);
   const lastClickTime = useRef(0);
 
-  // Check if current user has liked the reel
   const likeRef = useMemo(() => (
     (firestore && currentUser) ? doc(firestore, 'reels', reel.id, 'likes', currentUser.uid) : null
   ), [firestore, currentUser, reel.id]);
@@ -72,10 +75,16 @@ export function ReelItem({ reel, isMuted, onToggleMute }: ReelItemProps) {
     return () => { if (currentRef) observer.unobserve(currentRef); };
   }, [firestore, currentUser, reel.id, reel.authorId]);
 
+  const handleTimeUpdate = () => {
+    if (videoRef.current) {
+      const currentProgress = (videoRef.current.currentTime / videoRef.current.duration) * 100;
+      setProgress(currentProgress);
+    }
+  };
+
   const handleToggleLike = useCallback(async (forcedState?: boolean) => {
     if (!firestore || !currentUser || !likeRef || isLiking) return;
     
-    // If double tap forced a like and it's already liked, just show animation
     if (forcedState === true && isLiked) {
         setShowHeartAnim(true);
         setTimeout(() => setShowHeartAnim(false), 1000);
@@ -136,11 +145,20 @@ export function ReelItem({ reel, isMuted, onToggleMute }: ReelItemProps) {
     const DOUBLE_CLICK_DELAY = 300;
     
     if (now - lastClickTime.current < DOUBLE_CLICK_DELAY) {
-        // Double tap detected
         handleToggleLike(true);
     } else {
-        // Single tap - toggle mute
-        onToggleMute();
+        if (videoRef.current) {
+            if (isPaused) {
+                videoRef.current.play();
+                setIsPaused(false);
+                setShowPlayPauseAnim('play');
+            } else {
+                videoRef.current.pause();
+                setIsPaused(true);
+                setShowPlayPauseAnim('pause');
+            }
+            setTimeout(() => setShowPlayPauseAnim(null), 800);
+        }
     }
     lastClickTime.current = now;
   };
@@ -183,7 +201,24 @@ export function ReelItem({ reel, isMuted, onToggleMute }: ReelItemProps) {
         playsInline
         muted={isMuted}
         onClick={handleScreenClick}
+        onTimeUpdate={handleTimeUpdate}
       />
+
+      {/* Play/Pause Animation */}
+      <AnimatePresence>
+        {showPlayPauseAnim && (
+            <motion.div 
+                initial={{ scale: 0.5, opacity: 0 }}
+                animate={{ scale: 1.5, opacity: [0, 1, 0] }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 flex items-center justify-center z-40 pointer-events-none"
+            >
+                <div className="bg-black/20 backdrop-blur-md p-6 rounded-full border border-white/10">
+                    {showPlayPauseAnim === 'play' ? <Play className="w-12 h-12 text-white fill-white" /> : <Pause className="w-12 h-12 text-white fill-white" />}
+                </div>
+            </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Double Tap Heart Animation */}
       <AnimatePresence>
@@ -204,7 +239,7 @@ export function ReelItem({ reel, isMuted, onToggleMute }: ReelItemProps) {
       <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/90 pointer-events-none" />
 
       {/* Right Interaction Sidebar */}
-      <div className="absolute right-4 bottom-28 flex flex-col items-center gap-5 z-30">
+      <div className="absolute right-4 bottom-28 flex flex-col items-center gap-5 z-[105]">
         <div className="flex flex-col items-center gap-1">
             <motion.button 
                 whileTap={{ scale: 0.8 }}
@@ -258,7 +293,7 @@ export function ReelItem({ reel, isMuted, onToggleMute }: ReelItemProps) {
         <motion.div 
             animate={{ rotate: 360 }}
             transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-            className="h-10 w-10 rounded-full border-2 border-white/20 bg-zinc-900 p-1 flex items-center justify-center shadow-2xl mt-2"
+            className="h-10 w-10 rounded-full border-2 border-white/20 bg-zinc-900 p-1 flex items-center justify-center shadow-2xl mt-2 overflow-hidden"
         >
             <Avatar className="h-full w-full">
                 <AvatarImage src={reel.authorAvatarUrl} className="object-cover" />
@@ -268,7 +303,7 @@ export function ReelItem({ reel, isMuted, onToggleMute }: ReelItemProps) {
       </div>
 
       {/* Bottom Info Overlay */}
-      <div className="absolute bottom-0 left-0 right-0 p-6 pb-12 space-y-4 z-20 pointer-events-none">
+      <div className="absolute bottom-0 left-0 right-0 p-6 pb-12 space-y-4 z-[100] pointer-events-none">
         <div className="flex flex-col items-start gap-4 max-w-[85%]">
             <div className="flex items-center gap-3 pointer-events-auto">
                 <Link href={`/profile/${reel.authorName.toLowerCase()}`} className="group flex items-center gap-3">
@@ -291,7 +326,7 @@ export function ReelItem({ reel, isMuted, onToggleMute }: ReelItemProps) {
                     </div>
                 </Link>
                 
-                <button className="pointer-events-auto bg-white/10 backdrop-blur-md border border-white/20 text-white px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-white/20 transition-all ml-2">
+                <button className="pointer-events-auto bg-white/10 backdrop-blur-md border border-white/20 text-white px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-white/20 transition-all ml-2 shadow-xl">
                     Ikuti
                 </button>
             </div>
@@ -300,7 +335,7 @@ export function ReelItem({ reel, isMuted, onToggleMute }: ReelItemProps) {
                 {reel.caption || "Momen puitis di Elitera."}
             </p>
 
-            <div className="flex items-center gap-3 text-white/70 bg-black/20 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/5 max-w-full overflow-hidden">
+            <div className="flex items-center gap-3 text-white/70 bg-black/20 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/5 max-w-full overflow-hidden shadow-inner">
                 <Music2 className="h-3 w-3 shrink-0" />
                 <div className="overflow-hidden flex-1">
                     <p className="text-[9px] font-black uppercase tracking-[0.2em] whitespace-nowrap animate-marquee">
@@ -309,6 +344,14 @@ export function ReelItem({ reel, isMuted, onToggleMute }: ReelItemProps) {
                 </div>
             </div>
         </div>
+      </div>
+
+      {/* Progress Bar at the absolute bottom */}
+      <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/10 z-[110]">
+          <motion.div 
+            className="h-full bg-primary shadow-[0_0_10px_rgba(59,130,246,0.8)]"
+            style={{ width: `${progress}%` }}
+          />
       </div>
 
       {/* Sheets & Dialogs */}
