@@ -15,7 +15,7 @@ export function ReelsClient() {
   const firestore = useFirestore();
   const { user: currentUser } = useUser();
   const searchParams = useSearchParams();
-  const [isMuted] = useState(false); // Default to unmuted, button removed
+  const [isMuted] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const reelIdFromUrl = searchParams.get('id');
@@ -63,15 +63,15 @@ export function ReelsClient() {
   return (
     <div className="h-[calc(100dvh-64px)] -mt-6 -mx-4 md:-mx-6 bg-black overflow-y-auto snap-y snap-mandatory no-scrollbar rounded-none shadow-2xl relative scroll-smooth">
       
-      {/* Floating Global Controls */}
+      {/* Floating Global Controls - Subtler Glassmorphism Plus Button */}
       <div className="fixed top-24 left-6 z-[110] flex items-center pointer-events-none">
           <motion.button 
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
+            whileHover={{ scale: 1.05, backgroundColor: 'rgba(255,255,255,0.05)' }}
+            whileTap={{ scale: 0.95 }}
             onClick={() => setIsCreateModalOpen(true)}
-            className="pointer-events-auto bg-white/5 backdrop-blur-2xl border border-white/10 p-3.5 rounded-2xl text-white/60 hover:text-white hover:bg-white/10 transition-all shadow-2xl"
+            className="pointer-events-auto bg-white/[0.02] backdrop-blur-3xl border border-white/5 p-4 rounded-[2rem] text-white/20 hover:text-white/60 transition-all"
           >
-            <Plus className="h-6 w-6" />
+            <Plus className="h-5 w-5" />
           </motion.button>
       </div>
 
@@ -82,7 +82,8 @@ export function ReelsClient() {
                 key={reel.id} 
                 reel={reel} 
                 isMuted={isMuted} 
-                onToggleMute={() => {}} // No-op since button is removed
+                onToggleMute={() => {}}
+                isPausedByModal={isCreateModalOpen}
             />
             ))
         ) : (
