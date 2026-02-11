@@ -108,11 +108,13 @@ export async function signInWithGoogle() {
 export async function signOut() {
   try {
     if (auth.currentUser) {
-        const userStatusRef = doc(firestore, 'users', auth.currentUser.uid);
-        await updateDoc(userStatusRef, {
+        const uid = auth.currentUser.uid;
+        // Non-blocking update to status before signing out
+        const userStatusRef = doc(firestore, 'users', uid);
+        updateDoc(userStatusRef, {
             status: 'offline',
             lastSeen: serverTimestamp(),
-        });
+        }).catch(err => console.warn("Status update on signout failed", err));
     }
     await firebaseSignOut(auth);
   } catch (error) {
