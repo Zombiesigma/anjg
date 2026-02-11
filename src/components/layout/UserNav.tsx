@@ -60,8 +60,10 @@ export function UserNav() {
   // Safety cleanup: Ensure body is interactive when overlays are closed
   useEffect(() => {
     if (!isSheetOpen && !isLogoutAlertOpen) {
-        document.body.style.pointerEvents = 'auto';
-        document.body.style.overflow = 'auto';
+        if (typeof document !== 'undefined') {
+            document.body.style.pointerEvents = 'auto';
+            document.body.style.overflow = 'auto';
+        }
     }
   }, [isSheetOpen, isLogoutAlertOpen]);
 
@@ -76,19 +78,20 @@ export function UserNav() {
   };
 
   const handleSignOut = async () => {
+    // 1. Instantly close all UI layers
+    setIsLogoutAlertOpen(false);
+    setIsSheetOpen(false);
+    
+    // 2. Force interaction recovery BEFORE sign-out redirect
+    if (typeof document !== 'undefined') {
+        document.body.style.pointerEvents = 'auto';
+        document.body.style.overflow = 'auto';
+    }
+
     try {
-      // Close overlays immediately
-      setIsLogoutAlertOpen(false);
-      setIsSheetOpen(false);
-      
-      // Clear body styles
-      document.body.style.pointerEvents = 'auto';
-      document.body.style.overflow = 'auto';
-      
       await signOut();
     } catch (error) {
       console.error("Sign out error:", error);
-      document.body.style.pointerEvents = 'auto';
     }
   };
   
@@ -137,7 +140,9 @@ export function UserNav() {
             className="w-[85vw] max-w-sm flex flex-col p-0 border-l bg-background/95 backdrop-blur-2xl z-[140] shadow-2xl"
             onCloseAutoFocus={(e) => {
                 e.preventDefault();
-                document.body.style.pointerEvents = 'auto';
+                if (typeof document !== 'undefined') {
+                    document.body.style.pointerEvents = 'auto';
+                }
             }}
         >
           <SheetHeader className="sr-only">
@@ -246,7 +251,9 @@ export function UserNav() {
             className="rounded-[2.5rem] border-none shadow-2xl p-8 max-w-[90vw] md:max-w-md z-[160]"
             onCloseAutoFocus={(e) => {
                 e.preventDefault();
-                document.body.style.pointerEvents = 'auto';
+                if (typeof document !== 'undefined') {
+                    document.body.style.pointerEvents = 'auto';
+                }
             }}
         >
           <AlertDialogHeader>
