@@ -4,7 +4,7 @@ import { useFirestore, useUser, useDoc } from '@/firebase';
 import { doc, increment, updateDoc, serverTimestamp, writeBatch, getDoc, collection, addDoc } from 'firebase/firestore';
 import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import type { Reel, ReelLike, User } from '@/lib/types';
-import { Heart, MessageSquare, Share2, Volume2, VolumeX, Sparkles, Loader2, Music2, Send as SendIcon, Play, Pause } from 'lucide-react';
+import { Heart, MessageSquare, Share2, Sparkles, Loader2, Music2, Send as SendIcon, Play, Pause } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
@@ -19,9 +19,10 @@ interface ReelItemProps {
   reel: Reel;
   isMuted: boolean;
   onToggleMute: () => void;
+  isPausedByModal?: boolean;
 }
 
-export function ReelItem({ reel, isMuted, onToggleMute }: ReelItemProps) {
+export function ReelItem({ reel, isMuted, onToggleMute, isPausedByModal = false }: ReelItemProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const firestore = useFirestore();
@@ -46,25 +47,18 @@ export function ReelItem({ reel, isMuted, onToggleMute }: ReelItemProps) {
   const { data: likeDoc } = useDoc<ReelLike>(likeRef);
   const isLiked = !!likeDoc;
 
+  // Intersection Observer to track visibility
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
         setIsVisible(entry.isIntersecting);
-        if (videoRef.current) {
-          if (entry.isIntersecting) {
-            videoRef.current.play().catch(() => {});
-            if (!viewTracked.current && firestore && currentUser && currentUser.uid !== reel.authorId) {
-                const reelRef = doc(firestore, 'reels', reel.id);
-                const viewRef = doc(firestore, 'reels', reel.id, 'views', currentUser.uid);
-                const batch = writeBatch(firestore);
-                batch.update(reelRef, { viewCount: increment(1) });
-                batch.set(viewRef, { viewedAt: serverTimestamp() });
-                batch.commit().then(() => { viewTracked.current = true; });
-            }
-          } else {
-            videoRef.current.pause();
-            videoRef.current.currentTime = 0;
-          }
+        if (entry.isIntersecting && !viewTracked.current && firestore && currentUser && currentUser.uid !== reel.authorId) {
+            const reelRef = doc(firestore, 'reels', reel.id);
+            const viewRef = doc(firestore, 'reels', reel.id, 'views', currentUser.uid);
+            const batch = writeBatch(firestore);
+            batch.update(reelRef, { viewCount: increment(1) });
+            batch.set(viewRef, { viewedAt: serverTimestamp() });
+            batch.commit().then(() => { viewTracked.current = true; });
         }
       },
       { threshold: 0.8 }
@@ -74,6 +68,17 @@ export function ReelItem({ reel, isMuted, onToggleMute }: ReelItemProps) {
     if (currentRef) observer.observe(currentRef);
     return () => { if (currentRef) observer.unobserve(currentRef); };
   }, [firestore, currentUser, reel.id, reel.authorId]);
+
+  // Unified Play/Pause logic: Pause if not visible, paused by modal, or manually paused
+  useEffect(() => {
+    if (!videoRef.current) return;
+
+    if (isVisible && !isPausedByModal && !isPaused) {
+      videoRef.current.play().catch(() => {});
+    } else {
+      videoRef.current.pause();
+    }
+  }, [isVisible, isPausedByModal, isPaused]);
 
   const handleTimeUpdate = () => {
     if (videoRef.current) {
@@ -186,6 +191,11 @@ export function ReelItem({ reel, isMuted, onToggleMute }: ReelItemProps) {
     }
   };
 
+  const profileHref = useMemo(() => {
+      const slug = reel.authorName.toLowerCase().replace(/\s+/g, '');
+      return `/profile/${slug}`;
+  }, [reel.authorName]);
+
   return (
     <div 
       ref={containerRef}
@@ -236,7 +246,7 @@ export function ReelItem({ reel, isMuted, onToggleMute }: ReelItemProps) {
       </AnimatePresence>
 
       {/* Bottom Gradient Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/90 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/80 pointer-events-none" />
 
       {/* Right Interaction Sidebar */}
       <div className="absolute right-4 bottom-28 flex flex-col items-center gap-5 z-[105]">
@@ -306,7 +316,7 @@ export function ReelItem({ reel, isMuted, onToggleMute }: ReelItemProps) {
       <div className="absolute bottom-0 left-0 right-0 p-6 pb-12 space-y-4 z-[100] pointer-events-none">
         <div className="flex flex-col items-start gap-4 max-w-[85%]">
             <div className="flex items-center gap-3 pointer-events-auto">
-                <Link href={`/profile/${reel.authorName.toLowerCase()}`} className="group flex items-center gap-3">
+                <Link href={profileHref} className="group flex items-center gap-3">
                     <div className="relative">
                         <Avatar className="h-11 w-11 border-2 border-white/40 shadow-2xl transition-transform group-hover:scale-110">
                             <AvatarImage src={reel.authorAvatarUrl} className="object-cover" />
